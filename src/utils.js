@@ -1,0 +1,76 @@
+export function extents (ext1, ext2) {
+  return {
+    min: ext1 < ext2 ? ext1 : ext2,
+    max: ext1 > ext2 ? ext1 : ext2,
+  }
+}
+
+export function padArray (arr, filler) {
+  return arr.length ? arr : [filler]
+}
+
+export function filterEmpty (arr) {
+  return arr.filter(item => (typeof item === 'object'
+    ? Object.keys(item).every(key => item[key])
+    : item))
+}
+
+export function traverse (obj, onKey) {
+  const path = ['']
+
+  const fn = target => {
+    Object.entries(target).forEach(([k, v]) => {
+      path[path.length - 1] = k
+
+      const dateType = v instanceof Date
+      const clip = onKey([...path], v) === false
+      if (!clip && !dateType && v !== null && typeof v === 'object') {
+        const subObj = getValueByPath(obj, path)
+
+        path.push('')
+        fn(subObj)
+        path.pop()
+      }
+    })
+  }
+
+  fn(obj)
+}
+
+export function map (obj, onKey) {
+  const result = Array.isArray(obj) ? [] : {}
+
+  traverse(obj, (keyPath, value) => {
+    const dateType = value instanceof Date
+
+    if (!dateType && value !== null && typeof value === 'object') {
+      setValueByPath(result, keyPath, Array.isArray(value) ? [] : {})
+    } else {
+      setValueByPath(result, keyPath, onKey(keyPath, value))
+    }
+  })
+
+  return result
+}
+
+export function deepCopy (obj) {
+  return map(obj, (_, value) => value)
+}
+
+export function setValueByPath (obj, keyPath, value) {
+  keyPath.reduce((subObj, key, index) => {
+    if (index === keyPath.length - 1) {
+      subObj[key] = value
+    } else {
+      return subObj[key]
+    }
+  }, obj)
+}
+
+export function getValueByPath (obj, keyPath) {
+  return keyPath.reduce((obj, key) =>
+    (typeof obj !== 'undefined'
+      ? obj[key]
+      : undefined
+    ), obj)
+}
