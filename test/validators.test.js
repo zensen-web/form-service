@@ -1,6 +1,6 @@
 import sinon from 'sinon'
 
-import { expect } from '@open-wc/testing'
+import { expect } from 'chai'
 
 import {
   required,
@@ -10,7 +10,7 @@ import {
   range,
 } from '../src/validators'
 
-describe.only('validators', () => {
+describe('validators', () => {
   let sandbox
 
   beforeEach(() => {

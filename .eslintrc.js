@@ -8,6 +8,9 @@ module.exports = {
   },
   extends: ['standard'],
   plugins: ['standard', 'promise'],
+  globals: {
+    expect: true,
+  },
   rules: {
     'new-cap': [
       'warn',

@@ -1,8 +1,5 @@
 import sinon from 'sinon'
 
-import { expect } from '@open-wc/testing'
-import { parse } from 'date-fns'
-
 import { filterEmpty, padArray } from '../src/utils'
 import { FormService } from '../src'
 import { isPhoneNumber } from './validators'
@@ -20,7 +17,7 @@ import {
   toPhoneNumber,
 } from './formatters'
 
-const DATE = parse('2020-01-01T00:00:00')
+const DATE = new Date(2020, 0, 1, 0, 0, 0, 0)
 const MODIFIERS = ['ab', 'cd', 'ef', 'gh']
 
 const SCHEMA_DEFAULTS = {
@@ -88,7 +85,7 @@ describe('FormService', () => {
     sandbox = sinon.createSandbox()
     onChangeSpy = sandbox.spy()
 
-    requiredValidator = { ...required }
+    requiredValidator = { ...required() }
   })
 
   afterEach(() => {
@@ -399,7 +396,7 @@ describe('FormService', () => {
             description: '',
             amount: '',
           },
-          { name: [required] },
+          { name: [required()] },
           onChangeSpy,
         )
 
@@ -436,7 +433,7 @@ describe('FormService', () => {
       beforeEach(() => {
         service = new FormService(
           { name: 'asdf' },
-          { name: [required] },
+          { name: [required()] },
           onChangeSpy,
         )
 
@@ -456,7 +453,7 @@ describe('FormService', () => {
       beforeEach(() => {
         service = new FormService(
           { name: 'Wronguy' },
-          { name: [required, VALIDATOR_NAME_MATCH] },
+          { name: [required(), VALIDATOR_NAME_MATCH] },
           onChangeSpy,
         )
 
@@ -491,7 +488,7 @@ describe('FormService', () => {
       beforeEach(() => {
         service = new FormService(
           { name: NAME_MATCH },
-          { name: [required, VALIDATOR_NAME_MATCH] },
+          { name: [required(), VALIDATOR_NAME_MATCH] },
           onChangeSpy,
         )
 
@@ -515,7 +512,7 @@ describe('FormService', () => {
             tax: {
               validators: [requiredIf('name', 'rate')],
               children: {
-                rate: [range(0, 100, false, false)],
+                rate: [range(0, 100, false, false, '0 - 100')],
               },
             },
           },
@@ -651,7 +648,7 @@ describe('FormService', () => {
           {
             rate: {
               ignorePristine: true,
-              validators: [range(0, 100, false, false)],
+              validators: [range(0, 100, false, false, '0 - 100')],
             },
           },
           onChangeSpy,
@@ -671,7 +668,7 @@ describe('FormService', () => {
           {
             rates: {
               genItem: () => '',
-              validators: [range(0, 100, false, false)],
+              validators: [range(0, 100, false, false, '0 - 100')],
               children: { ignorePristine: true },
             },
           },
@@ -705,7 +702,7 @@ describe('FormService', () => {
               children: {
                 rate: {
                   ignorePristine: true,
-                  validators: [range(0, 100, false, false)],
+                  validators: [range(0, 100, false, false, '0 - 100')],
                 },
               },
             },
