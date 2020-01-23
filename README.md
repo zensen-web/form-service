@@ -17,13 +17,13 @@ This was created as a form solution for `LitElement`, but it can work with other
 Using `npm`:
 
 ```
-$ npm install @zensen/router
+$ npm install @zensen/form-service
 ```
 
 Using `yarn`:
 
 ```
-$ yarn add @zensen/router
+$ yarn add @zensen/form-service
 ```
 
 ## API
