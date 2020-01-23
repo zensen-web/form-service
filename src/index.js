@@ -1,4 +1,4 @@
-import FormService from './form'
+import FormService from './service'
 
 import * as validators from './validators'
 
