@@ -24,11 +24,12 @@ export function traverse (obj, onKey) {
 
       const dateType = v instanceof Date
       const clip = onKey([...path], v) === false
-      if (!clip && !dateType && v !== null && typeof v === 'object') {
-        const subObj = getValueByPath(obj, path)
+      const updatedVal = getValueByPath(obj, path)
+      const nonNullObj = updatedVal !== null && typeof updatedVal === 'object'
 
+      if (!clip && !dateType && nonNullObj) {
         path.push('')
-        fn(subObj)
+        fn(updatedVal)
         path.pop()
       }
     })

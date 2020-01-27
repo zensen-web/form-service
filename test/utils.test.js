@@ -171,6 +171,25 @@ describe('misc', () => {
             getValueByPath(schema, path),
           ])))
     })
+
+    context('when a null object is found', () => {
+      let obj
+
+      const fn = keyPath => {
+        if (keyPath[0] === 'userId') {
+          setValueByPath(obj, keyPath, null)
+        }
+      }
+
+      beforeEach(() => {
+        obj = {
+          userId: { id: null, label: 'None' },
+        }
+      })
+
+      it('does not throw an exception', () =>
+        expect(traverse(obj, fn)).to.not.throw)
+    })
   })
 
   describe('map()', () => {
