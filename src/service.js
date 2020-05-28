@@ -101,7 +101,7 @@ export default class FormService {
 
   validate () {
     this.__pristine = this.__buildSchema(this.__state, false, 'clipPristine')
-    traverse(this.__state, (keyPath, value) => {
+    traverse(this.__errors, (keyPath, value) => {
       if (typeof value !== 'object') {
         this.__validateBranch(keyPath)
       }

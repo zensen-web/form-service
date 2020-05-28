@@ -3,7 +3,7 @@ import { extents } from './utils'
 export function required (error = 'Required') {
   return {
     error,
-    validate: v => v || (Array.isArray(v) && v.length),
+    validate: v => (Array.isArray(v) ? v.length : v),
   }
 }
 

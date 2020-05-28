@@ -28,7 +28,7 @@ describe('validators', () => {
       expect(validator('')).to.be.false)
 
     it('fails when value is an empty array', () =>
-      expect(validator([])).to.be.true)
+      expect(validator([])).to.be.false)
 
     it('passes when a value is provided', () =>
       expect(validator('asdf')).to.be.true)

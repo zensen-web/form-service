@@ -65,8 +65,9 @@ describe('FormService', () => {
   let onChangeSpy
 
   const getLastChange = () => onChangeSpy.lastCall.args
-  const buildService = input =>
-    new FormService(
+
+  function buildService (input) {
+    return new FormService(
       input,
       {
         procedure: [requiredValidator],
@@ -80,6 +81,7 @@ describe('FormService', () => {
       },
       onChangeSpy,
     )
+  }
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
@@ -589,6 +591,33 @@ describe('FormService', () => {
           ]))
         })
       })
+    })
+
+    context('when errors are clipped', () => {
+      beforeEach(() => {
+        service = new FormService(
+          {
+            items: [
+              { diagnoses: [] },
+            ],
+          },
+          {
+            items: {
+              children: {
+                diagnoses: {
+                  clipErrors: true,
+                  validators: [requiredValidator],
+                },
+              },
+            },
+          },
+          onChangeSpy,
+        )
+
+        valid = service.validate()
+      })
+
+      it('is invalid', () => expect(valid).to.be.false)
     })
 
     context('when validating an array', () => {
