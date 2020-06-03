@@ -15,6 +15,25 @@ export function filterEmpty (arr) {
     : item))
 }
 
+export function moveItem (arr, fromIndex, toIndex) {
+  const target = arr[fromIndex]
+  const result = [...arr]
+
+  result.splice(fromIndex, 1)
+  result.splice(toIndex, 0, target)
+  return result
+}
+
+export function swap (arr, index1, index2) {
+  const result = [...arr]
+
+  result.splice(index1, 1)
+  result.splice(index1, 0, arr[index2])
+  result.splice(index2, 1)
+  result.splice(index2, 0, arr[index1])
+  return result
+}
+
 export function traverse (obj, onKey) {
   const path = ['']
 

@@ -66,23 +66,6 @@ describe('FormService', () => {
 
   const getLastChange = () => onChangeSpy.lastCall.args
 
-  function buildService (input) {
-    return new FormService(
-      input,
-      {
-        procedure: [requiredValidator],
-        modifiers: {
-          genItem: () => '',
-        },
-        amount: {
-          format: v => toCurrency(v),
-          unformat: v => toNumeric(v),
-        },
-      },
-      onChangeSpy,
-    )
-  }
-
   beforeEach(() => {
     sandbox = sinon.createSandbox()
     onChangeSpy = sandbox.spy()
@@ -105,7 +88,26 @@ describe('FormService', () => {
 
   context('when converters are provided', () => {
     beforeEach(() => {
-      service = buildService(MODEL)
+      service = new FormService(
+        MODEL,
+        {
+          procedure: [requiredValidator],
+          modifiers: {
+            genItem: () => '',
+            validators: [
+              {
+                error: 'asdf',
+                validate: () => false,
+              },
+            ],
+          },
+          amount: {
+            format: v => toCurrency(v),
+            unformat: v => toNumeric(v),
+          },
+        },
+        onChangeSpy,
+      )
     })
 
     it('produces a state with the proper conversions', () =>
@@ -209,7 +211,6 @@ describe('FormService', () => {
 
     context('when removing an item from the end of an array', () => {
       beforeEach(() => {
-        service.apply('modifiers', ['ab', 'cd', 'ef', 'gh'])
         service.removeItem('modifiers')
       })
 
@@ -225,6 +226,48 @@ describe('FormService', () => {
 
       it('removes it', () =>
         expect(service.__state.modifiers).to.be.eql(['cd', 'ef', 'gh']))
+    })
+
+    context('when moving an item in the array', () => {
+      const EXPECTED_MODEL = ['ef', 'ab', 'cd', 'gh']
+      const EXPECTED_ERRORS = ['asdf', '', '', '']
+      const EXPECTED_PRISTINE = [false, true, true, true]
+
+      beforeEach(() => {
+        service.apply('modifiers.2', 'touched')
+        service.apply('modifiers.2', 'ef')
+        service.moveItem('modifiers', 2, 0)
+      })
+
+      it('reorders the item in the state', () =>
+        expect(service.__state.modifiers).to.be.eql(EXPECTED_MODEL))
+
+      it('reorders the item in the error schema', () =>
+        expect(service.__errors.modifiers).to.be.eql(EXPECTED_ERRORS))
+
+      it('reorders the item in the pristine schema', () =>
+        expect(service.__pristine.modifiers).to.be.eql(EXPECTED_PRISTINE))
+    })
+
+    context('when swapping an item in the array', () => {
+      const EXPECTED_MODEL = ['ef', 'cd', 'ab', 'gh']
+      const EXPECTED_ERRORS = ['asdf', '', '', '']
+      const EXPECTED_PRISTINE = [false, true, false, true]
+
+      beforeEach(() => {
+        service.apply('modifiers.2', 'touched')
+        service.apply('modifiers.2', 'ef')
+        service.swapItems('modifiers', 2, 0)
+      })
+
+      it('swaps the selected items in the state', () =>
+        expect(service.__state.modifiers).to.be.eql(EXPECTED_MODEL))
+
+      it('swaps the selected items in the error schema', () =>
+        expect(service.__errors.modifiers).to.be.eql(EXPECTED_ERRORS))
+
+      it('swaps the selected items in the pristine schema', () =>
+        expect(service.__pristine.modifiers).to.be.eql(EXPECTED_PRISTINE))
     })
   })
 

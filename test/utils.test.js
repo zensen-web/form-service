@@ -4,6 +4,8 @@ import {
   extents,
   padArray,
   filterEmpty,
+  moveItem,
+  swap,
   traverse,
   map,
   deepCopy,
@@ -102,6 +104,44 @@ describe('misc', () => {
       it('returns a modified copy of the array', () =>
         expect(filterEmpty(ITEMS)).to.be.eql([]))
     })
+  })
+
+  describe('moveItem()', () => {
+    const ITEMS = ['a', 'b', 'c', 'd', 'e']
+
+    it('can move an item up by 1 element', () =>
+      expect(moveItem(ITEMS, 3, 2)).to.be.eql(['a', 'b', 'd', 'c', 'e']))
+
+    it('can move an item to the front', () =>
+      expect(moveItem(ITEMS, 3, 0)).to.be.eql(['d', 'a', 'b', 'c', 'e']))
+
+    it('can move an item to the back', () =>
+      expect(moveItem(ITEMS, 1, 4)).to.be.eql(['a', 'c', 'd', 'e', 'b']))
+
+    it('can move the front item to the back', () =>
+      expect(moveItem(ITEMS, 0, 4)).to.be.eql(['b', 'c', 'd', 'e', 'a']))
+
+    it('can move the back item to the front', () =>
+      expect(moveItem(ITEMS, 4, 0)).to.be.eql(['e', 'a', 'b', 'c', 'd']))
+  })
+
+  describe('swap()', () => {
+    const ITEMS = ['a', 'b', 'c', 'd', 'e']
+
+    it('can swap first and last items', () =>
+      expect(swap(ITEMS, 0, 4)).to.be.eql(['e', 'b', 'c', 'd', 'a']))
+
+    it('can swap first and last items with reversed indices', () =>
+      expect(swap(ITEMS, 4, 0)).to.be.eql(['e', 'b', 'c', 'd', 'a']))
+
+    it('can swap two items in the middle of the array', () =>
+      expect(swap(ITEMS, 3, 1)).to.be.eql(['a', 'd', 'c', 'b', 'e']))
+
+    it('can swap the 3rd and 5th items', () =>
+      expect(swap(ITEMS, 2, 4)).to.be.eql(['a', 'b', 'e', 'd', 'c']))
+
+    it('can swap the 1st and 3rd items', () =>
+      expect(swap(ITEMS, 0, 2)).to.be.eql(['c', 'b', 'a', 'd', 'e']))
   })
 
   describe('traverse()', () => {

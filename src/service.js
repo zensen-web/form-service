@@ -1,6 +1,8 @@
 import equal from 'fast-deep-equal'
 
 import {
+  moveItem,
+  swap,
   traverse,
   deepCopy,
   getValueByPath,
@@ -74,10 +76,10 @@ export default class FormService {
     const item = selector.genItem()
 
     items.splice(shiftedIndex, 0, item)
-    this.__spreadSchema('__state', [...keyPath, `${shiftedIndex}`])
+    this.__spreadSchema('__state', [...keyPath, shiftedIndex])
     this.__addItemToSchema('__errors', keyPath, shiftedIndex, item, '')
     this.__addItemToSchema('__pristine', keyPath, shiftedIndex, item, true)
-    this.__modifyPristineItem([...keyPath, `${shiftedIndex}`])
+    this.__modifyPristineItem([...keyPath, shiftedIndex])
     this.__modify(keyPath)
     this.__changeState()
   }
@@ -92,6 +94,28 @@ export default class FormService {
     this.__removeItemFromSchema('__errors', keyPath, shiftedIndex)
     this.__removeItemFromSchema('__pristine', keyPath, shiftedIndex)
     this.__modify(keyPath)
+    this.__changeState()
+  }
+
+  moveItem (name, fromIndex, toIndex) {
+    const keyPath = name.split('.')
+
+    this.__moveItemInSchema('__state', keyPath, fromIndex, toIndex)
+    this.__moveItemInSchema('__errors', keyPath, fromIndex, toIndex)
+    this.__moveItemInSchema('__pristine', keyPath, fromIndex, toIndex)
+    this.__changeState()
+  }
+
+  swapItems (name, index1, index2) {
+    const keyPath = name.split('.')
+
+    this.__swapItemsInSchema('__state', keyPath, index1, index2)
+    this.__swapItemsInSchema('__errors', keyPath, index1, index2)
+    this.__swapItemsInSchema('__pristine', keyPath, index1, index2)
+
+    setValueByPath(this.__pristine, [...keyPath, index1], false)
+    setValueByPath(this.__pristine, [...keyPath, index2], false)
+
     this.__changeState()
   }
 
@@ -232,6 +256,29 @@ export default class FormService {
   __removeItemFromSchema (schemaKey, keyPath, index) {
     getValueByPath(this[schemaKey], keyPath).splice(index, 1)
     this.__spreadSchema(schemaKey, [...keyPath, `${index}`])
+  }
+
+  __moveItemInSchema (schemaKey, keyPath, fromIndex, toIndex) {
+    const items = getValueByPath(this[schemaKey], keyPath)
+    const result = moveItem(items, fromIndex, toIndex).map(item => {
+      if (typeof item === 'object') {
+        return Array.isArray(item) ? [...item] : { ...item }
+      }
+
+      return item
+    })
+
+    setValueByPath(this[schemaKey], keyPath, result)
+    this.__spreadSchema(schemaKey, keyPath)
+  }
+
+  __swapItemsInSchema (schemaKey, keyPath, index1, index2) {
+    const items = getValueByPath(this[schemaKey], keyPath)
+    const result = swap(items, index1, index2)
+
+    setValueByPath(this[schemaKey], keyPath, result)
+    this.__spreadSchema(schemaKey, [...keyPath, index1])
+    this.__spreadSchema(schemaKey, [...keyPath, index2])
   }
 
   __modify (keyPath) {
