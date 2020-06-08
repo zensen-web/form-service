@@ -1,8 +1,13 @@
 import sinon from 'sinon'
 
-import { filterEmpty, padArray } from '../src/utils'
 import { FormService } from '../src'
 import { isPhoneNumber } from './validators'
+
+import {
+  filterEmpty,
+  padArray,
+  map,
+} from '../src/utils'
 
 import {
   required,
@@ -75,6 +80,169 @@ describe('FormService', () => {
 
   afterEach(() => {
     sandbox.restore()
+  })
+
+  context('when a complex set of selectors', () => {
+    const FORMATTERS = {
+      format: v => v,
+      unformat: v => v,
+    }
+
+    const MODEL = {
+      name: 'Gremlin',
+      level: 1,
+      stats: {
+        attack: 4,
+        evasion: 3,
+        speed: 2,
+      },
+      ailments: [3, 4, 7],
+      items: [
+        { id: 1, rate: 0.1 },
+        { id: 3, rate: 0.4 },
+      ],
+    }
+
+    const SELECTORS = {
+      name: FORMATTERS,
+      stats: {
+        ...FORMATTERS,
+        children: {
+          attack: FORMATTERS,
+          evasion: FORMATTERS,
+          speed: FORMATTERS,
+        },
+      },
+      ailments: {
+        ...FORMATTERS,
+        children: FORMATTERS,
+      },
+      items: {
+        ...FORMATTERS,
+        children: {
+          ...FORMATTERS,
+          id: FORMATTERS,
+          rate: FORMATTERS,
+        },
+      },
+      triangles: {
+        ...FORMATTERS,
+        children: {
+          ...FORMATTERS,
+          children: {
+            ...FORMATTERS,
+          },
+        },
+      },
+    }
+
+    beforeEach(() => {
+      service = new FormService(MODEL, SELECTORS, onChangeSpy)
+    })
+
+    describe('getSelectorPath()', () => {
+      it('finds the selector for "name"', () =>
+        expect(service.getSelectorPath(['name'])).to.be.eql(['name']))
+
+      it('does not find a selector for "level"', () =>
+        expect(service.getSelectorPath(['level'])).to.be.eql(['level']))
+
+      it('finds a selector for "stats"', () =>
+        expect(service.getSelectorPath(['stats'])).to.be.eql(['stats']))
+
+      it('finds a selector for "stats.attack"', () =>
+        expect(service.getSelectorPath(['stats', 'attack'])).to.be.eql([
+          'stats', 'children', 'attack',
+        ]))
+
+      it('finds a selector for "stats.evasion"', () =>
+        expect(service.getSelectorPath(['stats', 'evasion'])).to.be.eql([
+          'stats', 'children', 'evasion',
+        ]))
+
+      it('finds a selector for "stats.speed"', () =>
+        expect(service.getSelectorPath(['stats', 'speed'])).to.be.eql([
+          'stats', 'children', 'speed',
+        ]))
+
+      it('finds a selector for "stats.ailments"', () =>
+        expect(service.getSelectorPath(['ailments'])).to.be.eql(['ailments']))
+
+      it('finds a selector for "ailments.0"', () =>
+        expect(service.getSelectorPath(['ailments', '0'])).to.be.eql([
+          'ailments', 'children',
+        ]))
+
+      it('finds a selector for "items"', () =>
+        expect(service.getSelectorPath(['items'])).to.be.eql(['items']))
+
+      it('finds a selector for "items.0"', () =>
+        expect(service.getSelectorPath(['items', '0'])).to.be.eql([
+          'items', 'children',
+        ]))
+
+      it('finds a selector for "items.0.id"', () =>
+        expect(service.getSelectorPath(['items', '0', 'id'])).to.be.eql([
+          'items', 'children', 'id',
+        ]))
+
+      it('finds a selector for "items.0.rate"', () =>
+        expect(service.getSelectorPath(['items', '0', 'rate'])).to.be.eql([
+          'items', 'children', 'rate',
+        ]))
+    })
+
+    describe('getSelector()', () => {
+      it('finds the selector for "name"', () =>
+        expect(service.getSelector(['name'])).to.be.eq(SELECTORS.name))
+
+      it('does not find a selector for "level"', () =>
+        expect(service.getSelector(['level'])).to.be.eq(undefined))
+
+      it('finds a selector for "stats"', () =>
+        expect(service.getSelector(['stats'])).to.be.eq(SELECTORS.stats))
+
+      it('finds a selector for "stats.attack"', () =>
+        expect(service.getSelector(['stats', 'attack'])).to.be.eq(
+          SELECTORS.stats.children.attack,
+        ))
+
+      it('finds a selector for "stats.evasion"', () =>
+        expect(service.getSelector(['stats', 'evasion'])).to.be.eq(
+          SELECTORS.stats.children.evasion,
+        ))
+
+      it('finds a selector for "stats.speed"', () =>
+        expect(service.getSelector(['stats', 'speed'])).to.be.eq(
+          SELECTORS.stats.children.speed,
+        ))
+
+      it('finds a selector for "stats.ailments"', () =>
+        expect(service.getSelector(['ailments'])).to.be.eq(SELECTORS.ailments))
+
+      it('finds a selector for "ailments.0"', () =>
+        expect(service.getSelector(['ailments', '0'])).to.be.eq(
+          SELECTORS.ailments.children,
+        ))
+
+      it('finds a selector for "items"', () =>
+        expect(service.getSelector(['items'])).to.be.eq(SELECTORS.items))
+
+      it('finds a selector for "items.0"', () =>
+        expect(service.getSelector(['items', '0'])).to.be.eq(
+          SELECTORS.items.children,
+        ))
+
+      it('finds a selector for "items.0.id"', () =>
+        expect(service.getSelector(['items', '0', 'id'])).to.be.eq(
+          SELECTORS.items.children.id,
+        ))
+
+      it('finds a selector for "items.0.id"', () =>
+        expect(service.getSelector(['items', '0', 'rate'])).to.be.eq(
+          SELECTORS.items.children.rate,
+        ))
+    })
   })
 
   context('when converters are NOT provided', () => {
@@ -269,6 +437,50 @@ describe('FormService', () => {
       it('swaps the selected items in the pristine schema', () =>
         expect(service.__pristine.modifiers).to.be.eql(EXPECTED_PRISTINE))
     })
+  })
+
+  context.skip('when converters are provided to array items', () => {
+    const MODEL = {
+      items: [1, 4.25, 14.75],
+    }
+
+    const MODEL_EXPECTED = {
+      items: [
+        { hours: '1', minutes: '00', period: 'AM' },
+        { hours: '4', minutes: '15', period: 'AM' },
+        { hours: '2', minutes: '45', period: 'PM' },
+      ],
+    }
+
+    const SELECTORS = {
+      items: {
+        genItem: () => 12,
+        children: {
+          format: v => {
+            console.log('FORMAT()')
+            return {
+              hours: `${Math.floor(v > 12 ? v - 12 : v)}`,
+              minutes: `${((v - Math.floor(v)) * 60)}`.padStart(2, '0'),
+              period: v >= 12 ? 'PM' : 'AM',
+            }
+          },
+          unformat: v => {
+            const model = map(v, (keyPath, value) =>
+              (keyPath[0] !== 'period' ? Number(value) : value))
+
+            const offset = model.period === 'PM' ? 12 : 0
+
+            return model.hours + (model.minutes / 60) + offset
+          },
+        },
+      },
+    }
+
+    beforeEach(() => {
+      service = new FormService(MODEL, SELECTORS, onChangeSpy)
+    })
+
+    it('formats each item in the state', () => expect(service.__state).to.be.eql(MODEL_EXPECTED))
   })
 
   describe('schema clipping', () => {
