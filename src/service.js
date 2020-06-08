@@ -134,21 +134,23 @@ export default class FormService {
     return !this.hasErrors
   }
 
-  getSelector (keyPath) {
-    const selectorPath = keyPath.reduce((accum, curr, index) => {
-      if (index > 0 && !isNaN(curr)) {
-        const parentPath = keyPath.slice(0, index)
-        const parent = getValueByPath(this.__state, parentPath)
+  getSelectorPath (keyPath) {
+    return keyPath.reduce((accum, curr, index) => {
+      const parentPath = keyPath.slice(0, index)
+      const parent = getValueByPath(this.__state, parentPath)
 
-        if (Array.isArray(parent)) {
-          return accum
-        }
+      if (Array.isArray(parent)) {
+        return accum
       }
 
       return (index < keyPath.length - 1)
         ? [...accum, curr, 'children']
         : [...accum, curr]
     }, [])
+  }
+
+  getSelector (keyPath) {
+    const selectorPath = this.getSelectorPath(keyPath)
 
     return getValueByPath(this.__selectors, selectorPath)
   }
@@ -205,11 +207,13 @@ export default class FormService {
     return result
   }
 
-  __convert (data, op) {
+  __convert (data, op, rootPath = []) {
     const result = deepCopy(data)
 
     traverse(result, (keyPath, value) => {
-      const selector = this.getSelector(keyPath)
+      const fullPath = [...rootPath, ...keyPath]
+      const selector = this.getSelector(fullPath)
+
       if (selector && selector[op]) {
         const selVal = selector[op](value)
 
