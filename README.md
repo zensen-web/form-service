@@ -1,4 +1,4 @@
-# zensen-form-service
+# @zensen/form-service
 
 A reactive form service framework
 
