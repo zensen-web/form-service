@@ -7,6 +7,7 @@ import {
   filterEmpty,
   padArray,
   map,
+  getValueByPath,
 } from '../src/utils'
 
 import {
@@ -24,6 +25,11 @@ import {
 
 const DATE = new Date(2020, 0, 1, 0, 0, 0, 0)
 const MODIFIERS = ['ab', 'cd', 'ef', 'gh']
+
+const PERIOD = {
+  AM: 'am',
+  PM: 'pm',
+}
 
 const SCHEMA_DEFAULTS = {
   pristine: true,
@@ -63,7 +69,52 @@ const ERROR_SCHEMA = {
   modifiers: ['', '', '', ''],
 }
 
-describe('FormService', () => {
+const segmentValidator = {
+  error: 'Conflicting Time',
+  validate: (v, keyPath, state) => {
+    const key = keyPath[keyPath.length - 1]
+    const otherKey = key === 'start' ? 'end' : 'start'
+    const durationPath = keyPath.slice(0, keyPath.length - 1)
+    const otherPath = [...durationPath, otherKey]
+    const minutes = timeToScalar(v)
+    const otherMinutes = timeToScalar(getValueByPath(state, otherPath))
+
+    return key === 'start' ? (minutes < otherMinutes) : (minutes > otherMinutes)
+  },
+}
+
+const intervalValidator = {
+  error: 'Intersecting Interval',
+  validate: (v, keyPath, state) => {
+    const key = keyPath[keyPath.length - 1]
+    const otherKey = key === 'start' ? 'end' : 'start'
+    const segmentPath = keyPath.slice(0, keyPath.length - 1)
+    const segmentIndex = Number(segmentPath[segmentPath.length - 1])
+    const offset = key === 'start' ? -1 : 1
+    const otherIndex = segmentIndex + offset
+    const itemsPath = keyPath.slice(0, keyPath.length - 2)
+    const items = getValueByPath(state, itemsPath)
+
+    if (otherIndex < 0 || otherIndex > items.length - 1) {
+      return true
+    }
+
+    const otherPath = [...itemsPath, `${otherIndex}`, otherKey]
+    const minutes = timeToScalar(v)
+    const otherMinutes = timeToScalar(getValueByPath(state, otherPath))
+
+    return key === 'start' ? (minutes > otherMinutes) : (minutes < otherMinutes)
+  },
+}
+
+function timeToScalar (time) {
+  const periodToMinutes =
+    time.period === PERIOD.PM && time.hours !== 12 ? 720 : 0
+
+  return periodToMinutes + (time.hours * 60) + (time.minutes)
+}
+
+describe.only('FormService', () => {
   let sandbox
   let service
   let requiredValidator
@@ -848,20 +899,35 @@ describe('FormService', () => {
       })
     })
 
-    context('when errors are clipped', () => {
+    context.only('when errors are clipped', () => {
       beforeEach(() => {
         service = new FormService(
           {
             items: [
-              { diagnoses: [] },
+              {
+                start: { hours: 8, minutes: 0, period: PERIOD.AM },
+                end: { hours: 12, minutes: 0, period: PERIOD.PM },
+              },
+              {
+                start: { hours: 13, minutes: 0, period: PERIOD.PM },
+                end: { hours: 17, minutes: 0, period: PERIOD.PM },
+              },
+              {
+                start: { hours: 16, minutes: 0, period: PERIOD.PM },
+                end: { hours: 18, minutes: 0, period: PERIOD.PM },
+              },
             ],
           },
           {
             items: {
               children: {
-                diagnoses: {
+                start: {
                   clipErrors: true,
-                  validators: [requiredValidator],
+                  validators: [segmentValidator, intervalValidator],
+                },
+                end: {
+                  clipErrors: true,
+                  validators: [segmentValidator, intervalValidator],
                 },
               },
             },
@@ -873,6 +939,14 @@ describe('FormService', () => {
       })
 
       it('is invalid', () => expect(valid).to.be.false)
+
+      context('when validating a second time', () => {
+        beforeEach(() => {
+          valid = service.validate()
+        })
+
+        it('is still invalid', () => expect(valid).to.be.false)
+      })
     })
 
     context('when validating an array', () => {
