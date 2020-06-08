@@ -89,8 +89,5 @@ export function setValueByPath (obj, keyPath, value) {
 
 export function getValueByPath (obj, keyPath) {
   return keyPath.reduce((obj, key) =>
-    (typeof obj !== 'undefined'
-      ? obj[key]
-      : undefined
-    ), obj)
+    (typeof obj !== 'undefined' ? obj[key] : undefined), obj)
 }
