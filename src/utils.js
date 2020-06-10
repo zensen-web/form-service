@@ -91,3 +91,11 @@ export function getValueByPath (obj, keyPath) {
   return keyPath.reduce((obj, key) =>
     (typeof obj !== 'undefined' ? obj[key] : undefined), obj)
 }
+
+export function getKeyPaths (obj) {
+  const result = []
+
+  traverse(obj, keyPath => result.push(keyPath))
+
+  return result
+}

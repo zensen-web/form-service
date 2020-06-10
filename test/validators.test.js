@@ -39,25 +39,25 @@ describe('validators', () => {
 
   describe('requiredIf()', () => {
     const NUMBER = '(702) 555-1234'
-    const ERROR = { type: 'Required' }
+    const TYPE = 'Home'
 
-    const validator = requiredIf('number', 'type')
-    const validate = item => Boolean(validator.validate(item))
+    const validator = requiredIf('number')
+    const validate = (number, type) =>
+      Boolean(validator.validate(type, ['type'], { number, type }))
 
-    it('provides the correct error shape', () =>
-      expect(validator.error).to.be.eql(ERROR))
+    let result
 
-    it('fails when only the primary field is truthy', () =>
-      expect(validate({ number: NUMBER, type: '' })).to.be.false)
+    it('fails when only the dependency field is truthy', () =>
+      expect(validate(NUMBER, '')).to.be.false)
 
     it('passes when only the secondary field is truthy', () =>
-      expect(validate({ number: '', type: 'Home' })).to.be.true)
+      expect(validate('', TYPE)).to.be.true)
 
     it('passes when both fields are truthy', () =>
-      expect(validate({ number: NUMBER, type: 'Home' })).to.be.true)
+      expect(validate(NUMBER, TYPE)).to.be.true)
 
     it('passes when both fields are falsy', () =>
-      expect(validate({ number: '', type: '' })).to.be.true)
+      expect(validate('', '')).to.be.true)
   })
 
   describe('min()', () => {

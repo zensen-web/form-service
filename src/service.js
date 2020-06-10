@@ -4,20 +4,39 @@ import {
   moveItem,
   swap,
   traverse,
+  map,
   deepCopy,
   getValueByPath,
   setValueByPath,
+  getKeyPaths,
 } from './utils'
 
-function capitalize (str) {
-  return `${str.charAt(0).toUpperCase()}${str.slice(1)}`
+export class VerificationError extends Error {
+  constructor (childPath, ancestorPath) {
+    const child = childPath.join('.')
+    const ancestor = ancestorPath.join('.')
+
+    super(`Child selector (${child}) has ancestor selector with validators: ${ancestor}`)
+  }
 }
 
-class ValidationError extends Error {
-  constructor (schema) {
-    super('')
+export class ValidationError extends Error {
+  constructor (message) {
+    super(message)
+  }
+}
 
-    this.schema = schema
+export class PristineError extends Error {
+  constructor (keyPath) {
+    super(`Selector (${keyPath.join('.')}) cannot have pristine state`)
+  }
+}
+
+export class MutationError extends Error {
+  constructor (keyPath, oldValue, newValue) {
+    super(`Reshaping on mutation not allowed at path: ${keyPath}
+Old Value: ${oldValue}
+New Value: ${value}`)
   }
 }
 
@@ -42,28 +61,32 @@ export default class FormService {
     this.__onChange = onChange
 
     this.refresh(model)
+    this.__verifySchema()
   }
 
   refresh (model) {
+    this.__state = deepCopy(model)
     this.__state = this.__convert(model, 'format')
     this.__initialState = deepCopy(this.__state)
-    this.__errors = this.__buildSchema(this.__state, '', 'clipErrors')
+    this.__errors = this.__buildSchema(this.__state, '', 'validators')
     this.__refreshPristine()
-    this.__changeState()
+    this.__change()
   }
 
   reset () {
     this.__state = deepCopy(this.__initialState)
-    this.__errors = this.__buildSchema(this.__state, '', 'clipErrors')
+    this.__errors = this.__buildSchema(this.__state, '', 'validators')
     this.__refreshPristine()
-    this.__changeState()
+    this.__change()
   }
 
   apply (name, value) {
     const keyPath = name.split('.')
+
+    this.__verifyValue(keyPath, value)
     setValueByPath(this.__state, keyPath, value)
 
-    this.__validateBranch(keyPath)
+    this.__validateKey(keyPath)
     this.__spreadSchema('__state', keyPath)
     this.__modify(keyPath)
   }
@@ -73,15 +96,18 @@ export default class FormService {
     const items = getValueByPath(this.__state, keyPath)
     const shiftedIndex = index !== -1 ? index : items.length
     const selector = this.getSelector(keyPath)
-    const item = selector.genItem()
+    const rawItem = selector.genItem()
+    const item = typeof rawItem === 'object'
+      ? this.__convert(selector.genItem(), keyPath)
+      : rawItem
 
     items.splice(shiftedIndex, 0, item)
     this.__spreadSchema('__state', [...keyPath, shiftedIndex])
-    this.__addItemToSchema('__errors', keyPath, shiftedIndex, item, '')
-    this.__addItemToSchema('__pristine', keyPath, shiftedIndex, item, true)
+    this.__addItemToSchema('__errors', 'validators', keyPath, shiftedIndex, item, '')
+    this.__addItemToSchema('__pristine', 'clipPristine', keyPath, shiftedIndex, item, true)
     this.__modifyPristineItem([...keyPath, shiftedIndex])
     this.__modify(keyPath)
-    this.__changeState()
+    this.__change()
   }
 
   removeItem (name, index = -1) {
@@ -94,7 +120,7 @@ export default class FormService {
     this.__removeItemFromSchema('__errors', keyPath, shiftedIndex)
     this.__removeItemFromSchema('__pristine', keyPath, shiftedIndex)
     this.__modify(keyPath)
-    this.__changeState()
+    this.__change()
   }
 
   moveItem (name, fromIndex, toIndex) {
@@ -103,7 +129,7 @@ export default class FormService {
     this.__moveItemInSchema('__state', keyPath, fromIndex, toIndex)
     this.__moveItemInSchema('__errors', keyPath, fromIndex, toIndex)
     this.__moveItemInSchema('__pristine', keyPath, fromIndex, toIndex)
-    this.__changeState()
+    this.__change()
   }
 
   swapItems (name, index1, index2) {
@@ -116,7 +142,7 @@ export default class FormService {
     setValueByPath(this.__pristine, [...keyPath, index1], false)
     setValueByPath(this.__pristine, [...keyPath, index2], false)
 
-    this.__changeState()
+    this.__change()
   }
 
   buildModel () {
@@ -124,10 +150,14 @@ export default class FormService {
   }
 
   validate () {
-    this.__pristine = this.__buildSchema(this.__state, false, 'clipPristine')
-    traverse(this.__errors, (keyPath, value) => {
-      if (typeof value !== 'object') {
-        this.__validateBranch(keyPath)
+    this.__pristine = map(this.__pristine, (keyPath, value) =>
+      typeof value === 'object' ? value : false)
+
+    traverse(this.__state, (keyPath, value) => {
+      const pristine = getValueByPath(this.__pristine, keyPath)
+
+      if (typeof pristine !== 'object') {
+        this.__validateKey(keyPath)
       }
     })
 
@@ -157,6 +187,7 @@ export default class FormService {
 
   getValidators (keyPath) {
     const selector = this.getSelector(keyPath)
+
     if (selector) {
       return Array.isArray(selector) ? selector : selector.validators
     }
@@ -164,22 +195,58 @@ export default class FormService {
     return null
   }
 
-  setError (keyPath, message) {
-    setValueByPath(this.__errors, keyPath, message)
-
-    this.__spreadSchema('__errors', keyPath)
-    this.__changeState()
+  __change () {
+    this.__onChange(this.isDirty, this.__state, this.__errors)
   }
 
-  __changeState () {
-    this.__onChange(this.isDirty, this.__state, this.__errors)
+  __verifySchema () {
+    traverse(this.__state, (childPath, v) => {
+      const validators = this.getValidators(childPath)
+
+      if (validators) {
+        const parentPath = childPath.slice(0, childPath.length - 1)
+
+        parentPath.forEach((_, index) => {
+          const path = parentPath.slice(0, index + 1)
+          const ancestorValidators = this.getValidators(path)
+
+          if (ancestorValidators) {
+            throw new VerificationError(childPath, path)
+          }
+        })
+      }
+    })
+  }
+
+  __verifyValue (keyPath, value) {
+    const oldValue = getValueByPath(this.__state, keyPath)
+
+    if (oldValue === undefined) {
+      throw new TypeError(`Invalid path: ${keyPath.join('.')}`)
+    }
+
+    if (typeof oldValue === 'object') {
+      const oldPathMap = getKeyPaths(oldValue)
+
+      if (typeof value === 'object') {
+        const pathMap = getKeyPaths(value)
+
+        if (!equal(oldPathMap, pathMap)) {
+          throw new MutationError(keyPath, value, oldValue)
+        }
+      } else {
+        throw new MutationError(keyPath, value, oldValue)
+      }
+    }
   }
 
   __buildSchema (refSchema, initialValue, clipKey, rootPath = []) {
     if (rootPath) {
       const rootSelector = this.getSelector(rootPath)
+
       if (rootSelector) {
         const children = rootSelector.children
+
         if (children && children[clipKey]) {
           return initialValue
         }
@@ -246,43 +313,56 @@ export default class FormService {
     }
   }
 
-  __addItemToSchema (schemaKey, keyPath, index, item, defaultValue) {
-    const clipKey = `clip${capitalize(schemaKey.replace(/_/g, ''))}`
+  __addItemToSchema (schemaKey, clipKey, keyPath, index, item, defaultValue) {
     const value = getValueByPath(this[schemaKey], keyPath)
-    const subObj = (typeof item === 'object')
-      ? this.__buildSchema(item, defaultValue, clipKey, keyPath)
-      : defaultValue
 
-    value.splice(index, 0, subObj)
-    this.__spreadSchema(schemaKey, [...keyPath, `${index}`])
+    if (typeof value === 'object') {
+      const subObj = (typeof item === 'object')
+        ? this.__buildSchema(item, defaultValue, clipKey, keyPath)
+        : defaultValue
+
+      value.splice(index, 0, subObj)
+      this.__spreadSchema(schemaKey, [...keyPath, `${index}`])
+    }
   }
 
   __removeItemFromSchema (schemaKey, keyPath, index) {
-    getValueByPath(this[schemaKey], keyPath).splice(index, 1)
-    this.__spreadSchema(schemaKey, [...keyPath, `${index}`])
+    const item = getValueByPath(this[schemaKey], keyPath)
+
+    if (Array.isArray(item)) {
+      item.splice(index, 1)
+
+      this.__spreadSchema(schemaKey, [...keyPath, `${index}`])
+    }
   }
 
   __moveItemInSchema (schemaKey, keyPath, fromIndex, toIndex) {
     const items = getValueByPath(this[schemaKey], keyPath)
-    const result = moveItem(items, fromIndex, toIndex).map(item => {
-      if (typeof item === 'object') {
-        return Array.isArray(item) ? [...item] : { ...item }
-      }
 
-      return item
-    })
+    if (Array.isArray(items)) {
+      const result = moveItem(items, fromIndex, toIndex).map(item => {
+        if (typeof item === 'object') {
+          return Array.isArray(item) ? [...item] : { ...item }
+        }
 
-    setValueByPath(this[schemaKey], keyPath, result)
-    this.__spreadSchema(schemaKey, keyPath)
+        return item
+      })
+
+      setValueByPath(this[schemaKey], keyPath, result)
+      this.__spreadSchema(schemaKey, keyPath)
+    }
   }
 
   __swapItemsInSchema (schemaKey, keyPath, index1, index2) {
     const items = getValueByPath(this[schemaKey], keyPath)
-    const result = swap(items, index1, index2)
 
-    setValueByPath(this[schemaKey], keyPath, result)
-    this.__spreadSchema(schemaKey, [...keyPath, index1])
-    this.__spreadSchema(schemaKey, [...keyPath, index2])
+    if (Array.isArray(items)) {
+      const result = swap(items, index1, index2)
+
+      setValueByPath(this[schemaKey], keyPath, result)
+      this.__spreadSchema(schemaKey, [...keyPath, index1])
+      this.__spreadSchema(schemaKey, [...keyPath, index2])
+    }
   }
 
   __modify (keyPath) {
@@ -291,111 +371,52 @@ export default class FormService {
       setValueByPath(this.__pristine, keyPath, false)
     }
 
-    this.__changeState()
-  }
-
-  __validateBranch (keyPath) {
-    const clippedPathIndex = keyPath.findIndex((_, index) => {
-      const subPath = keyPath.slice(0, index + 1)
-      const selector = this.getSelector(subPath)
-
-      return selector && selector.clipErrors
-    })
-
-    const pathList = keyPath
-      .slice(0, clippedPathIndex !== -1 ? (clippedPathIndex + 1) : keyPath.length)
-      .map((_, index) => keyPath.slice(0, index + 1))
-      .reverse()
-
-    /* TODO: reset all errors
-        1) Walk up the path
-        2) Iterate through all validators
-        3) Generate a default schema per validator
-        4) Apply the defaulted schema to the error schema to reset it
-     */
-
-    if (clippedPathIndex === -1) {
-      const subErrors = getValueByPath(this.__errors, keyPath)
-      const resetErrors = typeof subErrors === 'object'
-        ? this.__buildSchema(subErrors, '', 'clipErrors', keyPath)
-        : ''
-
-      setValueByPath(this.__errors, keyPath, resetErrors)
-    }
-
-    pathList.forEach((path, index) => {
-      const item = getValueByPath(this.__state, path)
-      if (!index || !Array.isArray(item)) {
-        this.__validateKey(path)
-      }
-    })
+    this.__change()
   }
 
   __validateKey (keyPath) {
-    const parentPath = keyPath.slice(0, keyPath.length - 1)
-    const parent = getValueByPath(this.__state, parentPath)
-    const validatorPath = Array.isArray(parent)
-      ? keyPath.slice(0, keyPath.length - 1)
-      : keyPath
+    const clippedPathIndex = keyPath.findIndex((_, index) => {
+      const subPath = keyPath.slice(0, index)
+      const selector = this.getSelector(subPath)
 
+      return selector && selector.validators
+    })
+
+    const validatorPathLength = clippedPathIndex !== -1
+      ? clippedPathIndex
+      : keyPath.length
+
+    const validatorPath = keyPath.slice(0, validatorPathLength)
     const validators = this.getValidators(validatorPath)
-    if (validators) {
-      const prevError = getValueByPath(this.__errors, keyPath)
-
-      try {
-        validators.forEach(validator =>
-          this.__processValidator(keyPath, prevError, validator))
-      } catch (e) {
-        this.__processError(keyPath, e, prevError)
-      }
-    }
-  }
-
-  __processValidator (keyPath, prevError, validator) {
     const pristine = getValueByPath(this.__pristine, keyPath)
 
-    if (!pristine || typeof pristine === 'object') {
-      const value = getValueByPath(this.__state, keyPath)
-      if (!validator.validate(value, keyPath, this.__state)) {
-        throw new ValidationError(validator.error)
-      }
-
-      this.__resolveError(keyPath, prevError, validator)
+    if (typeof pristine === 'object') {
+      throw new PristineError(keyPath)
     }
+
+    if (validators && !pristine) {
+      this.__processValidator(keyPath, validatorPath, validators)
+    }
+
+    setValueByPath(this.__pristine, keyPath, false)
   }
 
-  __processError (keyPath, err, prevError) {
-    if (err instanceof ValidationError) {
-      if (typeof err.schema === 'object') {
-        traverse(err.schema, (errPath, value) => {
-          const prevValue = getValueByPath(prevError, errPath)
-          if (value && !prevValue && typeof value !== 'object') {
-            this.setError([...keyPath, ...errPath], value)
-          }
-        })
-      } else {
-        if (equal(prevError, '')) {
-          this.setError(keyPath, err.schema)
-        }
-      }
-    } else {
-      throw err
-    }
-  }
+  __processValidator (keyPath, validatorPath, validators) {
+    const value = getValueByPath(this.__state, keyPath)
 
-  __resolveError (keyPath, prevError, validator) {
-    if (typeof validator.error === 'object') {
-      traverse(validator.error, (errPath, curr) => {
-        if (typeof curr !== 'object') {
-          const prev = getValueByPath(prevError, errPath)
-          if (prev === curr) {
-            this.setError([...keyPath, ...errPath], '')
-          }
+    try {
+      validators.forEach(validator => {
+        if (!validator.validate(value, validatorPath, this.__state)) {
+          throw new ValidationError(validator.error)
         }
       })
-    } else {
-      if (!equal(prevError, '')) {
-        this.setError(keyPath, '')
+
+      setValueByPath(this.__errors, validatorPath, '')
+    } catch (e) {
+      if (e instanceof ValidationError) {
+        setValueByPath(this.__errors, validatorPath, e.message)
+      } else {
+        throw e
       }
     }
   }
@@ -404,6 +425,7 @@ export default class FormService {
     this.__pristine = this.__buildSchema(this.__state, true, 'clipPristine')
     traverse(this.__pristine, keyPath => {
       const selector = this.getSelector(keyPath)
+
       if (selector && selector.ignorePristine) {
         setValueByPath(this.__pristine, keyPath, false)
       }

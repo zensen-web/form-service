@@ -11,6 +11,7 @@ import {
   deepCopy,
   setValueByPath,
   getValueByPath,
+  getKeyPaths,
 } from '../src/utils'
 
 const SCHEMA = {
@@ -40,6 +41,33 @@ const SCHEMA = {
     relationship: '',
   },
 }
+
+const KEY_PATHS = [
+  ['hasPhoto'],
+  ['accountNumber'],
+  ['gender'],
+  ['ssn'],
+  ['dateOfBirth'],
+  ['emails'],
+  ['emails', '0'],
+  ['phones'],
+  ['phones', '0'],
+  ['address'],
+  ['address', 'street1'],
+  ['address', 'street2'],
+  ['address', 'city'],
+  ['address', 'state'],
+  ['address', 'postalCode'],
+  ['name'],
+  ['name', 'first'],
+  ['name', 'last'],
+  ['name', 'middle'],
+  ['name', 'preferred'],
+  ['statuses'],
+  ['statuses', 'patient'],
+  ['statuses', 'employment'],
+  ['statuses', 'relationship'],
+]
 
 describe('misc', () => {
   let sandbox
@@ -147,40 +175,13 @@ describe('misc', () => {
   describe('traverse()', () => {
     let onKeyStub
 
-    const EXPECTED_RESULT = [
-      ['hasPhoto'],
-      ['accountNumber'],
-      ['gender'],
-      ['ssn'],
-      ['dateOfBirth'],
-      ['emails'],
-      ['emails', '0'],
-      ['phones'],
-      ['phones', '0'],
-      ['address'],
-      ['address', 'street1'],
-      ['address', 'street2'],
-      ['address', 'city'],
-      ['address', 'state'],
-      ['address', 'postalCode'],
-      ['name'],
-      ['name', 'first'],
-      ['name', 'last'],
-      ['name', 'middle'],
-      ['name', 'preferred'],
-      ['statuses'],
-      ['statuses', 'patient'],
-      ['statuses', 'employment'],
-      ['statuses', 'relationship'],
-    ]
-
     context('when traversing', () => {
       beforeEach(() => {
         onKeyStub = sandbox.stub()
         traverse(SCHEMA, onKeyStub)
       })
 
-      EXPECTED_RESULT.map((path, index) =>
+      KEY_PATHS.map((path, index) =>
         it(`returns path: ${path}`, () =>
           expect(onKeyStub.getCall(index).args).to.be.eql([
             path,
@@ -190,7 +191,7 @@ describe('misc', () => {
 
     context('when mutating the object while traversing', () => {
       const schema = { ...SCHEMA }
-      const expectedResult = [...EXPECTED_RESULT]
+      const expectedResult = [...KEY_PATHS]
       expectedResult.splice(6, 1)
       expectedResult.splice(7, 1)
 
@@ -362,5 +363,10 @@ describe('misc', () => {
 
     it('returns undefined path does not exist (beyond)', () =>
       expect(getValueByPath(SCHEMA, ['x', 'y'])).to.be.eql(undefined))
+  })
+
+  describe('getKeyPaths()', () => {
+    it('returns an array of paths', () =>
+      expect(getKeyPaths(SCHEMA)).to.be.eql(KEY_PATHS))
   })
 })

@@ -1,7 +1,13 @@
 import sinon from 'sinon'
+import pkg from 'validator'
 
-import { FormService } from '../src'
-import { isPhoneNumber } from './validators'
+import {
+  FormService,
+  VerificationError,
+  ValidationError,
+  PristineError,
+  MutationError,
+} from '../src'
 
 import {
   filterEmpty,
@@ -17,7 +23,6 @@ import {
 } from '../src/validators'
 
 import {
-  capitalize,
   toNumeric,
   toCurrency,
   toPhoneNumber,
@@ -31,11 +36,6 @@ const PERIOD = {
   PM: 'pm',
 }
 
-const SCHEMA_DEFAULTS = {
-  pristine: true,
-  errors: '',
-}
-
 const MODEL = {
   id: '123',
   taxId: null,
@@ -45,6 +45,21 @@ const MODEL = {
   amount: 19.99,
   purchaseDate: DATE,
   modifiers: MODIFIERS,
+}
+
+const MODEL_COMPLEX = {
+  name: 'Gremlin',
+  level: 1,
+  stats: {
+    attack: 4,
+    evasion: 3,
+    speed: 2,
+  },
+  ailments: [3, 4, 7],
+  items: [
+    { id: 1, rate: 0.1 },
+    { id: 3, rate: 0.4 },
+  ],
 }
 
 const STATE = {
@@ -66,7 +81,17 @@ const ERROR_SCHEMA = {
   description: '',
   amount: '',
   purchaseDate: '',
-  modifiers: ['', '', '', ''],
+  modifiers: '',
+}
+
+const passValidator = {
+  error: '',
+  validator: () => true,
+}
+
+const phoneNumberValidator = {
+  error: 'Invalid phone number',
+  validate: v => !v || pkg.isMobilePhone(v),
 }
 
 const segmentValidator = {
@@ -114,7 +139,7 @@ function timeToScalar (time) {
   return periodToMinutes + (time.hours * 60) + (time.minutes)
 }
 
-describe.only('FormService', () => {
+describe('FormService', () => {
   let sandbox
   let service
   let requiredValidator
@@ -133,25 +158,10 @@ describe.only('FormService', () => {
     sandbox.restore()
   })
 
-  context('when a complex set of selectors', () => {
+  context('when a complex set of selectors are provided', () => {
     const FORMATTERS = {
       format: v => v,
       unformat: v => v,
-    }
-
-    const MODEL = {
-      name: 'Gremlin',
-      level: 1,
-      stats: {
-        attack: 4,
-        evasion: 3,
-        speed: 2,
-      },
-      ailments: [3, 4, 7],
-      items: [
-        { id: 1, rate: 0.1 },
-        { id: 3, rate: 0.4 },
-      ],
     }
 
     const SELECTORS = {
@@ -188,7 +198,7 @@ describe.only('FormService', () => {
     }
 
     beforeEach(() => {
-      service = new FormService(MODEL, SELECTORS, onChangeSpy)
+      service = new FormService(MODEL_COMPLEX, SELECTORS, onChangeSpy)
     })
 
     describe('getSelectorPath()', () => {
@@ -297,12 +307,57 @@ describe.only('FormService', () => {
   })
 
   context('when converters are NOT provided', () => {
+    const ERRORS = {
+      name: '',
+      level: '',
+      stats: {
+        attack: '',
+        evasion: '',
+        speed: '',
+      },
+      ailments: ['', '', ''],
+      items: [
+        { id: '', rate: '' },
+        { id: '', rate: '' },
+      ],
+    }
+
     beforeEach(() => {
-      service = new FormService(MODEL, {}, onChangeSpy)
+      service = new FormService(MODEL_COMPLEX, {}, onChangeSpy)
     })
 
     it('invokes onChange', () =>
-      expect(getLastChange()).to.be.eql([false, MODEL, ERROR_SCHEMA]))
+      expect(getLastChange()).to.be.eql([false, MODEL_COMPLEX, ERRORS]))
+
+    context('when modifying a key that does not exist', () => {  
+      const NAME_INVALID = 'asdf'
+      const fn = () => service.apply(NAME_INVALID)
+  
+      it('throw an error', () =>
+        expect(fn).to.throw(TypeError, `Invalid path: ${NAME_INVALID}`))
+    })
+
+    context('when mutating an object to a primitive', () => {  
+      const fn = () => service.apply('stats', '')
+  
+      it('throw an error', () => expect(fn).to.throw(MutationError))
+    })
+
+    context('when adding a rogue property to sub-object', () => {  
+      const fn = () => service.apply('stats', {})
+  
+      it('throw an error', () => expect(fn).to.throw(MutationError))
+    })
+
+    context('when modifying a key that does not have pristine status', () => {  
+      const fn = () => service.apply('stats', {
+        attack: 'a',
+        evasion: 'b',
+        speed: 'c',
+      })
+  
+      it('throw an error', () => expect(fn).to.throw(PristineError))
+    })
   })
 
   context('when converters are provided', () => {
@@ -437,9 +492,8 @@ describe.only('FormService', () => {
         expect(service.__state.modifiers).to.be.eql(['ab', 'cd', 'ef']))
     })
 
-    context('when removing an item to an array', () => {
+    context('when removing an item from an array', () => {
       beforeEach(() => {
-        service.apply('modifiers', ['ab', 'cd', 'ef', 'gh'])
         service.removeItem('modifiers', 0)
       })
 
@@ -449,8 +503,8 @@ describe.only('FormService', () => {
 
     context('when moving an item in the array', () => {
       const EXPECTED_MODEL = ['ef', 'ab', 'cd', 'gh']
-      const EXPECTED_ERRORS = ['asdf', '', '', '']
       const EXPECTED_PRISTINE = [false, true, true, true]
+      const EXPECTED_ERRORS = 'asdf'
 
       beforeEach(() => {
         service.apply('modifiers.2', 'touched')
@@ -470,8 +524,8 @@ describe.only('FormService', () => {
 
     context('when swapping an item in the array', () => {
       const EXPECTED_MODEL = ['ef', 'cd', 'ab', 'gh']
-      const EXPECTED_ERRORS = ['asdf', '', '', '']
       const EXPECTED_PRISTINE = [false, true, false, true]
+      const EXPECTED_ERRORS = 'asdf'
 
       beforeEach(() => {
         service.apply('modifiers.2', 'touched')
@@ -490,16 +544,16 @@ describe.only('FormService', () => {
     })
   })
 
-  context.skip('when converters are provided to array items', () => {
+  context('when converters are provided to array items', () => {
     const MODEL = {
       items: [1, 4.25, 14.75],
     }
 
     const MODEL_EXPECTED = {
       items: [
-        { hours: '1', minutes: '00', period: 'AM' },
-        { hours: '4', minutes: '15', period: 'AM' },
-        { hours: '2', minutes: '45', period: 'PM' },
+        { hours: 1, minutes: 0, period: PERIOD.AM },
+        { hours: 4, minutes: 15, period: PERIOD.AM },
+        { hours: 2, minutes: 45, period: PERIOD.PM },
       ],
     }
 
@@ -507,14 +561,11 @@ describe.only('FormService', () => {
       items: {
         genItem: () => 12,
         children: {
-          format: v => {
-            console.log('FORMAT()')
-            return {
-              hours: `${Math.floor(v > 12 ? v - 12 : v)}`,
-              minutes: `${((v - Math.floor(v)) * 60)}`.padStart(2, '0'),
-              period: v >= 12 ? 'PM' : 'AM',
-            }
-          },
+          format: v => ({
+            hours: Math.floor(v > 12 ? v - 12 : v),
+            minutes: (v - Math.floor(v)) * 60,
+            period: v >= 12 ? PERIOD.PM : PERIOD.AM,
+          }),
           unformat: v => {
             const model = map(v, (keyPath, value) =>
               (keyPath[0] !== 'period' ? Number(value) : value))
@@ -531,119 +582,115 @@ describe.only('FormService', () => {
       service = new FormService(MODEL, SELECTORS, onChangeSpy)
     })
 
-    it('formats each item in the state', () => expect(service.__state).to.be.eql(MODEL_EXPECTED))
+    it('formats each item in the state', () =>
+      expect(service.__state).to.be.eql(MODEL_EXPECTED))
   })
 
   describe('schema clipping', () => {
-    Object.entries(SCHEMA_DEFAULTS).forEach(([key, defaultValue]) => {
-      const clipKey = `clip${capitalize(key)}`
-      const propKey = `__${key}`
+    context(`when clipping the pristine schema`, () => {
+      const MODEL = {
+        id: '123',
+        name: 'Test',
+        type: {
+          label: 'Default',
+          value: null,
+        },
+      }
 
-      context(`when clipping the ${key} schema`, () => {
-        const MODEL = {
-          id: '123',
-          name: 'Test',
-          type: {
-            label: 'Default',
-            value: null,
+      const EXPECTED_RESULT = {
+        id: true,
+        name: true,
+        type: true,
+      }
+
+      beforeEach(() => {
+        service = new FormService(
+          MODEL,
+          {
+            type: { clipPristine: true },
           },
-        }
-
-        const EXPECTED_RESULT = {
-          id: defaultValue,
-          name: defaultValue,
-          type: defaultValue,
-        }
-
-        beforeEach(() => {
-          service = new FormService(
-            MODEL,
-            {
-              type: { [clipKey]: true },
-            },
-            onChangeSpy,
-          )
-        })
-
-        it('returns the proper schema', () =>
-          expect(service[propKey]).to.be.eql(EXPECTED_RESULT))
+          onChangeSpy,
+        )
       })
 
-      context(`when clipping the ${key} schema (array)`, () => {
-        const MODEL = {
-          id: '123',
-          name: 'Test',
-          types: [{
-            label: 'Default',
-            value: null,
-          }],
-        }
+      it('returns the proper schema', () =>
+        expect(service.__pristine).to.be.eql(EXPECTED_RESULT))
+    })
 
-        const EXPECTED_RESULT = {
-          id: defaultValue,
-          name: defaultValue,
-          types: defaultValue,
-        }
+    context(`when clipping the pristine schema (array)`, () => {
+      const MODEL = {
+        id: '123',
+        name: 'Test',
+        types: [{
+          label: 'Default',
+          value: null,
+        }],
+      }
 
-        beforeEach(() => {
-          service = new FormService(
-            MODEL,
-            {
-              types: { [clipKey]: true },
-            },
-            onChangeSpy,
-          )
-        })
+      const EXPECTED_RESULT = {
+        id: true,
+        name: true,
+        types: true,
+      }
 
-        it('returns the proper schema', () =>
-          expect(service[propKey]).to.be.eql(EXPECTED_RESULT))
+      beforeEach(() => {
+        service = new FormService(
+          MODEL,
+          {
+            types: { clipPristine: true },
+          },
+          onChangeSpy,
+        )
       })
 
-      context(`when clipping the ${key} schema (array-child)`, () => {
-        const MODEL = {
-          id: '123',
-          name: 'Test',
-          types: [{
-            label: 'Default',
-            value: null,
-          }],
-        }
+      it('returns the proper schema', () =>
+        expect(service.__pristine).to.be.eql(EXPECTED_RESULT))
+    })
 
-        const EXPECTED_RESULT = {
-          id: defaultValue,
-          name: defaultValue,
-          types: [defaultValue],
+    context(`when clipping the pristine schema (array-child)`, () => {
+      const MODEL = {
+        id: '123',
+        name: 'Test',
+        types: [{
+          label: 'Default',
+          value: null,
+        }],
+      }
+
+      const EXPECTED_RESULT = {
+        id: true,
+        name: true,
+        types: [true],
+      }
+
+      beforeEach(() => {
+        service = new FormService(
+          MODEL,
+          {
+            types: {
+              genItem: () => ({ label: '', value: null }),
+              children: { clipPristine: true },
+            },
+          },
+          onChangeSpy,
+        )
+      })
+
+      it('returns the proper schema', () =>
+        expect(service.__pristine).to.be.eql(EXPECTED_RESULT))
+
+      context('when adding an item', () => {
+        const RESULT_ADDED = {
+          ...EXPECTED_RESULT,
+          types: [true, true],
         }
 
         beforeEach(() => {
-          service = new FormService(
-            MODEL,
-            {
-              types: {
-                genItem: () => ({ label: '', value: null }),
-                children: { [clipKey]: true },
-              },
-            },
-            onChangeSpy,
-          )
+          service.addItem('types')
         })
 
-        it('returns the proper schema', () =>
-          expect(service[propKey]).to.be.eql(EXPECTED_RESULT))
-
-        context('when adding an item', () => {
-          const RESULT_ADDED = {
-            ...EXPECTED_RESULT,
-            types: [defaultValue, defaultValue],
-          }
-
-          beforeEach(() => {
-            service.addItem('types')
-          })
-
-          it('clips the schema on the new item', () =>
-            expect(service[propKey]).to.be.eql(RESULT_ADDED))
-        })
+        it('clips the schema on the new item', () =>
+          expect(service.__pristine).to.be.eql(RESULT_ADDED))
       })
     })
   })
@@ -695,6 +742,27 @@ describe.only('FormService', () => {
       error: 'Invalid',
       validate: v => v === NAME_MATCH,
     }
+
+    context('when nested validators are found', () => {
+      const MODEL = {
+        stats: {
+          a: '',
+        },
+      }
+
+      const SELECTORS = {
+        stats: {
+          validators: [passValidator],
+          children: {
+            a: [passValidator],
+          },
+        },
+      }
+
+      const fn = () => new FormService(MODEL, SELECTORS, onChangeSpy)
+
+      it('throw an error', () => expect(fn).to.throw(VerificationError))
+    })
 
     context('when invalid data is provided (single validator)', () => {
       beforeEach(() => {
@@ -818,9 +886,11 @@ describe.only('FormService', () => {
           { tax: { name: '', rate: '' } },
           {
             tax: {
-              validators: [requiredIf('name', 'rate')],
               children: {
-                rate: [range(0, 100, false, false, '0 - 100')],
+                rate: [
+                  requiredIf('name'),
+                  range(0, 100, false, false, '0 - 100'),
+                ],
               },
             },
           },
@@ -899,7 +969,7 @@ describe.only('FormService', () => {
       })
     })
 
-    context.only('when errors are clipped', () => {
+    context('when errors are clipped', () => {
       beforeEach(() => {
         service = new FormService(
           {
@@ -958,11 +1028,10 @@ describe.only('FormService', () => {
           {
             phones: {
               genItem: () => ({ number: '', type: '' }),
-              validators: [{
-                error: { type: 'Required' },
-                validate: v => !v.number || v.type,
-              }],
-              children: { number: [isPhoneNumber] },
+              children: {
+                number: [phoneNumberValidator],
+                type: [requiredIf('number')],
+              },
             },
           },
           onChangeSpy,
@@ -1026,8 +1095,10 @@ describe.only('FormService', () => {
           {
             rates: {
               genItem: () => '',
-              validators: [range(0, 100, false, false, '0 - 100')],
-              children: { ignorePristine: true },
+              children: {
+                ignorePristine: true,
+                validators: [range(0, 100, false, false, '0 - 100')],
+              },
             },
           },
           onChangeSpy,

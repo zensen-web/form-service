@@ -1,4 +1,4 @@
-import { extents } from './utils'
+import { extents, getValueByPath } from './utils'
 
 export function required (error = 'Required') {
   return {
@@ -7,10 +7,17 @@ export function required (error = 'Required') {
   }
 }
 
-export function requiredIf (primaryKey, secondaryKey, error = 'Required') {
+export function requiredIf (siblingKey, error = 'Required') {
   return {
-    error: { [secondaryKey]: error },
-    validate: v => !v[primaryKey] || v[secondaryKey],
+    error,
+    validate: (v, keyPath, state) => {
+      const siblingPath = [...keyPath]
+      siblingPath[siblingPath.length - 1] = siblingKey
+
+      const siblingValue = getValueByPath(state, siblingPath)
+
+      return siblingValue ? v : true
+    },
   }
 }
 
