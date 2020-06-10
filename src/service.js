@@ -97,9 +97,7 @@ export default class FormService {
     const shiftedIndex = index !== -1 ? index : items.length
     const selector = this.getSelector(keyPath)
     const rawItem = selector.genItem()
-    const item = typeof rawItem === 'object'
-      ? this.__convert(selector.genItem(), keyPath)
-      : rawItem
+    const item = this.__convertItem(rawItem, keyPath)
 
     items.splice(shiftedIndex, 0, item)
     this.__spreadSchema('__state', [...keyPath, shiftedIndex])
@@ -275,7 +273,7 @@ export default class FormService {
   }
 
   __convert (data, op, rootPath = []) {
-    const result = deepCopy(data)
+    const result = typeof data === 'object' ? deepCopy(data) : data
 
     traverse(result, (keyPath, value) => {
       const fullPath = [...rootPath, ...keyPath]
@@ -297,6 +295,13 @@ export default class FormService {
     })
 
     return result
+  }
+
+  __convertItem (data, rootPath = []) {
+    const item = typeof data === 'object' ? deepCopy(data) : data
+    const result = this.__convert([item], 'format', rootPath)
+
+    return result[0]
   }
 
   __spreadSchema (schemaKey, keyPath) {

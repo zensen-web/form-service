@@ -557,10 +557,14 @@ describe('FormService', () => {
       ],
     }
 
+    const ITEM_ADDED_HOURS = 16.75
+    const ITEM_ADDED_OBJ = { hours: 4, minutes: 45, period: PERIOD.PM }
+
     const SELECTORS = {
       items: {
-        genItem: () => 12,
+        genItem: () => ITEM_ADDED_HOURS,
         children: {
+          validators: [passValidator],
           format: v => ({
             hours: Math.floor(v > 12 ? v - 12 : v),
             minutes: (v - Math.floor(v)) * 60,
@@ -582,8 +586,29 @@ describe('FormService', () => {
       service = new FormService(MODEL, SELECTORS, onChangeSpy)
     })
 
-    it('formats each item in the state', () =>
-      expect(service.__state).to.be.eql(MODEL_EXPECTED))
+    it('invokes callback', () => expect(getLastChange()).to.be.eql([
+      false,
+      MODEL_EXPECTED,
+      {
+        items: ['', '', ''],
+      },
+    ]))
+
+    context('when adding an item', () => {
+      beforeEach(() => {
+        service.addItem('items')
+      })
+
+      it('invokes callback', () => expect(getLastChange()).to.be.eql([
+        true,
+        {
+          items: [...MODEL_EXPECTED.items, ITEM_ADDED_OBJ]
+        },
+        {
+          items: ['', '', '', ''],
+        },
+      ]))
+    })
   })
 
   describe('schema clipping', () => {
