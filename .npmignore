@@ -1,10 +1,13 @@
+/.circleci
 /.nye_output
 /.storybook
+/coverage
 /examples
 /stories
 /test
 
-.eslintrc.js
+.babelrc
+.eslintrc.yaml
 .eslintignore
 karma.conf.js
 yarn.lock

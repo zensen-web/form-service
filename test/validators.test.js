@@ -45,8 +45,6 @@ describe('validators', () => {
     const validate = (number, type) =>
       Boolean(validator.validate(type, ['type'], { number, type }))
 
-    let result
-
     it('fails when only the dependency field is truthy', () =>
       expect(validate(NUMBER, '')).to.be.false)
 
