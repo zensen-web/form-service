@@ -4,9 +4,9 @@ import pkg from 'validator'
 import {
   FormService,
   VerificationError,
-  ValidationError,
   PristineError,
   MutationError,
+  PathError,
 } from '../src'
 
 import {
@@ -49,16 +49,24 @@ const MODEL = {
 
 const MODEL_COMPLEX = {
   name: 'Gremlin',
-  level: 1,
+  job: 'monster',
   stats: {
     attack: 4,
     evasion: 3,
     speed: 2,
+    attributes: {
+      level: 9,
+      experience: 1000,
+    },
   },
   ailments: [3, 4, 7],
   items: [
     { id: 1, rate: 0.1 },
     { id: 3, rate: 0.4 },
+  ],
+  triangles: [
+    [0, 1, 2],
+    [0, 2, 3],
   ],
 }
 
@@ -159,39 +167,52 @@ describe('FormService', () => {
   })
 
   context('when a complex set of selectors are provided', () => {
-    const FORMATTERS = {
-      format: v => v,
-      unformat: v => v,
-    }
+    const genFmt = () => ({ format: v => v, unformat: v => v })
 
     const SELECTORS = {
-      name: FORMATTERS,
+      name: genFmt(),
+      // 'job' is intentionally left out...
       stats: {
-        ...FORMATTERS,
+        ...genFmt(),
         children: {
-          attack: FORMATTERS,
-          evasion: FORMATTERS,
-          speed: FORMATTERS,
+          attack: genFmt(),
+          evasion: genFmt(),
+          speed: genFmt(),
+          attributes: {
+            ...genFmt(),
+            children: {
+              level: genFmt(),
+              experience: genFmt(),
+            },
+          },
         },
       },
       ailments: {
-        ...FORMATTERS,
-        children: FORMATTERS,
+        ...genFmt(),
+        children: {
+          $: genFmt(),
+        },
       },
       items: {
-        ...FORMATTERS,
+        ...genFmt(),
         children: {
-          ...FORMATTERS,
-          id: FORMATTERS,
-          rate: FORMATTERS,
+          $: {
+            ...genFmt(),
+            children: {
+              id: genFmt(),
+              rate: genFmt(),
+            },
+          },
         },
       },
       triangles: {
-        ...FORMATTERS,
+        ...genFmt(),
         children: {
-          ...FORMATTERS,
-          children: {
-            ...FORMATTERS,
+          $: {
+            ...genFmt(),
+            children: {
+              $: genFmt(),
+            },
           },
         },
       },
@@ -202,63 +223,110 @@ describe('FormService', () => {
     })
 
     describe('getSelectorPath()', () => {
-      it('finds the selector for "name"', () =>
+      it('throws an error when an invalid path is provided: "asdf"', () =>
+        expect(() => service.getSelectorPath(['asdf'])).to.throw(PathError))
+
+      it('resolve the path for "name"', () =>
         expect(service.getSelectorPath(['name'])).to.be.eql(['name']))
 
-      it('does not find a selector for "level"', () =>
-        expect(service.getSelectorPath(['level'])).to.be.eql(['level']))
+      it('resolve the path for "job"', () =>
+        expect(service.getSelectorPath(['job'])).to.be.eql(['job']))
 
-      it('finds a selector for "stats"', () =>
+      it('resolve the path for "stats"', () =>
         expect(service.getSelectorPath(['stats'])).to.be.eql(['stats']))
 
-      it('finds a selector for "stats.attack"', () =>
+      it('resolve the path for "stats.attack"', () =>
         expect(service.getSelectorPath(['stats', 'attack'])).to.be.eql([
           'stats', 'children', 'attack',
         ]))
 
-      it('finds a selector for "stats.evasion"', () =>
+      it('resolve the path for "stats.evasion"', () =>
         expect(service.getSelectorPath(['stats', 'evasion'])).to.be.eql([
           'stats', 'children', 'evasion',
         ]))
 
-      it('finds a selector for "stats.speed"', () =>
+      it('resolve the path for "stats.speed"', () =>
         expect(service.getSelectorPath(['stats', 'speed'])).to.be.eql([
           'stats', 'children', 'speed',
         ]))
 
-      it('finds a selector for "stats.ailments"', () =>
+      it('resolve the path for "stats.attributes"', () =>
+        expect(service.getSelectorPath(['stats', 'attributes'])).to.be.eql([
+          'stats', 'children', 'attributes',
+        ]))
+
+      it('resolve the path for "stats.attributes.level"', () =>
+        expect(service.getSelectorPath(['stats', 'attributes', 'level'])).to.be.eql([
+          'stats', 'children', 'attributes', 'children', 'level',
+        ]))
+
+      it('resolve the path for "stats.attributes.experience"', () =>
+        expect(service.getSelectorPath(['stats', 'attributes', 'experience'])).to.be.eql([
+          'stats', 'children', 'attributes', 'children', 'experience',
+        ]))
+
+      it('resolve the path for "stats.ailments"', () =>
         expect(service.getSelectorPath(['ailments'])).to.be.eql(['ailments']))
 
-      it('finds a selector for "ailments.0"', () =>
+      it('resolve the path for "ailments.0"', () =>
         expect(service.getSelectorPath(['ailments', '0'])).to.be.eql([
-          'ailments', 'children',
+          'ailments', 'children', '$',
         ]))
 
-      it('finds a selector for "items"', () =>
+      it('resolve the path for "items"', () =>
         expect(service.getSelectorPath(['items'])).to.be.eql(['items']))
 
-      it('finds a selector for "items.0"', () =>
+      it('resolve the path for "items.0"', () =>
         expect(service.getSelectorPath(['items', '0'])).to.be.eql([
-          'items', 'children',
+          'items', 'children', '$',
         ]))
 
-      it('finds a selector for "items.0.id"', () =>
+      it('resolve the path for "items.0.id"', () =>
         expect(service.getSelectorPath(['items', '0', 'id'])).to.be.eql([
-          'items', 'children', 'id',
+          'items', 'children', '$', 'children', 'id',
         ]))
 
-      it('finds a selector for "items.0.rate"', () =>
+      it('resolve the path for "items.0.rate"', () =>
         expect(service.getSelectorPath(['items', '0', 'rate'])).to.be.eql([
-          'items', 'children', 'rate',
+          'items', 'children', '$', 'children', 'rate',
         ]))
+
+      it('resolve the path for "triangles"', () =>
+        expect(service.getSelectorPath(['triangles'])).to.be.eql(['triangles']))
+
+      it('resolve the path for "triangles.0"', () =>
+        expect(service.getSelectorPath(['triangles', '0'])).to.be.eql([
+          'triangles', 'children', '$',
+        ]))
+
+      it('resolve the path for "triangles.0.0"', () =>
+        expect(service.getSelectorPath(['triangles', '0', '0'])).to.be.eql([
+          'triangles', 'children', '$', 'children', '$',
+        ]))
+
+      it('resolve the path for "triangles.0.1"', () =>
+        expect(service.getSelectorPath(['triangles', '0', '1'])).to.be.eql([
+          'triangles', 'children', '$', 'children', '$',
+        ]))
+
+      it('resolve the path for "triangles.0.2"', () =>
+        expect(service.getSelectorPath(['triangles', '0', '2'])).to.be.eql([
+          'triangles', 'children', '$', 'children', '$',
+        ]))
+
+      it('throws an error when an invalid path is provided: "triangles.0.3"', () =>
+        expect(() => service.getSelectorPath(['triangles.0.3'])).to.throw(PathError))
     })
 
     describe('getSelector()', () => {
+      it('throws an error when an invalid path is provided: "asdf"', () =>
+        expect(() => service.getSelector(['asdf'])).to.throw(PathError))
+
       it('finds the selector for "name"', () =>
         expect(service.getSelector(['name'])).to.be.eq(SELECTORS.name))
 
-      it('does not find a selector for "level"', () =>
-        expect(service.getSelector(['level'])).to.be.eq(undefined))
+      it('does not find a selector for "job"', () =>
+        expect(service.getSelector(['job'])).to.be.eq(undefined))
 
       it('finds a selector for "stats"', () =>
         expect(service.getSelector(['stats'])).to.be.eq(SELECTORS.stats))
@@ -278,12 +346,27 @@ describe('FormService', () => {
           SELECTORS.stats.children.speed,
         ))
 
+      it('finds a selector for "stats.attributes"', () =>
+        expect(service.getSelector(['stats', 'attributes'])).to.be.eq(
+          SELECTORS.stats.children.attributes,
+        ))
+
+      it('finds a selector for "stats.attributes.level"', () =>
+        expect(service.getSelector(['stats', 'attributes', 'level'])).to.be.eq(
+          SELECTORS.stats.children.attributes.children.level,
+        ))
+
+      it('finds a selector for "stats.attributes.experience"', () =>
+        expect(service.getSelector(['stats', 'attributes', 'experience'])).to.be.eq(
+          SELECTORS.stats.children.attributes.children.experience,
+        ))
+
       it('finds a selector for "stats.ailments"', () =>
         expect(service.getSelector(['ailments'])).to.be.eq(SELECTORS.ailments))
 
       it('finds a selector for "ailments.0"', () =>
         expect(service.getSelector(['ailments', '0'])).to.be.eq(
-          SELECTORS.ailments.children,
+          SELECTORS.ailments.children.$,
         ))
 
       it('finds a selector for "items"', () =>
@@ -291,34 +374,71 @@ describe('FormService', () => {
 
       it('finds a selector for "items.0"', () =>
         expect(service.getSelector(['items', '0'])).to.be.eq(
-          SELECTORS.items.children,
+          SELECTORS.items.children.$,
         ))
 
       it('finds a selector for "items.0.id"', () =>
         expect(service.getSelector(['items', '0', 'id'])).to.be.eq(
-          SELECTORS.items.children.id,
+          SELECTORS.items.children.$.children.id,
         ))
 
-      it('finds a selector for "items.0.id"', () =>
+      it('finds a selector for "items.0.rate"', () =>
         expect(service.getSelector(['items', '0', 'rate'])).to.be.eq(
-          SELECTORS.items.children.rate,
+          SELECTORS.items.children.$.children.rate,
         ))
+
+      it('finds a selector for "triangles"', () =>
+        expect(service.getSelector(['triangles'])).to.be.eq(
+          SELECTORS.triangles,
+        ))
+
+      it('finds a selector for "triangles.0"', () =>
+        expect(service.getSelector(['triangles', '0'])).to.be.eq(
+          SELECTORS.triangles.children.$,
+        ))
+
+      it('finds a selector for "triangles.0.0"', () =>
+        expect(service.getSelector(['triangles', '0', '0'])).to.be.eq(
+          SELECTORS.triangles.children.$.children.$,
+        ))
+
+      it('finds a selector for "triangles.0.1"', () =>
+        expect(service.getSelector(['triangles', '0', '1'])).to.be.eq(
+          SELECTORS.triangles.children.$.children.$,
+        ))
+
+      it('finds a selector for "triangles.0.2"', () =>
+        expect(service.getSelector(['triangles', '0', '2'])).to.be.eq(
+          SELECTORS.triangles.children.$.children.$,
+        ))
+
+
+      it('throws an error when an invalid path is provided: "triangles.0.3"', () =>
+        expect(() => service.getSelector(['triangles', '0', '3'])).to.throw(PathError))
     })
   })
 
   context('when converters are NOT provided', () => {
     const ERRORS = {
       name: '',
-      level: '',
+      job: '',
       stats: {
         attack: '',
         evasion: '',
         speed: '',
+        attributes: {
+          level: '',
+          experience: '',
+        },
       },
       ailments: ['', '', ''],
       items: [
         { id: '', rate: '' },
         { id: '', rate: '' },
+      ],
+      triangles: [
+        ['', '', ''],
+        ['', '', ''],
       ],
     }
 
@@ -564,19 +684,21 @@ describe('FormService', () => {
       items: {
         genItem: () => ITEM_ADDED_HOURS,
         children: {
-          validators: [passValidator],
-          format: v => ({
-            hours: Math.floor(v > 12 ? v - 12 : v),
-            minutes: (v - Math.floor(v)) * 60,
-            period: v >= 12 ? PERIOD.PM : PERIOD.AM,
-          }),
-          unformat: v => {
-            const model = map(v, (keyPath, value) =>
-              (keyPath[0] !== 'period' ? Number(value) : value))
-
-            const offset = model.period === 'PM' ? 12 : 0
-
-            return model.hours + (model.minutes / 60) + offset
+          $: {
+            validators: [passValidator],
+            format: v => ({
+              hours: Math.floor(v > 12 ? v - 12 : v),
+              minutes: (v - Math.floor(v)) * 60,
+              period: v >= 12 ? PERIOD.PM : PERIOD.AM,
+            }),
+            unformat: v => {
+              const model = map(v, (keyPath, value) =>
+                (keyPath[0] !== 'period' ? Number(value) : value))
+  
+              const offset = model.period === 'PM' ? 12 : 0
+  
+              return model.hours + (model.minutes / 60) + offset
+            },
           },
         },
       },
@@ -694,7 +816,11 @@ describe('FormService', () => {
           {
             types: {
               genItem: () => ({ label: '', value: null }),
-              children: { clipPristine: true },
+              children: {
+                $: {
+                  clipPristine: true,
+                },
+              },
             },
           },
           onChangeSpy,
@@ -1016,13 +1142,17 @@ describe('FormService', () => {
           {
             items: {
               children: {
-                start: {
-                  clipErrors: true,
-                  validators: [segmentValidator, intervalValidator],
-                },
-                end: {
-                  clipErrors: true,
-                  validators: [segmentValidator, intervalValidator],
+                $: {
+                  children: {
+                    start: {
+                      clipErrors: true,
+                      validators: [segmentValidator, intervalValidator],
+                    },
+                    end: {
+                      clipErrors: true,
+                      validators: [segmentValidator, intervalValidator],
+                    },
+                  },
                 },
               },
             },
@@ -1054,8 +1184,12 @@ describe('FormService', () => {
             phones: {
               genItem: () => ({ number: '', type: '' }),
               children: {
-                number: [phoneNumberValidator],
-                type: [requiredIf('number')],
+                $: {
+                  children: {
+                    number: [phoneNumberValidator],
+                    type: [requiredIf('number')],
+                  },
+                },
               },
             },
           },
@@ -1121,8 +1255,10 @@ describe('FormService', () => {
             rates: {
               genItem: () => '',
               children: {
-                ignorePristine: true,
-                validators: [range(0, 100, false, false, '0 - 100')],
+                $: {
+                  ignorePristine: true,
+                  validators: [range(0, 100, false, false, '0 - 100')],
+                },
               },
             },
           },
@@ -1154,9 +1290,13 @@ describe('FormService', () => {
             taxes: {
               genItem: () => ({ name: '', rate: '' }),
               children: {
-                rate: {
-                  ignorePristine: true,
-                  validators: [range(0, 100, false, false, '0 - 100')],
+                $: {
+                  children: {
+                    rate: {
+                      ignorePristine: true,
+                      validators: [range(0, 100, false, false, '0 - 100')],
+                    },
+                  },
                 },
               },
             },

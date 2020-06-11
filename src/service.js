@@ -40,6 +40,12 @@ New Value: ${value}`)
   }
 }
 
+export class PathError extends Error {
+  constructor(keyPath) {
+    super(`No key found in state for path: ${keyPath.join('.')}`)
+  }
+}
+
 export default class FormService {
   get isDirty () {
     return !equal(this.__state, this.__initialState)
@@ -162,23 +168,28 @@ export default class FormService {
     return !this.hasErrors
   }
 
-  getSelectorPath (keyPath) {
+  getSelectorPath (keyPath, ignoreCheck) {
+    if (!ignoreCheck) {
+      const value = getValueByPath(this.__state, keyPath)
+
+      if (value === undefined) {
+        throw new PathError(keyPath)
+      }
+    }
+
     return keyPath.reduce((accum, curr, index) => {
       const parentPath = keyPath.slice(0, index)
       const parent = getValueByPath(this.__state, parentPath)
-
-      if (Array.isArray(parent)) {
-        return accum
-      }
+      const key = Array.isArray(parent) ? '$' : curr
 
       return (index < keyPath.length - 1)
-        ? [...accum, curr, 'children']
-        : [...accum, curr]
+        ? [...accum, key, 'children']
+        : [...accum, key]
     }, [])
   }
 
-  getSelector (keyPath) {
-    const selectorPath = this.getSelectorPath(keyPath)
+  getSelector (keyPath, ignoreCheck = false) {
+    const selectorPath = this.getSelectorPath(keyPath, ignoreCheck)
 
     return getValueByPath(this.__selectors, selectorPath)
   }
@@ -239,15 +250,13 @@ export default class FormService {
   }
 
   __buildSchema (refSchema, initialValue, clipKey, rootPath = []) {
-    if (rootPath) {
-      const rootSelector = this.getSelector(rootPath)
+    const rootSelector = this.getSelector(rootPath)
 
-      if (rootSelector) {
-        const children = rootSelector.children
+    if (rootSelector) {
+      const children = rootSelector.children
 
-        if (children && children[clipKey]) {
-          return initialValue
-        }
+      if (children && children.$ && children.$[clipKey]) {
+        return initialValue
       }
     }
 
@@ -277,7 +286,7 @@ export default class FormService {
 
     traverse(result, (keyPath, value) => {
       const fullPath = [...rootPath, ...keyPath]
-      const selector = this.getSelector(fullPath)
+      const selector = this.getSelector(fullPath, true)
 
       if (selector && selector[op]) {
         const selVal = selector[op](value)
