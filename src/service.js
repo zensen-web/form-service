@@ -416,7 +416,7 @@ export default class FormService {
   }
 
   __processValidator (keyPath, validatorPath, validators) {
-    const value = getValueByPath(this.__state, keyPath)
+    const value = getValueByPath(this.__state, validatorPath)
 
     try {
       validators.forEach(validator => {

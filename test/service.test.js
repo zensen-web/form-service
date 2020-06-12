@@ -147,6 +147,24 @@ function timeToScalar (time) {
   return periodToMinutes + (time.hours * 60) + (time.minutes)
 }
 
+
+function hoursToObj (v) {
+  return {
+    hours: Math.floor(v > 12 ? v - 12 : v),
+    minutes: (v - Math.floor(v)) * 60,
+    period: v >= 12 ? PERIOD.PM : PERIOD.AM,
+  }
+}
+
+function objToHours (v) {
+  const model = map(v, (keyPath, value) =>
+    (keyPath[0] !== 'period' ? Number(value) : value))
+
+  const offset = model.period === 'PM' ? 12 : 0
+
+  return model.hours + (model.minutes / 60) + offset
+}
+
 describe('FormService', () => {
   let sandbox
   let service
@@ -665,6 +683,11 @@ describe('FormService', () => {
   })
 
   context('when converters are provided to array items', () => {
+    const validator = {
+      error: 'Invalid',
+      validate: () => true,
+    }
+
     const MODEL = {
       items: [1, 4.25, 14.75],
     }
@@ -685,20 +708,9 @@ describe('FormService', () => {
         genItem: () => ITEM_ADDED_HOURS,
         children: {
           $: {
-            validators: [passValidator],
-            format: v => ({
-              hours: Math.floor(v > 12 ? v - 12 : v),
-              minutes: (v - Math.floor(v)) * 60,
-              period: v >= 12 ? PERIOD.PM : PERIOD.AM,
-            }),
-            unformat: v => {
-              const model = map(v, (keyPath, value) =>
-                (keyPath[0] !== 'period' ? Number(value) : value))
-  
-              const offset = model.period === 'PM' ? 12 : 0
-  
-              return model.hours + (model.minutes / 60) + offset
-            },
+            validators: [],
+            format: v => hoursToObj(v),
+            unformat: v => objToHours(v),
           },
         },
       },
