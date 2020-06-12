@@ -420,7 +420,7 @@ export default class FormService {
 
     try {
       validators.forEach(validator => {
-        if (!validator.validate(value, validatorPath, this.__state)) {
+        if (!validator.validate(value, validatorPath, this.__state, this)) {
           throw new ValidationError(validator.error)
         }
       })
