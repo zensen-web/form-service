@@ -433,6 +433,8 @@ export default class FormService {
         throw e
       }
     }
+
+    this.__spreadSchema('__errors', validatorPath)
   }
 
   __refreshPristine () {
