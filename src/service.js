@@ -157,6 +157,8 @@ export default class FormService {
     this.__pristine = map(this.__pristine, (keyPath, value) =>
       typeof value === 'object' ? value : false)
 
+    const prevErrors = this.__errors
+
     traverse(this.__state, (keyPath, value) => {
       const pristine = getValueByPath(this.__pristine, keyPath)
 
@@ -164,6 +166,10 @@ export default class FormService {
         this.__validateKey(keyPath)
       }
     })
+
+    if (prevErrors !== this.__errors) {
+      this.__change()
+    }
 
     return !this.hasErrors
   }
