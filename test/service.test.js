@@ -21,6 +21,10 @@ import {
 
 import {
   PERIOD,
+  MODIFIERS,
+  CHARGE_MODEL,
+  CHARGE_STATE,
+  CHARGE_ERRORS,
   ENEMY_MODEL,
   ENEMY_SELECTORS,
   ENEMY_ERRORS,
@@ -34,42 +38,6 @@ import {
   segmentValidator,
   intervalValidator,
 } from './helpers'
-
-const DATE = new Date(2020, 0, 1, 0, 0, 0, 0)
-const MODIFIERS = ['ab', 'cd', 'ef', 'gh']
-
-const MODEL = {
-  id: '123',
-  taxId: null,
-  active: true,
-  procedure: '',
-  description: '',
-  amount: 19.99,
-  purchaseDate: DATE,
-  modifiers: MODIFIERS,
-}
-
-const STATE = {
-  id: '123',
-  taxId: null,
-  active: true,
-  procedure: '',
-  description: '',
-  amount: '$19.99',
-  purchaseDate: DATE,
-  modifiers: MODIFIERS,
-}
-
-const ERROR_SCHEMA = {
-  id: '',
-  taxId: '',
-  active: '',
-  procedure: '',
-  description: '',
-  amount: '',
-  purchaseDate: '',
-  modifiers: '',
-}
 
 describe.only('FormService', () => {
   let sandbox
@@ -91,13 +59,13 @@ describe.only('FormService', () => {
   })
 
   describe('verifying selectors', () => {
-    context('when nested validators are found', () => {
-      const MODEL = {
-        stats: {
-          a: '',
-        },
-      }
+    const MODEL = {
+      stats: {
+        a: '',
+      },
+    }
 
+    context('when nested validators are found', () => {
       const SELECTORS = {
         stats: {
           validators: [passValidator],
@@ -113,12 +81,6 @@ describe.only('FormService', () => {
     })
 
     context('when setting ignorePristine on object-type key', () => {
-      const MODEL = {
-        stats: {
-          a: '',
-        },
-      }
-
       const SELECTORS = {
         stats: {
           ignorePristine: true,
@@ -146,11 +108,8 @@ describe.only('FormService', () => {
   })
 
   describe('selectors', () => {
-    const MODEL = ENEMY_MODEL
-    const SELECTORS = ENEMY_SELECTORS
-
     beforeEach(() => {
-      service = new FormService(MODEL, SELECTORS, onChangeSpy)
+      service = new FormService(ENEMY_MODEL, ENEMY_SELECTORS, onChangeSpy)
     })
 
     describe('getSelectorPath()', () => {
@@ -254,93 +213,93 @@ describe.only('FormService', () => {
         expect(() => service.getSelector(['asdf'])).to.throw(PathError))
 
       it('finds the selector for "name"', () =>
-        expect(service.getSelector(['name'])).to.be.eq(SELECTORS.name))
+        expect(service.getSelector(['name'])).to.be.eq(ENEMY_SELECTORS.name))
 
       it('does not find a selector for "job"', () =>
         expect(service.getSelector(['job'])).to.be.eq(undefined))
 
       it('finds a selector for "stats"', () =>
-        expect(service.getSelector(['stats'])).to.be.eq(SELECTORS.stats))
+        expect(service.getSelector(['stats'])).to.be.eq(ENEMY_SELECTORS.stats))
 
       it('finds a selector for "stats.attack"', () =>
         expect(service.getSelector(['stats', 'attack'])).to.be.eq(
-          SELECTORS.stats.children.attack,
+          ENEMY_SELECTORS.stats.children.attack,
         ))
 
       it('finds a selector for "stats.evasion"', () =>
         expect(service.getSelector(['stats', 'evasion'])).to.be.eq(
-          SELECTORS.stats.children.evasion,
+          ENEMY_SELECTORS.stats.children.evasion,
         ))
 
       it('finds a selector for "stats.speed"', () =>
         expect(service.getSelector(['stats', 'speed'])).to.be.eq(
-          SELECTORS.stats.children.speed,
+          ENEMY_SELECTORS.stats.children.speed,
         ))
 
       it('finds a selector for "stats.attributes"', () =>
         expect(service.getSelector(['stats', 'attributes'])).to.be.eq(
-          SELECTORS.stats.children.attributes,
+          ENEMY_SELECTORS.stats.children.attributes,
         ))
 
       it('finds a selector for "stats.attributes.level"', () =>
         expect(service.getSelector(['stats', 'attributes', 'level'])).to.be.eq(
-          SELECTORS.stats.children.attributes.children.level,
+          ENEMY_SELECTORS.stats.children.attributes.children.level,
         ))
 
       it('finds a selector for "stats.attributes.experience"', () =>
         expect(service.getSelector(['stats', 'attributes', 'experience'])).to.be.eq(
-          SELECTORS.stats.children.attributes.children.experience,
+          ENEMY_SELECTORS.stats.children.attributes.children.experience,
         ))
 
       it('finds a selector for "stats.ailments"', () =>
-        expect(service.getSelector(['ailments'])).to.be.eq(SELECTORS.ailments))
+        expect(service.getSelector(['ailments'])).to.be.eq(ENEMY_SELECTORS.ailments))
 
       it('finds a selector for "ailments.0"', () =>
         expect(service.getSelector(['ailments', '0'])).to.be.eq(
-          SELECTORS.ailments.children.$,
+          ENEMY_SELECTORS.ailments.children.$,
         ))
 
       it('finds a selector for "items"', () =>
-        expect(service.getSelector(['items'])).to.be.eq(SELECTORS.items))
+        expect(service.getSelector(['items'])).to.be.eq(ENEMY_SELECTORS.items))
 
       it('finds a selector for "items.0"', () =>
         expect(service.getSelector(['items', '0'])).to.be.eq(
-          SELECTORS.items.children.$,
+          ENEMY_SELECTORS.items.children.$,
         ))
 
       it('finds a selector for "items.0.id"', () =>
         expect(service.getSelector(['items', '0', 'id'])).to.be.eq(
-          SELECTORS.items.children.$.children.id,
+          ENEMY_SELECTORS.items.children.$.children.id,
         ))
 
       it('finds a selector for "items.0.rate"', () =>
         expect(service.getSelector(['items', '0', 'rate'])).to.be.eq(
-          SELECTORS.items.children.$.children.rate,
+          ENEMY_SELECTORS.items.children.$.children.rate,
         ))
 
       it('finds a selector for "triangles"', () =>
         expect(service.getSelector(['triangles'])).to.be.eq(
-          SELECTORS.triangles,
+          ENEMY_SELECTORS.triangles,
         ))
 
       it('finds a selector for "triangles.0"', () =>
         expect(service.getSelector(['triangles', '0'])).to.be.eq(
-          SELECTORS.triangles.children.$,
+          ENEMY_SELECTORS.triangles.children.$,
         ))
 
       it('finds a selector for "triangles.0.0"', () =>
         expect(service.getSelector(['triangles', '0', '0'])).to.be.eq(
-          SELECTORS.triangles.children.$.children.$,
+          ENEMY_SELECTORS.triangles.children.$.children.$,
         ))
 
       it('finds a selector for "triangles.0.1"', () =>
         expect(service.getSelector(['triangles', '0', '1'])).to.be.eq(
-          SELECTORS.triangles.children.$.children.$,
+          ENEMY_SELECTORS.triangles.children.$.children.$,
         ))
 
       it('finds a selector for "triangles.0.2"', () =>
         expect(service.getSelector(['triangles', '0', '2'])).to.be.eq(
-          SELECTORS.triangles.children.$.children.$,
+          ENEMY_SELECTORS.triangles.children.$.children.$,
         ))
 
 
@@ -350,19 +309,16 @@ describe.only('FormService', () => {
   })
 
   describe('apply()', () => {
-    const MODEL = ENEMY_MODEL
-    const ERRORS = ENEMY_ERRORS
-
     beforeEach(() => {
-      service = new FormService(MODEL, {}, onChangeSpy)
+      service = new FormService(ENEMY_MODEL, {}, onChangeSpy)
     })
 
     it('invokes onChange', () =>
-      expect(getLastChange()).to.be.eql([false, MODEL, ERRORS]))
+      expect(getLastChange()).to.be.eql([false, ENEMY_MODEL, ENEMY_ERRORS]))
 
     context('when modifying a top-level property', () => {
       const EXPECTED_MODEL = {
-        ...MODEL,
+        ...ENEMY_MODEL,
         name: 'Goblin',
       }
 
@@ -371,15 +327,15 @@ describe.only('FormService', () => {
       })
 
       it('invokes onChange', () => expect(getLastChange()).to.be.eql([
-        true, EXPECTED_MODEL, ERRORS,
+        true, EXPECTED_MODEL, ENEMY_ERRORS,
       ]))
     })
 
     context('when modifying a sub-object property', () => {
       const EXPECTED_MODEL = {
-        ...MODEL,
+        ...ENEMY_MODEL,
         stats: {
-          ...MODEL.stats,
+          ...ENEMY_MODEL.stats,
           attack: 255,
         },
       }
@@ -389,7 +345,7 @@ describe.only('FormService', () => {
       })
 
       it('invokes onChange', () => expect(getLastChange()).to.be.eql([
-        true, EXPECTED_MODEL, ERRORS,
+        true, EXPECTED_MODEL, ENEMY_ERRORS,
       ]))
     })
 
@@ -511,6 +467,7 @@ describe.only('FormService', () => {
         expect(service.__errors).to.be.eql({ items: [''] }))
     })
 
+    // FAILS due to schema clipping not working on shorthand validators
     context.skip('when adding an object item', () => {
       beforeEach(() => {
         service = new FormService(
@@ -557,7 +514,7 @@ describe.only('FormService', () => {
   context('when converters are provided', () => {
     beforeEach(() => {
       service = new FormService(
-        MODEL,
+        CHARGE_MODEL,
         {
           procedure: [requiredValidator],
           modifiers: {
@@ -579,12 +536,12 @@ describe.only('FormService', () => {
     })
 
     it('produces a state with the proper conversions', () =>
-      expect(service.__state).to.be.eql(STATE))
+      expect(service.__state).to.be.eql(CHARGE_STATE))
 
     context('when a change occurs', () => {
-      const EXPECTED_MODEL = { ...MODEL, procedure: '' }
-      const EXPECTED_STATE = { ...STATE, procedure: '' }
-      const EXPECTED_ERRORS = { ...ERROR_SCHEMA, procedure: 'Required' }
+      const EXPECTED_MODEL = { ...CHARGE_MODEL, procedure: '' }
+      const EXPECTED_STATE = { ...CHARGE_STATE, procedure: '' }
+      const EXPECTED_ERRORS = { ...CHARGE_ERRORS, procedure: 'Required' }
 
       beforeEach(() => {
         service.apply('procedure', '')
@@ -594,7 +551,7 @@ describe.only('FormService', () => {
         expect(getLastChange()).to.be.eql([
           false,
           EXPECTED_STATE,
-          ERROR_SCHEMA,
+          CHARGE_ERRORS,
         ]))
 
       context('when an error is triggered', () => {
@@ -624,7 +581,7 @@ describe.only('FormService', () => {
           })
 
           it('resets state', () =>
-            expect(service.__state).to.be.eql(STATE))
+            expect(service.__state).to.be.eql(CHARGE_STATE))
 
           it('resets errors', () =>
             expect(service.hasErrors).to.be.false)

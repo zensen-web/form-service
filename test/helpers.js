@@ -2,6 +2,9 @@ import pkg from 'validator'
 
 import { getValueByPath } from '../src/utils'
 
+export const DATE = new Date(2020, 0, 1, 0, 0, 0, 0)
+export const MODIFIERS = ['ab', 'cd', 'ef', 'gh']
+
 export const PERIOD = {
   AM: 'am',
   PM: 'pm',
@@ -137,6 +140,39 @@ export const ENEMY_ERRORS = {
     ['', '', ''],
     ['', '', ''],
   ],
+}
+
+export const CHARGE_MODEL = {
+  id: '123',
+  taxId: null,
+  active: true,
+  procedure: '',
+  description: '',
+  amount: 19.99,
+  purchaseDate: DATE,
+  modifiers: MODIFIERS,
+}
+
+export const CHARGE_STATE = {
+  id: '123',
+  taxId: null,
+  active: true,
+  procedure: '',
+  description: '',
+  amount: '$19.99',
+  purchaseDate: DATE,
+  modifiers: MODIFIERS,
+}
+
+export const CHARGE_ERRORS = {
+  id: '',
+  taxId: '',
+  active: '',
+  procedure: '',
+  description: '',
+  amount: '',
+  purchaseDate: '',
+  modifiers: '',
 }
 
 export function capitalize (str) {
