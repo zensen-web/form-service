@@ -91,20 +91,6 @@ describe.only('FormService', () => {
 
       it('throw an error', () => expect(fn).to.throw(VerificationError))
     })
-
-    context('when applying a null value', () => {
-      const MODEL = {
-        date: null,
-      }
-
-      const fn = () => service.apply('date', null)
-
-      beforeEach(() => {
-        service = new FormService(MODEL, {}, onChangeSpy)
-      })
-
-      it('throw an error', () => expect(fn).to.not.throw())
-    })
   })
 
   describe('getSelectorPath()', () => {
@@ -319,7 +305,7 @@ describe.only('FormService', () => {
       expect(getLastChange()).to.be.eql([false, ENEMY_MODEL, ENEMY_ERRORS]))
 
     context('when modifying a top-level property', () => {
-      const EXPECTED_MODEL = {
+      const EXPECTED_STATE = {
         ...ENEMY_MODEL,
         name: 'Goblin',
       }
@@ -329,12 +315,12 @@ describe.only('FormService', () => {
       })
 
       it('invokes onChange', () => expect(getLastChange()).to.be.eql([
-        true, EXPECTED_MODEL, ENEMY_ERRORS,
+        true, EXPECTED_STATE, ENEMY_ERRORS,
       ]))
     })
 
     context('when modifying a sub-object property', () => {
-      const EXPECTED_MODEL = {
+      const EXPECTED_STATE = {
         ...ENEMY_MODEL,
         stats: {
           ...ENEMY_MODEL.stats,
@@ -347,8 +333,54 @@ describe.only('FormService', () => {
       })
 
       it('invokes onChange', () => expect(getLastChange()).to.be.eql([
-        true, EXPECTED_MODEL, ENEMY_ERRORS,
+        true, EXPECTED_STATE, ENEMY_ERRORS,
       ]))
+    })
+
+    context('when modifying a value to null', () => {
+      const MODEL = {
+        date: null,
+      }
+
+      const fn = () => service.apply('date', null)
+
+      beforeEach(() => {
+        service = new FormService(MODEL, {}, onChangeSpy)
+      })
+
+      it('throw an error', () => expect(fn).to.not.throw())
+    })
+
+    context('when modifying an object to null', () => {
+      const SELECTORS = {
+        stats: {
+          clipPristine: true,
+        },
+      }
+
+      const EXPECTED_STATE = {
+        ...ENEMY_MODEL,
+        stats: null,
+      }
+
+      beforeEach(() => {
+        service = new FormService(ENEMY_MODEL, SELECTORS, onChangeSpy)
+        service.apply('stats', null)
+      })
+
+      it('invokes onChange', () => expect(getLastChange()).to.be.eql([
+        true, EXPECTED_STATE, ENEMY_ERRORS,
+      ]))
+
+      context('when modifying a null value to object', () => {  
+        beforeEach(() => {
+          service.apply('stats', ENEMY_MODEL.stats)
+        })
+  
+        it('invokes onChange', () => expect(getLastChange()).to.be.eql([
+          false, ENEMY_MODEL, ENEMY_ERRORS,
+        ]))
+      })
     })
 
     context('when modifying a key that does not exist', () => {  
@@ -643,7 +675,7 @@ describe.only('FormService', () => {
     })
 
     context('when moving an item in the array', () => {
-      const EXPECTED_MODEL = ['ef', 'ab', 'cd', 'gh']
+      const EXPECTED_STATE = ['ef', 'ab', 'cd', 'gh']
       const EXPECTED_PRISTINE = [false, true, true, true]
       const EXPECTED_ERRORS = 'asdf'
 
@@ -654,7 +686,7 @@ describe.only('FormService', () => {
       })
 
       it('reorders the item in the state', () =>
-        expect(service.__state.modifiers).to.be.eql(EXPECTED_MODEL))
+        expect(service.__state.modifiers).to.be.eql(EXPECTED_STATE))
 
       it('reorders the item in the error schema', () =>
         expect(service.__errors.modifiers).to.be.eql(EXPECTED_ERRORS))
@@ -664,7 +696,7 @@ describe.only('FormService', () => {
     })
 
     context('when swapping an item in the array', () => {
-      const EXPECTED_MODEL = ['ef', 'cd', 'ab', 'gh']
+      const EXPECTED_STATE = ['ef', 'cd', 'ab', 'gh']
       const EXPECTED_PRISTINE = [false, true, false, true]
       const EXPECTED_ERRORS = 'asdf'
 
@@ -675,7 +707,7 @@ describe.only('FormService', () => {
       })
 
       it('swaps the selected items in the state', () =>
-        expect(service.__state.modifiers).to.be.eql(EXPECTED_MODEL))
+        expect(service.__state.modifiers).to.be.eql(EXPECTED_STATE))
 
       it('swaps the selected items in the error schema', () =>
         expect(service.__errors.modifiers).to.be.eql(EXPECTED_ERRORS))
