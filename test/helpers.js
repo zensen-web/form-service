@@ -33,6 +33,29 @@ export const ENEMY_MODEL = {
   ],
 }
 
+export const ENEMY_ERRORS = {
+  name: '',
+  job: '',
+  stats: {
+    attack: '',
+    evasion: '',
+    speed: '',
+    attributes: {
+      level: '',
+      experience: '',
+    },
+  },
+  ailments: ['', '', ''],
+  items: [
+    { id: '', rate: '' },
+    { id: '', rate: '' },
+  ],
+  triangles: [
+    ['', '', ''],
+    ['', '', ''],
+  ],
+}
+
 export const ENEMY_SELECTORS = {
   name: {
     format: v => v,
@@ -117,29 +140,6 @@ export const ENEMY_SELECTORS = {
       },
     },
   },
-}
-
-export const ENEMY_ERRORS = {
-  name: '',
-  job: '',
-  stats: {
-    attack: '',
-    evasion: '',
-    speed: '',
-    attributes: {
-      level: '',
-      experience: '',
-    },
-  },
-  ailments: ['', '', ''],
-  items: [
-    { id: '', rate: '' },
-    { id: '', rate: '' },
-  ],
-  triangles: [
-    ['', '', ''],
-    ['', '', ''],
-  ],
 }
 
 export const CHARGE_MODEL = {

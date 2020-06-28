@@ -21,13 +21,12 @@ import {
 
 import {
   PERIOD,
-  MODIFIERS,
   CHARGE_MODEL,
   CHARGE_STATE,
   CHARGE_ERRORS,
   ENEMY_MODEL,
-  ENEMY_SELECTORS,
   ENEMY_ERRORS,
+  ENEMY_SELECTORS,
   toNumeric,
   toCurrency,
   toPhoneNumber,
@@ -335,6 +334,19 @@ describe.only('FormService', () => {
       ]))
     })
 
+    context('when modifying an item in an array', () => {
+      const AILMENT_ID = '42'
+      const EXPECTED = ENEMY_MODEL.ailments.map((mod, index) =>
+        (index === 1 ? AILMENT_ID : mod))
+
+      beforeEach(() => {
+        service.apply('ailments.1', AILMENT_ID)
+      })
+
+      it('modifies the correct element', () =>
+        expect(service.__state.ailments).to.be.eql(EXPECTED))
+    })
+
     context('when modifying a value to null', () => {
       const MODEL = {
         date: null,
@@ -429,6 +441,28 @@ describe.only('FormService', () => {
 
       it('provides the correct errors', () =>
         expect(service.__errors).to.be.eql({ items: [''] }))
+
+      context('when adding an item to end of an array', () => {
+        const EXPECTED = ['', '']
+  
+        beforeEach(() => {
+          service.addItem('items')
+        })
+  
+        it('adds it', () => expect(service.__state.items).to.be.eql(EXPECTED))
+
+        context('when adding an item in the middle of an array', () => {
+          const EXPECTED = ['1', '', '2']
+    
+          beforeEach(() => {
+            service.apply('items.0', '1')
+            service.apply('items.1', '2')
+            service.addItem('items', 1)
+          })
+    
+          it('adds it', () => expect(service.__state.items).to.be.eql(EXPECTED))
+        })
+      })
     })
 
     context('when adding an object', () => {
@@ -528,6 +562,30 @@ describe.only('FormService', () => {
     })
   })
 
+  describe('removeItem()', () => {
+    beforeEach(() => {
+      service = new FormService(ENEMY_MODEL, {}, onChangeSpy)
+    })
+
+    context('when removing an item from the end of an array', () => {
+      beforeEach(() => {
+        service.removeItem('ailments')
+      })
+
+      it('removes it', () =>
+        expect(service.__state.ailments).to.be.eql([3, 4]))
+    })
+
+    context('when removing an item from the front of an array', () => {
+      beforeEach(() => {
+        service.removeItem('ailments', 0)
+      })
+
+      it('removes it', () =>
+        expect(service.__state.ailments).to.be.eql([4, 7]))
+    })
+  })
+
   context('when converters are provided', () => {
     let requiredSpy
 
@@ -550,118 +608,6 @@ describe.only('FormService', () => {
 
     it('produces a state with the proper conversions', () =>
       expect(service.__state).to.be.eql(CHARGE_STATE))
-
-    context('when a change occurs', () => {
-      const EXPECTED_MODEL = { ...CHARGE_MODEL, procedure: '' }
-      const EXPECTED_STATE = { ...CHARGE_STATE, procedure: '' }
-      const EXPECTED_ERRORS = { ...CHARGE_ERRORS, procedure: 'Required' }
-
-      beforeEach(() => {
-        service.apply('procedure', '')
-      })
-
-      it('invokes onChange', () =>
-        expect(getLastChange()).to.be.eql([
-          false,
-          EXPECTED_STATE,
-          CHARGE_ERRORS,
-        ]))
-
-      context('when an error is triggered', () => {
-        const PROCEDURE_ERR_VAL = ''
-
-        beforeEach(() => {
-          service.apply('procedure', PROCEDURE_ERR_VAL)
-        })
-
-        it('has errors', () => expect(service.hasErrors).to.be.true)
-
-        it('invokes onChange', () =>
-          expect(getLastChange()).to.be.eql([
-            false,
-            EXPECTED_STATE,
-            EXPECTED_ERRORS,
-          ]))
-
-        it('invokes the key validator', () =>
-          expect(requiredSpy.withArgs(PROCEDURE_ERR_VAL)).to.be.calledOnce)
-
-        context('when resetting', () => {
-          beforeEach(() => {
-            service.reset()
-          })
-
-          it('resets state', () =>
-            expect(service.__state).to.be.eql(CHARGE_STATE))
-
-          it('resets errors', () =>
-            expect(service.hasErrors).to.be.false)
-        })
-      })
-
-      context('when building the model from state', () => {
-        let expectedValue
-
-        beforeEach(() => {
-          expectedValue = service.buildModel()
-        })
-
-        it('returns a converted version of the current state', () =>
-          expect(expectedValue).to.be.eql(EXPECTED_MODEL))
-      })
-    })
-
-    context('when modifying an item to an array', () => {
-      const MODIFIER = 'sd'
-      const EXPECTED = MODIFIERS.map((mod, index) =>
-        (index === 2 ? MODIFIER : mod),
-      )
-
-      beforeEach(() => {
-        service.apply('modifiers.2', MODIFIER)
-      })
-
-      it('modifies the correct element', () =>
-        expect(service.__state.modifiers).to.be.eql(EXPECTED))
-    })
-
-    context('when adding an item to end of an array', () => {
-      const EXPECTED = [...MODIFIERS, '']
-
-      beforeEach(() => {
-        service.addItem('modifiers')
-      })
-
-      it('adds it', () => expect(service.__state.modifiers).to.be.eql(EXPECTED))
-    })
-
-    context('when adding an item in the middle of an array', () => {
-      const EXPECTED = ['ab', 'cd', '', 'ef', 'gh']
-
-      beforeEach(() => {
-        service.addItem('modifiers', 2)
-      })
-
-      it('adds it', () => expect(service.__state.modifiers).to.be.eql(EXPECTED))
-    })
-
-    context('when removing an item from the end of an array', () => {
-      beforeEach(() => {
-        service.removeItem('modifiers')
-      })
-
-      it('removes it', () =>
-        expect(service.__state.modifiers).to.be.eql(['ab', 'cd', 'ef']))
-    })
-
-    context('when removing an item from an array', () => {
-      beforeEach(() => {
-        service.removeItem('modifiers', 0)
-      })
-
-      it('removes it', () =>
-        expect(service.__state.modifiers).to.be.eql(['cd', 'ef', 'gh']))
-    })
 
     context('when moving an item in the array', () => {
       const EXPECTED_STATE = ['ef', 'ab', 'cd', 'gh']
