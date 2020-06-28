@@ -671,8 +671,8 @@ describe('FormService', () => {
     })
   })
 
-  describe('schema clipping', () => {
-    context(`when clipping the pristine schema`, () => {
+  describe('clipPristine', () => {
+    context(`when clipping an object`, () => {
       const MODEL = {
         id: '123',
         name: 'Test',
@@ -702,7 +702,7 @@ describe('FormService', () => {
         expect(service.__pristine).to.be.eql(EXPECTED_RESULT))
     })
 
-    context(`when clipping the pristine schema (array)`, () => {
+    context(`when clipping an array`, () => {
       const MODEL = {
         id: '123',
         name: 'Test',
@@ -732,7 +732,7 @@ describe('FormService', () => {
         expect(service.__pristine).to.be.eql(EXPECTED_RESULT))
     })
 
-    context(`when clipping the pristine schema (array-child)`, () => {
+    context(`when clipping an array's object-elements`, () => {
       const MODEL = {
         id: '123',
         name: 'Test',
