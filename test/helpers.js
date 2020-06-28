@@ -1,6 +1,6 @@
 import pkg from 'validator'
 
-import { getValueByPath } from '../src/utils'
+import { map, getValueByPath } from '../src/utils'
 
 export const DATE = new Date(2020, 0, 1, 0, 0, 0, 0)
 export const MODIFIERS = ['ab', 'cd', 'ef', 'gh']
@@ -142,34 +142,12 @@ export const ENEMY_SELECTORS = {
   },
 }
 
-export const CHARGE_MODEL = {
-  id: '123',
-  taxId: null,
-  active: true,
-  procedure: '',
-  description: '',
-  amount: 19.99,
-  purchaseDate: DATE,
-  modifiers: MODIFIERS,
-}
-
-export const CHARGE_STATE = {
-  id: '123',
-  taxId: null,
-  active: true,
-  procedure: '',
-  description: '',
-  amount: '$19.99',
-  purchaseDate: DATE,
-  modifiers: MODIFIERS,
-}
-
 export function capitalize (str) {
   return `${str.charAt(0).toUpperCase()}${str.slice(1)}`
 }
 
-export function toNumeric (str) {
-  return Number(str.replace(/\$|,/g, ''))
+export function toNumeric (str, allowDecimal = false) {
+  return str.replace(allowDecimal ? /\$|,/g : /\D/g, '')
 }
 
 export function toCurrency (v) {
@@ -204,7 +182,7 @@ export function objToHours (v) {
   const model = map(v, (keyPath, value) =>
     (keyPath[0] !== 'period' ? Number(value) : value))
 
-  const offset = model.period === 'PM' ? 12 : 0
+  const offset = model.period === PERIOD.PM ? 12 : 0
 
   return model.hours + (model.minutes / 60) + offset
 }

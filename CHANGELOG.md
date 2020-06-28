@@ -1,7 +1,112 @@
+# CHANGELOG
+
+## v1.1
+
 - Added `moveItem()` for easily moving an item to another spot in an array
 - Added `swapItem()` for easily swapping two items in an array
 
-- Selectors can now be declared for arrays and on a per-element-basis:
+## v2
+
+### Selector Access to Top-Level Properties is Consistent with Sub-Level Properties
+
+Previously, selectors accessed top-level properties were pretty direct in previous versions.
+
+Take this model for example:
+
+```js
+const MODEL = {
+  email: 'john@doe.io',
+  name: {
+    first: 'John',
+    last: 'Doe',
+  },
+}
+```
+
+In previous versions of `FormService`, selectors could be defined for top-level properties such as `email` like this:
+
+```js
+const SELECTORS = {
+  email: [isEmail],
+  name: [required],
+}
+```
+
+Then, sub-object properties were accessed via the `children` sub-selector:
+
+```js
+const SELECTORS = {
+  email: [isEmail],
+  name: {
+    children: {
+      first: [required],
+      last: [required],
+    },
+  },
+}
+```
+
+The `children` sub-selector was created to eliminate any potential any chance of reserved words. For example, if the `children` sub-selector didn't exist, and the data had a properties named `clipErrors` or `validators`, then `FormService` would process them as modifiers instead of as selectors. The top-level object in a `model` was treated special in the sense that it couldn't have modifiers applied to it such as `clipErrors`, `validators`, etc. This limited its use.
+
+This has now been changed as `children` is always required to access top-level properties going forward:
+
+```js
+const SELECTORS = {
+  children: {
+    email: [isEmail],
+    name: [required],
+  },
+}
+```
+
+Although this is a bit more verbose, the consistent behavior allows us to write selectors for the entire object:
+
+```js
+const SELECTORS = {
+  format: v => v, // format entire schema at the top-level
+  unformat: v => v, // format entire schema at the top-level
+  validators: [], // top-level validation
+  children: {
+    email: [isEmail],
+    name: [required],
+  },
+}
+```
+
+This also allows the root object of the schema to be an array going forward:
+
+```js
+const MODEL = [
+  {
+    id: '1',
+    hp: 520,
+    name: 'Tidus',
+  },
+  {
+    id: '2',
+    hp: 1030,
+    name: 'Auron',
+  },
+  {
+    id: '3',
+    hp: 475,
+    name: 'Yuna',
+  },
+]
+```
+
+```js
+const SELECTORS = {
+  format: v => v, // format the entire array
+  unformat: v => v, // unformat the entire array
+  $: {
+    format: v => v, // format each array element
+    unformat: v => v, // unformat each array element
+  },
+}
+```
+
+# Clearer Syntax for Declaring Selectors for Array Elements
 
 ```js
 const MODEL = {

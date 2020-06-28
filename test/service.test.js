@@ -21,8 +21,6 @@ import {
 
 import {
   PERIOD,
-  CHARGE_MODEL,
-  CHARGE_STATE,
   ENEMY_MODEL,
   ENEMY_ERRORS,
   ENEMY_SELECTORS,
@@ -41,6 +39,7 @@ import {
 describe.only('FormService', () => {
   let sandbox
   let service
+  let model
   let onChangeSpy
 
   const getLastChange = () => onChangeSpy.lastCall.args
@@ -90,50 +89,128 @@ describe.only('FormService', () => {
   })
 
   describe('formatters', () => {
-    context('when converters are provided', () => {
-      let requiredSpy
-  
+    const TIME_NUM = 4.25
+    const TIME_OBJ = {
+      hours: 4,
+      minutes: 15,
+      period: PERIOD.AM,
+    }
+
+    context('when formatting a field only', () => {
+      const MODEL = { amount: 42 }
+      const SELECTORS = {
+        amount: {
+          format: v => toCurrency(v / 100)
+        },
+      }
+
       beforeEach(() => {
-        const selectors = {
-          procedure: [required()],
-          modifiers: {
-            genItem: () => '',
-            validators: [failValidator],
-          },
-          amount: {
-            format: v => toCurrency(v),
-            unformat: v => toNumeric(v),
-          },
-        }
-  
-        requiredSpy = sandbox.spy(selectors.procedure[0], 'validate')
-        service = new FormService(CHARGE_MODEL, selectors, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        model = service.buildModel()
       })
-  
-      it('produces a state with the proper conversions', () =>
-        expect(service.__state).to.be.eql(CHARGE_STATE))
+
+      it('formats the field', () =>
+        expect(service.__state.amount).to.be.eq('$0.42'))
+
+      it('does not unformat the field', () =>
+        expect(model.amount).to.be.eq('$0.42'))
+    })
+
+    context('when unformatting a field only', () => {
+      const MODEL = { amount: '$0.42' }
+      const SELECTORS = {
+        amount: {
+          unformat: v => Number(toNumeric(v, true)) * 100,
+        },
+      }
+
+      beforeEach(() => {
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        model = service.buildModel()
+      })
+
+      it('does not change the field', () =>
+        expect(service.__state.amount).to.be.eq('$0.42'))
+
+      it('unformats the field', () =>
+        expect(model.amount).to.be.eq(42))
+    })
+
+    context('when both converters are both provided', () => {
+      const MODEL = { amount: 42 }
+      const SELECTORS = {
+        amount: {
+          format: v => toCurrency(v / 100),
+          unformat: v => Number(toNumeric(v, true)) * 100,
+        },
+      }
+
+      beforeEach(() => {
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        model = service.buildModel()
+      })
+
+      it('formats the field', () =>
+        expect(service.__state.amount).to.be.eq('$0.42'))
+
+      it('unformats the field', () =>
+        expect(model.amount).to.be.eq(42))
+    })
+
+    context('when formatting from primitive to object', () => {
+      const MODEL = { time: TIME_NUM }
+      const SELECTORS = {
+        time: {
+          format: v => hoursToObj(v),
+          unformat: v => objToHours(v),
+        },
+      }
+
+      beforeEach(() => {
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        model = service.buildModel()
+      })
+
+      it('formats the field', () =>
+        expect(service.__state.time).to.be.eql(TIME_OBJ))
+
+      it('unformats the field', () =>
+        expect(model.time).to.be.eq(TIME_NUM))
+    })
+
+    context('when formatting from object to primitive', () => {
+      const MODEL = { time: TIME_OBJ }
+      const SELECTORS = {
+        time: {
+          format: v => objToHours(v),
+          unformat: v => hoursToObj(v),
+        },
+      }
+
+      beforeEach(() => {
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        model = service.buildModel()
+      })
+
+      it('formats the field', () =>
+        expect(service.__state.time).to.be.eq(TIME_NUM))
+
+      it('unformats the field', () =>
+        expect(model.time).to.be.eql(TIME_OBJ))
     })
   
     context('when converters are provided to array items', () => {
-      const validator = {
-        error: 'Invalid',
-        validate: () => true,
-      }
-  
       const MODEL = {
         items: [1, 4.25, 14.75],
       }
   
-      const MODEL_EXPECTED = {
+      const STATE = {
         items: [
           { hours: 1, minutes: 0, period: PERIOD.AM },
           { hours: 4, minutes: 15, period: PERIOD.AM },
           { hours: 2, minutes: 45, period: PERIOD.PM },
         ],
       }
-  
-      const ITEM_ADDED_HOURS = 16.75
-      const ITEM_ADDED_OBJ = { hours: 4, minutes: 45, period: PERIOD.PM }
   
       const SELECTORS = {
         items: {
@@ -150,43 +227,43 @@ describe.only('FormService', () => {
   
       beforeEach(() => {
         service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        model = service.buildModel()
       })
   
-      it('invokes callback', () => expect(getLastChange()).to.be.eql([
-        false,
-        MODEL_EXPECTED,
-        {
-          items: ['', '', ''],
-        },
-      ]))
-  
-      context('when adding an item', () => {
-        beforeEach(() => {
-          service.addItem('items')
-        })
-  
-        it('invokes callback', () => expect(getLastChange()).to.be.eql([
-          true,
-          {
-            items: [...MODEL_EXPECTED.items, ITEM_ADDED_OBJ]
-          },
-          {
-            items: ['', '', '', ''],
-          },
-        ]))
-      })
+      it('formats the state', () =>
+        expect(service.__state).to.be.eql(STATE))
+
+      it('unformats the state', () =>
+        expect(model).to.be.eql(MODEL))
     })
 
-    context('when format() adds array elements', () => {
-      const MODEL = { phones: [{ number: '7025551234', type: 'Home' }] }
+    context('when providing nested formatters', () => {
+      const MODEL = {
+        phones: [{
+          number: '7025551234',
+          type: 'Home',
+        }],
+      }
+
+      const STATE = {
+        phones: [{
+          number: '(702) 555-1234',
+          type: 'Home',
+        }],
+      }
+
       const SELECTORS = {
         phones: {
           format: v => padArray(v),
           unformat: v => filterEmpty(v),
           children: {
-            number: {
-              format: v => toPhoneNumber(v),
-              unformat: v => toNumeric(v),
+            $: {
+              children: {
+                number: {
+                  format: v => toPhoneNumber(v),
+                  unformat: v => toNumeric(v),
+                },
+              },
             },
           },
         },
@@ -194,10 +271,14 @@ describe.only('FormService', () => {
 
       beforeEach(() => {
         service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        model = service.buildModel()
       })
 
-      it('does not throw an error', () =>
-        expect(service.buildModel()).to.not.throw)
+      it('formats the state', () =>
+        expect(service.__state).to.be.eql(STATE))
+
+      it('unformats the state', () =>
+        expect(model).to.be.eql(MODEL))
     })
   })
 
@@ -649,6 +730,7 @@ describe.only('FormService', () => {
     })
   })
 
+  // TODO: test with converters
   describe('addItem()', () => {
     const MODEL = { items: [] }
 
