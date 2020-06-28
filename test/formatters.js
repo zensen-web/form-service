@@ -47,3 +47,10 @@ export function objToHours (v) {
 
   return model.hours + (model.minutes / 60) + offset
 }
+
+export function timeToScalar (time) {
+  const periodToMinutes =
+    time.period === PERIOD.PM && time.hours !== 12 ? 720 : 0
+
+  return periodToMinutes + (time.hours * 60) + (time.minutes)
+}

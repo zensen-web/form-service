@@ -23,18 +23,17 @@ import {
 } from '../src/validators'
 
 import {
+  PERIOD,
   toNumeric,
   toCurrency,
   toPhoneNumber,
+  hoursToObj,
+  objToHours,
+  timeToScalar,
 } from './formatters'
 
 const DATE = new Date(2020, 0, 1, 0, 0, 0, 0)
 const MODIFIERS = ['ab', 'cd', 'ef', 'gh']
-
-const PERIOD = {
-  AM: 'am',
-  PM: 'pm',
-}
 
 const MODEL = {
   id: '123',
@@ -138,31 +137,6 @@ const intervalValidator = {
 
     return key === 'start' ? (minutes > otherMinutes) : (minutes < otherMinutes)
   },
-}
-
-function timeToScalar (time) {
-  const periodToMinutes =
-    time.period === PERIOD.PM && time.hours !== 12 ? 720 : 0
-
-  return periodToMinutes + (time.hours * 60) + (time.minutes)
-}
-
-
-function hoursToObj (v) {
-  return {
-    hours: Math.floor(v > 12 ? v - 12 : v),
-    minutes: (v - Math.floor(v)) * 60,
-    period: v >= 12 ? PERIOD.PM : PERIOD.AM,
-  }
-}
-
-function objToHours (v) {
-  const model = map(v, (keyPath, value) =>
-    (keyPath[0] !== 'period' ? Number(value) : value))
-
-  const offset = model.period === 'PM' ? 12 : 0
-
-  return model.hours + (model.minutes / 60) + offset
 }
 
 describe('FormService', () => {
