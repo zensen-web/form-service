@@ -1,5 +1,4 @@
 import sinon from 'sinon'
-import pkg from 'validator'
 
 import {
   FormService,
@@ -12,8 +11,6 @@ import {
 import {
   filterEmpty,
   padArray,
-  map,
-  getValueByPath,
 } from '../src/utils'
 
 import {
@@ -29,8 +26,11 @@ import {
   toPhoneNumber,
   hoursToObj,
   objToHours,
-  timeToScalar,
-} from './formatters'
+  passValidator,
+  phoneNumberValidator,
+  segmentValidator,
+  intervalValidator,
+} from './helpers'
 
 const DATE = new Date(2020, 0, 1, 0, 0, 0, 0)
 const MODIFIERS = ['ab', 'cd', 'ef', 'gh']
@@ -89,54 +89,6 @@ const ERROR_SCHEMA = {
   amount: '',
   purchaseDate: '',
   modifiers: '',
-}
-
-const passValidator = {
-  error: '',
-  validator: () => true,
-}
-
-const phoneNumberValidator = {
-  error: 'Invalid phone number',
-  validate: v => !v || pkg.isMobilePhone(v),
-}
-
-const segmentValidator = {
-  error: 'Conflicting Time',
-  validate: (v, keyPath, state) => {
-    const key = keyPath[keyPath.length - 1]
-    const otherKey = key === 'start' ? 'end' : 'start'
-    const durationPath = keyPath.slice(0, keyPath.length - 1)
-    const otherPath = [...durationPath, otherKey]
-    const minutes = timeToScalar(v)
-    const otherMinutes = timeToScalar(getValueByPath(state, otherPath))
-
-    return key === 'start' ? (minutes < otherMinutes) : (minutes > otherMinutes)
-  },
-}
-
-const intervalValidator = {
-  error: 'Intersecting Interval',
-  validate: (v, keyPath, state) => {
-    const key = keyPath[keyPath.length - 1]
-    const otherKey = key === 'start' ? 'end' : 'start'
-    const segmentPath = keyPath.slice(0, keyPath.length - 1)
-    const segmentIndex = Number(segmentPath[segmentPath.length - 1])
-    const offset = key === 'start' ? -1 : 1
-    const otherIndex = segmentIndex + offset
-    const itemsPath = keyPath.slice(0, keyPath.length - 2)
-    const items = getValueByPath(state, itemsPath)
-
-    if (otherIndex < 0 || otherIndex > items.length - 1) {
-      return true
-    }
-
-    const otherPath = [...itemsPath, `${otherIndex}`, otherKey]
-    const minutes = timeToScalar(v)
-    const otherMinutes = timeToScalar(getValueByPath(state, otherPath))
-
-    return key === 'start' ? (minutes > otherMinutes) : (minutes < otherMinutes)
-  },
 }
 
 describe('FormService', () => {
