@@ -67,7 +67,7 @@ export default class FormService {
     this.__onChange = onChange
 
     this.refresh(model)
-    this.__verifySchema()
+    this.__verifySelectors()
   }
 
   refresh (model) {
@@ -214,7 +214,7 @@ export default class FormService {
     this.__onChange(this.isDirty, this.__state, this.__errors)
   }
 
-  __verifySchema () {
+  __verifySelectors () {
     traverse(this.__state, (childPath, v) => {
       const validators = this.getValidators(childPath)
 
