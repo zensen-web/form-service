@@ -90,6 +90,31 @@ describe.only('FormService', () => {
     })
   })
 
+  describe('formatters', () => {
+    context('when format() adds array elements', () => {
+      const MODEL = { phones: [{ number: '7025551234', type: 'Home' }] }
+      const SELECTORS = {
+        phones: {
+          format: v => padArray(v),
+          unformat: v => filterEmpty(v),
+          children: {
+            number: {
+              format: v => toPhoneNumber(v),
+              unformat: v => toNumeric(v),
+            },
+          },
+        },
+      }
+
+      beforeEach(() => {
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+      })
+
+      it('does not throw an error', () =>
+        expect(service.buildModel()).to.not.throw)
+    })
+  })
+
   describe('getSelectorPath()', () => {
     beforeEach(() => {
       service = new FormService(ENEMY_MODEL, ENEMY_SELECTORS, onChangeSpy)
@@ -833,43 +858,6 @@ describe.only('FormService', () => {
         it('clips the schema on the new item', () =>
           expect(service.__pristine).to.be.eql(RESULT_ADDED))
       })
-    })
-  })
-
-  describe('when using nested formatters', () => {
-    const SELECTORS = {
-      phones: {
-        format: v => padArray(v),
-        unformat: v => filterEmpty(v),
-        children: {
-          number: {
-            format: v => toPhoneNumber(v),
-            unformat: v => toNumeric(v),
-          },
-        },
-      },
-    }
-
-    context('when removing array elements', () => {
-      const MODEL = { phones: [{ number: '7025551234', type: '' }] }
-
-      beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
-      })
-
-      it('does not throw an error', () =>
-        expect(service.buildModel()).to.not.throw)
-    })
-
-    context('when format() adds array elements', () => {
-      const MODEL = { phones: [{ number: '7025551234', type: 'Home' }] }
-
-      beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
-      })
-
-      it('does not throw an error', () =>
-        expect(service.buildModel()).to.not.throw)
     })
   })
 
