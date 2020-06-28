@@ -15,7 +15,7 @@
   "scripts": {
     "install:clear": "rm -rf node_modules",
     "lint": "eslint --fix",
-    "test": "nyc --reporter=html --all mocha --require @babel/register 'test/**/**.test.js'",
+    "test": "nyc --reporter=html --all mocha --exit --require @babel/register 'test/**/**.test.js'",
     "test:watch": "yarn test --watch"
   },
   "keywords": [
