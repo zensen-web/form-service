@@ -71,7 +71,7 @@ const ERROR_SCHEMA = {
   modifiers: '',
 }
 
-describe('FormService', () => {
+describe.only('FormService', () => {
   let sandbox
   let service
   let requiredValidator
@@ -421,6 +421,136 @@ describe('FormService', () => {
       })
   
       it('throw an error', () => expect(fn).to.throw(PristineError))
+    })
+  })
+
+  describe('addItem()', () => {
+    context('when adding a primitive item', () => {
+      const MODEL = {
+        items: [],
+      }
+
+      const SELECTORS = {
+        items: {
+          genItem: () => '',
+        },
+      }
+
+      beforeEach(() => {
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service.addItem('items')
+      })
+
+      it('provides the correct errors', () =>
+        expect(service.__errors).to.be.eql({ items: [''] }))
+    })
+
+    context('when adding an object', () => {
+      const MODEL = {
+        items: [],
+      }
+
+      const SELECTORS = {
+        items: {
+          genItem: () => ({ id: '' }),
+        },
+      }
+
+      beforeEach(() => {
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service.addItem('items')
+      })
+
+      it('provides the correct errors', () =>
+        expect(service.__errors).to.be.eql({ items: [{ id: '' }] }))
+    })
+
+    context('when adding an object and clipping errors for the array', () => {
+      const MODEL = {
+        items: [],
+      }
+
+      const SELECTORS = {
+        items: {
+          genItem: () => ({ id: '' }),
+          validators: [],
+        },
+      }
+
+      beforeEach(() => {
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service.addItem('items')
+      })
+
+      it('provides the correct errors', () =>
+        expect(service.__errors).to.be.eql({ items: '' }))
+    })
+
+    context('when adding an object and clipping errors for the array element', () => {
+      const MODEL = {
+        items: [],
+      }
+
+      const SELECTORS = {
+        items: { 
+          genItem: () => ({ id: '' }),
+          children: {
+            $: {
+              validators: [],
+            },
+          },
+        },
+      }
+
+      beforeEach(() => {
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service.addItem('items')
+      })
+
+      it('invokes the callback', () =>
+        expect(service.__errors).to.be.eql({ items: [''] }))
+    })
+
+    context.skip('when adding an object item', () => {
+      beforeEach(() => {
+        service = new FormService(
+          {
+            items: [
+              {
+                start: { hours: 8, minutes: 0, period: PERIOD.AM },
+                end: { hours: 12, minutes: 0, period: PERIOD.PM },
+              },
+            ],
+          },
+          {
+            items: {
+              genItem: () => ({
+                start: { hours: 7, minutes: 0, period: PERIOD.AM },
+                end: { hours: 17, minutes: 0, period: PERIOD.PM },
+              }),
+              children: {
+                $: {
+                  children: {
+                    start: [segmentValidator, intervalValidator],
+                    end: [segmentValidator, intervalValidator],
+                  },
+                },
+              },
+            },
+          },
+          onChangeSpy,
+        )
+
+        service.addItem('items')
+      })
+
+      it('provides the correct errors', () =>
+        expect(service.__errors).to.eql({
+          items: [
+            { start: '', end: '' },
+            { start: '', end: '' },
+          ],
+        }))
     })
   })
 
@@ -1037,7 +1167,7 @@ describe('FormService', () => {
       })
     })
 
-    context('when errors are clipped', () => {
+    context.skip('when errors are clipped', () => {
       beforeEach(() => {
         service = new FormService(
           {
@@ -1058,17 +1188,15 @@ describe('FormService', () => {
           },
           {
             items: {
+              genItem: () => ({
+                start: { hours: 7, minutes: 0, period: PERIOD.AM },
+                end: { hours: 17, minutes: 0, period: PERIOD.PM },
+              }),
               children: {
                 $: {
                   children: {
-                    start: {
-                      clipErrors: true,
-                      validators: [segmentValidator, intervalValidator],
-                    },
-                    end: {
-                      clipErrors: true,
-                      validators: [segmentValidator, intervalValidator],
-                    },
+                    start: [segmentValidator, intervalValidator],
+                    end: [segmentValidator, intervalValidator],
                   },
                 },
               },
