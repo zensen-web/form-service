@@ -91,6 +91,93 @@ describe.only('FormService', () => {
   })
 
   describe('formatters', () => {
+    context('when converters are provided', () => {
+      let requiredSpy
+  
+      beforeEach(() => {
+        const selectors = {
+          procedure: [required()],
+          modifiers: {
+            genItem: () => '',
+            validators: [failValidator],
+          },
+          amount: {
+            format: v => toCurrency(v),
+            unformat: v => toNumeric(v),
+          },
+        }
+  
+        requiredSpy = sandbox.spy(selectors.procedure[0], 'validate')
+        service = new FormService(CHARGE_MODEL, selectors, onChangeSpy)
+      })
+  
+      it('produces a state with the proper conversions', () =>
+        expect(service.__state).to.be.eql(CHARGE_STATE))
+    })
+  
+    context('when converters are provided to array items', () => {
+      const validator = {
+        error: 'Invalid',
+        validate: () => true,
+      }
+  
+      const MODEL = {
+        items: [1, 4.25, 14.75],
+      }
+  
+      const MODEL_EXPECTED = {
+        items: [
+          { hours: 1, minutes: 0, period: PERIOD.AM },
+          { hours: 4, minutes: 15, period: PERIOD.AM },
+          { hours: 2, minutes: 45, period: PERIOD.PM },
+        ],
+      }
+  
+      const ITEM_ADDED_HOURS = 16.75
+      const ITEM_ADDED_OBJ = { hours: 4, minutes: 45, period: PERIOD.PM }
+  
+      const SELECTORS = {
+        items: {
+          genItem: () => ITEM_ADDED_HOURS,
+          children: {
+            $: {
+              validators: [],
+              format: v => hoursToObj(v),
+              unformat: v => objToHours(v),
+            },
+          },
+        },
+      }
+  
+      beforeEach(() => {
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+      })
+  
+      it('invokes callback', () => expect(getLastChange()).to.be.eql([
+        false,
+        MODEL_EXPECTED,
+        {
+          items: ['', '', ''],
+        },
+      ]))
+  
+      context('when adding an item', () => {
+        beforeEach(() => {
+          service.addItem('items')
+        })
+  
+        it('invokes callback', () => expect(getLastChange()).to.be.eql([
+          true,
+          {
+            items: [...MODEL_EXPECTED.items, ITEM_ADDED_OBJ]
+          },
+          {
+            items: ['', '', '', ''],
+          },
+        ]))
+      })
+    })
+
     context('when format() adds array elements', () => {
       const MODEL = { phones: [{ number: '7025551234', type: 'Home' }] }
       const SELECTORS = {
@@ -659,93 +746,6 @@ describe.only('FormService', () => {
 
     it('swaps the selected items in the pristine schema', () =>
       expect(service.__pristine.ailments).to.be.eql(EXPECTED_PRISTINE))
-  })
-
-  context('when converters are provided', () => {
-    let requiredSpy
-
-    beforeEach(() => {
-      const selectors = {
-        procedure: [required()],
-        modifiers: {
-          genItem: () => '',
-          validators: [failValidator],
-        },
-        amount: {
-          format: v => toCurrency(v),
-          unformat: v => toNumeric(v),
-        },
-      }
-
-      requiredSpy = sandbox.spy(selectors.procedure[0], 'validate')
-      service = new FormService(CHARGE_MODEL, selectors, onChangeSpy)
-    })
-
-    it('produces a state with the proper conversions', () =>
-      expect(service.__state).to.be.eql(CHARGE_STATE))
-  })
-
-  context('when converters are provided to array items', () => {
-    const validator = {
-      error: 'Invalid',
-      validate: () => true,
-    }
-
-    const MODEL = {
-      items: [1, 4.25, 14.75],
-    }
-
-    const MODEL_EXPECTED = {
-      items: [
-        { hours: 1, minutes: 0, period: PERIOD.AM },
-        { hours: 4, minutes: 15, period: PERIOD.AM },
-        { hours: 2, minutes: 45, period: PERIOD.PM },
-      ],
-    }
-
-    const ITEM_ADDED_HOURS = 16.75
-    const ITEM_ADDED_OBJ = { hours: 4, minutes: 45, period: PERIOD.PM }
-
-    const SELECTORS = {
-      items: {
-        genItem: () => ITEM_ADDED_HOURS,
-        children: {
-          $: {
-            validators: [],
-            format: v => hoursToObj(v),
-            unformat: v => objToHours(v),
-          },
-        },
-      },
-    }
-
-    beforeEach(() => {
-      service = new FormService(MODEL, SELECTORS, onChangeSpy)
-    })
-
-    it('invokes callback', () => expect(getLastChange()).to.be.eql([
-      false,
-      MODEL_EXPECTED,
-      {
-        items: ['', '', ''],
-      },
-    ]))
-
-    context('when adding an item', () => {
-      beforeEach(() => {
-        service.addItem('items')
-      })
-
-      it('invokes callback', () => expect(getLastChange()).to.be.eql([
-        true,
-        {
-          items: [...MODEL_EXPECTED.items, ITEM_ADDED_OBJ]
-        },
-        {
-          items: ['', '', '', ''],
-        },
-      ]))
-    })
   })
 
   describe('clipPristine', () => {
