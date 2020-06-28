@@ -267,17 +267,19 @@ export default class FormService {
       throw new TypeError(`Invalid path: ${keyPath.join('.')}`)
     }
 
-    if (typeof oldValue === 'object') {
-      const oldPathMap = getKeyPaths(oldValue)
+    if (oldValue !== null && value !== null) {
+      if (typeof oldValue === 'object') {
+        const oldPathMap = getKeyPaths(oldValue)
 
-      if (typeof value === 'object') {
-        const pathMap = getKeyPaths(value)
+        if (typeof value === 'object') {
+          const pathMap = getKeyPaths(value)
 
-        if (!equal(oldPathMap, pathMap)) {
+          if (!equal(oldPathMap, pathMap)) {
+            throw new MutationError(keyPath, value, oldValue)
+          }
+        } else {
           throw new MutationError(keyPath, value, oldValue)
         }
-      } else {
-        throw new MutationError(keyPath, value, oldValue)
       }
     }
   }

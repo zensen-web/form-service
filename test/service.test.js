@@ -21,6 +21,8 @@ import {
 
 import {
   PERIOD,
+  ENEMY_MODEL,
+  ENEMY_SELECTORS,
   toNumeric,
   toCurrency,
   toPhoneNumber,
@@ -44,29 +46,6 @@ const MODEL = {
   amount: 19.99,
   purchaseDate: DATE,
   modifiers: MODIFIERS,
-}
-
-const MODEL_COMPLEX = {
-  name: 'Gremlin',
-  job: 'monster',
-  stats: {
-    attack: 4,
-    evasion: 3,
-    speed: 2,
-    attributes: {
-      level: 9,
-      experience: 1000,
-    },
-  },
-  ailments: [3, 4, 7],
-  items: [
-    { id: 1, rate: 0.1 },
-    { id: 3, rate: 0.4 },
-  ],
-  triangles: [
-    [0, 1, 2],
-    [0, 2, 3],
-  ],
 }
 
 const STATE = {
@@ -110,60 +89,67 @@ describe('FormService', () => {
     sandbox.restore()
   })
 
-  context('when a complex set of selectors are provided', () => {
-    const genFmt = () => ({ format: v => v, unformat: v => v })
+  describe('verifying selectors', () => {
+    context('when nested validators are found', () => {
+      const MODEL = {
+        stats: {
+          a: '',
+        },
+      }
 
-    const SELECTORS = {
-      name: genFmt(),
-      // 'job' is intentionally left out...
-      stats: {
-        ...genFmt(),
-        children: {
-          attack: genFmt(),
-          evasion: genFmt(),
-          speed: genFmt(),
-          attributes: {
-            ...genFmt(),
-            children: {
-              level: genFmt(),
-              experience: genFmt(),
-            },
+      const SELECTORS = {
+        stats: {
+          validators: [passValidator],
+          children: {
+            a: [passValidator],
           },
         },
-      },
-      ailments: {
-        ...genFmt(),
-        children: {
-          $: genFmt(),
+      }
+
+      const fn = () => new FormService(MODEL, SELECTORS, onChangeSpy)
+
+      it('throw an error', () => expect(fn).to.throw(VerificationError))
+    })
+
+    context.skip('when setting ignorePristine on object-type key', () => {
+      const MODEL = {
+        stats: {
+          a: '',
         },
-      },
-      items: {
-        ...genFmt(),
-        children: {
-          $: {
-            ...genFmt(),
-            children: {
-              id: genFmt(),
-              rate: genFmt(),
-            },
-          },
+      }
+
+      const SELECTORS = {
+        stats: {
+          ignorePristine: true,
         },
-      },
-      triangles: {
-        ...genFmt(),
-        children: {
-          $: {
-            ...genFmt(),
-            children: {
-              $: genFmt(),
-            },
-          },
-        },
-      },
-    }
+      }
+
+      const fn = () => new FormService(MODEL, SELECTORS, onChangeSpy)
+
+      it('throw an error', () => expect(fn).to.throw(VerificationError))
+    })
+
+    context('when applying a null value', () => {
+      const MODEL = {
+        date: null,
+      }
+
+      const fn = () => service.apply('date', null)
+
+      beforeEach(() => {
+        service = new FormService(MODEL, {}, onChangeSpy)
+      })
+
+      it('throw an error', () => expect(fn).to.not.throw())
+    })
+  })
+
+  describe('selectors', () => {
+    const MODEL = ENEMY_MODEL
+    const SELECTORS = ENEMY_SELECTORS
 
     beforeEach(() => {
-      service = new FormService(MODEL_COMPLEX, SELECTORS, onChangeSpy)
+      service = new FormService(MODEL, SELECTORS, onChangeSpy)
     })
 
     describe('getSelectorPath()', () => {
@@ -359,68 +345,6 @@ describe('FormService', () => {
 
       it('throws an error when an invalid path is provided: "triangles.0.3"', () =>
         expect(() => service.getSelector(['triangles', '0', '3'])).to.throw(PathError))
-    })
-  })
-
-  context('when converters are NOT provided', () => {
-    const ERRORS = {
-      name: '',
-      job: '',
-      stats: {
-        attack: '',
-        evasion: '',
-        speed: '',
-        attributes: {
-          level: '',
-          experience: '',
-        },
-      },
-      ailments: ['', '', ''],
-      items: [
-        { id: '', rate: '' },
-        { id: '', rate: '' },
-      ],
-      triangles: [
-        ['', '', ''],
-        ['', '', ''],
-      ],
-    }
-
-    beforeEach(() => {
-      service = new FormService(MODEL_COMPLEX, {}, onChangeSpy)
-    })
-
-    it('invokes onChange', () =>
-      expect(getLastChange()).to.be.eql([false, MODEL_COMPLEX, ERRORS]))
-
-    context('when modifying a key that does not exist', () => {  
-      const NAME_INVALID = 'asdf'
-      const fn = () => service.apply(NAME_INVALID)
-  
-      it('throw an error', () =>
-        expect(fn).to.throw(TypeError, `Invalid path: ${NAME_INVALID}`))
-    })
-
-    context('when mutating an object to a primitive', () => {  
-      const fn = () => service.apply('stats', '')
-  
-      it('throw an error', () => expect(fn).to.throw(MutationError))
-    })
-
-    context('when adding a rogue property to sub-object', () => {  
-      const fn = () => service.apply('stats', {})
-  
-      it('throw an error', () => expect(fn).to.throw(MutationError))
-    })
-
-    context('when modifying a key that does not have pristine status', () => {  
-      const fn = () => service.apply('stats', {
-        attack: 'a',
-        evasion: 'b',
-        speed: 'c',
-      })
-  
-      it('throw an error', () => expect(fn).to.throw(PristineError))
     })
   })
 
