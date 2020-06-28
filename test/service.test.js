@@ -756,27 +756,6 @@ describe('FormService', () => {
       validate: v => v === NAME_MATCH,
     }
 
-    context('when nested validators are found', () => {
-      const MODEL = {
-        stats: {
-          a: '',
-        },
-      }
-
-      const SELECTORS = {
-        stats: {
-          validators: [passValidator],
-          children: {
-            a: [passValidator],
-          },
-        },
-      }
-
-      const fn = () => new FormService(MODEL, SELECTORS, onChangeSpy)
-
-      it('throw an error', () => expect(fn).to.throw(VerificationError))
-    })
-
     context('when invalid data is provided (single validator)', () => {
       beforeEach(() => {
         service = new FormService(
