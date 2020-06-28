@@ -872,26 +872,24 @@ describe.only('FormService', () => {
   })
 
   describe('when using nested formatters', () => {
-    function genService (model) {
-      return new FormService(model, {
-        phones: {
-          format: v => padArray(v),
-          unformat: v => filterEmpty(v),
-          children: {
-            number: {
-              format: v => toPhoneNumber(v),
-              unformat: v => toNumeric(v),
-            },
+    const SELECTORS = {
+      phones: {
+        format: v => padArray(v),
+        unformat: v => filterEmpty(v),
+        children: {
+          number: {
+            format: v => toPhoneNumber(v),
+            unformat: v => toNumeric(v),
           },
         },
-      }, onChangeSpy)
+      },
     }
 
     context('when removing array elements', () => {
       const MODEL = { phones: [{ number: '7025551234', type: '' }] }
 
       beforeEach(() => {
-        service = genService(MODEL)
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
       })
 
       it('does not throw an error', () =>
@@ -902,7 +900,7 @@ describe.only('FormService', () => {
       const MODEL = { phones: [{ number: '7025551234', type: 'Home' }] }
 
       beforeEach(() => {
-        service = genService(MODEL)
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
       })
 
       it('does not throw an error', () =>
