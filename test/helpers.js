@@ -164,17 +164,6 @@ export const CHARGE_STATE = {
   modifiers: MODIFIERS,
 }
 
-export const CHARGE_ERRORS = {
-  id: '',
-  taxId: '',
-  active: '',
-  procedure: '',
-  description: '',
-  amount: '',
-  purchaseDate: '',
-  modifiers: '',
-}
-
 export function capitalize (str) {
   return `${str.charAt(0).toUpperCase()}${str.slice(1)}`
 }
