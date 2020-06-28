@@ -92,7 +92,7 @@ export default class FormService {
     this.__verifyValue(keyPath, value)
     setValueByPath(this.__state, keyPath, value)
 
-    this.__validateKey(keyPath)
+    this.validateKey(keyPath)
     this.__spreadSchema('__state', keyPath)
     this.__modify(keyPath)
   }
@@ -163,7 +163,7 @@ export default class FormService {
       const pristine = getValueByPath(this.__pristine, keyPath)
 
       if (typeof pristine !== 'object') {
-        this.__validateKey(keyPath)
+        this.validateKey(keyPath)
       }
     })
 
@@ -172,6 +172,33 @@ export default class FormService {
     }
 
     return !this.hasErrors
+  }
+
+  validateKey (keyPath) {
+    const clippedPathIndex = keyPath.findIndex((_, index) => {
+      const subPath = keyPath.slice(0, index)
+      const selector = this.getSelector(subPath)
+
+      return selector && selector.validators
+    })
+
+    const validatorPathLength = clippedPathIndex !== -1
+      ? clippedPathIndex
+      : keyPath.length
+
+    const validatorPath = keyPath.slice(0, validatorPathLength)
+    const validators = this.getValidators(validatorPath)
+    const pristine = getValueByPath(this.__pristine, keyPath)
+
+    if (typeof pristine === 'object') {
+      throw new PristineError(keyPath)
+    }
+
+    if (validators && !pristine) {
+      this.__processValidator(keyPath, validatorPath, validators)
+    }
+
+    setValueByPath(this.__pristine, keyPath, false)
   }
 
   getSelectorPath (keyPath, ignoreCheck) {
@@ -392,33 +419,6 @@ export default class FormService {
     }
 
     this.__change()
-  }
-
-  __validateKey (keyPath) {
-    const clippedPathIndex = keyPath.findIndex((_, index) => {
-      const subPath = keyPath.slice(0, index)
-      const selector = this.getSelector(subPath)
-
-      return selector && selector.validators
-    })
-
-    const validatorPathLength = clippedPathIndex !== -1
-      ? clippedPathIndex
-      : keyPath.length
-
-    const validatorPath = keyPath.slice(0, validatorPathLength)
-    const validators = this.getValidators(validatorPath)
-    const pristine = getValueByPath(this.__pristine, keyPath)
-
-    if (typeof pristine === 'object') {
-      throw new PristineError(keyPath)
-    }
-
-    if (validators && !pristine) {
-      this.__processValidator(keyPath, validatorPath, validators)
-    }
-
-    setValueByPath(this.__pristine, keyPath, false)
   }
 
   __processValidator (keyPath, validatorPath, validators) {
