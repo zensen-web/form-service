@@ -12,11 +12,8 @@ import {
 } from './utils'
 
 export class VerificationError extends Error {
-  constructor (childPath, ancestorPath) {
-    const child = childPath.join('.')
-    const ancestor = ancestorPath.join('.')
-
-    super(`Child selector (${child}) has ancestor selector with validators: ${ancestor}`)
+  constructor (message) {
+    super(message)
   }
 }
 
@@ -249,11 +246,15 @@ export default class FormService {
         const parentPath = childPath.slice(0, childPath.length - 1)
 
         parentPath.forEach((_, index) => {
-          const path = parentPath.slice(0, index + 1)
-          const ancestorValidators = this.getValidators(path)
+          const ancestorPath = parentPath.slice(0, index + 1)
+          const ancestorValidators = this.getValidators(ancestorPath)
 
           if (ancestorValidators) {
-            throw new VerificationError(childPath, path)
+            throw new VerificationError(`Selector (${
+              childPath.join('.')
+            }) has ancestor selector with validators: ${
+              ancestorPath.join('.')
+            }`)
           }
         })
       }
