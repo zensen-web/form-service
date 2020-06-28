@@ -1,11 +1,11 @@
 import sinon from 'sinon'
 
 import {
-  FormService,
   VerificationError,
   PristineError,
   MutationError,
   PathError,
+  FormService,
 } from '../src'
 
 import {
@@ -107,205 +107,207 @@ describe.only('FormService', () => {
     })
   })
 
-  describe('selectors', () => {
+  describe('getSelectorPath()', () => {
     beforeEach(() => {
       service = new FormService(ENEMY_MODEL, ENEMY_SELECTORS, onChangeSpy)
     })
 
-    describe('getSelectorPath()', () => {
-      it('throws an error when an invalid path is provided: "asdf"', () =>
-        expect(() => service.getSelectorPath(['asdf'])).to.throw(PathError))
+    it('throws an error when an invalid path is provided: "asdf"', () =>
+      expect(() => service.getSelectorPath(['asdf'])).to.throw(PathError))
 
-      it('resolve the path for "name"', () =>
-        expect(service.getSelectorPath(['name'])).to.be.eql(['name']))
+    it('resolve the path for "name"', () =>
+      expect(service.getSelectorPath(['name'])).to.be.eql(['name']))
 
-      it('resolve the path for "job"', () =>
-        expect(service.getSelectorPath(['job'])).to.be.eql(['job']))
+    it('resolve the path for "job"', () =>
+      expect(service.getSelectorPath(['job'])).to.be.eql(['job']))
 
-      it('resolve the path for "stats"', () =>
-        expect(service.getSelectorPath(['stats'])).to.be.eql(['stats']))
+    it('resolve the path for "stats"', () =>
+      expect(service.getSelectorPath(['stats'])).to.be.eql(['stats']))
 
-      it('resolve the path for "stats.attack"', () =>
-        expect(service.getSelectorPath(['stats', 'attack'])).to.be.eql([
-          'stats', 'children', 'attack',
-        ]))
+    it('resolve the path for "stats.attack"', () =>
+      expect(service.getSelectorPath(['stats', 'attack'])).to.be.eql([
+        'stats', 'children', 'attack',
+      ]))
 
-      it('resolve the path for "stats.evasion"', () =>
-        expect(service.getSelectorPath(['stats', 'evasion'])).to.be.eql([
-          'stats', 'children', 'evasion',
-        ]))
+    it('resolve the path for "stats.evasion"', () =>
+      expect(service.getSelectorPath(['stats', 'evasion'])).to.be.eql([
+        'stats', 'children', 'evasion',
+      ]))
 
-      it('resolve the path for "stats.speed"', () =>
-        expect(service.getSelectorPath(['stats', 'speed'])).to.be.eql([
-          'stats', 'children', 'speed',
-        ]))
+    it('resolve the path for "stats.speed"', () =>
+      expect(service.getSelectorPath(['stats', 'speed'])).to.be.eql([
+        'stats', 'children', 'speed',
+      ]))
 
-      it('resolve the path for "stats.attributes"', () =>
-        expect(service.getSelectorPath(['stats', 'attributes'])).to.be.eql([
-          'stats', 'children', 'attributes',
-        ]))
+    it('resolve the path for "stats.attributes"', () =>
+      expect(service.getSelectorPath(['stats', 'attributes'])).to.be.eql([
+        'stats', 'children', 'attributes',
+      ]))
 
-      it('resolve the path for "stats.attributes.level"', () =>
-        expect(service.getSelectorPath(['stats', 'attributes', 'level'])).to.be.eql([
-          'stats', 'children', 'attributes', 'children', 'level',
-        ]))
+    it('resolve the path for "stats.attributes.level"', () =>
+      expect(service.getSelectorPath(['stats', 'attributes', 'level'])).to.be.eql([
+        'stats', 'children', 'attributes', 'children', 'level',
+      ]))
 
-      it('resolve the path for "stats.attributes.experience"', () =>
-        expect(service.getSelectorPath(['stats', 'attributes', 'experience'])).to.be.eql([
-          'stats', 'children', 'attributes', 'children', 'experience',
-        ]))
+    it('resolve the path for "stats.attributes.experience"', () =>
+      expect(service.getSelectorPath(['stats', 'attributes', 'experience'])).to.be.eql([
+        'stats', 'children', 'attributes', 'children', 'experience',
+      ]))
 
-      it('resolve the path for "stats.ailments"', () =>
-        expect(service.getSelectorPath(['ailments'])).to.be.eql(['ailments']))
+    it('resolve the path for "stats.ailments"', () =>
+      expect(service.getSelectorPath(['ailments'])).to.be.eql(['ailments']))
 
-      it('resolve the path for "ailments.0"', () =>
-        expect(service.getSelectorPath(['ailments', '0'])).to.be.eql([
-          'ailments', 'children', '$',
-        ]))
+    it('resolve the path for "ailments.0"', () =>
+      expect(service.getSelectorPath(['ailments', '0'])).to.be.eql([
+        'ailments', 'children', '$',
+      ]))
 
-      it('resolve the path for "items"', () =>
-        expect(service.getSelectorPath(['items'])).to.be.eql(['items']))
+    it('resolve the path for "items"', () =>
+      expect(service.getSelectorPath(['items'])).to.be.eql(['items']))
 
-      it('resolve the path for "items.0"', () =>
-        expect(service.getSelectorPath(['items', '0'])).to.be.eql([
-          'items', 'children', '$',
-        ]))
+    it('resolve the path for "items.0"', () =>
+      expect(service.getSelectorPath(['items', '0'])).to.be.eql([
+        'items', 'children', '$',
+      ]))
 
-      it('resolve the path for "items.0.id"', () =>
-        expect(service.getSelectorPath(['items', '0', 'id'])).to.be.eql([
-          'items', 'children', '$', 'children', 'id',
-        ]))
+    it('resolve the path for "items.0.id"', () =>
+      expect(service.getSelectorPath(['items', '0', 'id'])).to.be.eql([
+        'items', 'children', '$', 'children', 'id',
+      ]))
 
-      it('resolve the path for "items.0.rate"', () =>
-        expect(service.getSelectorPath(['items', '0', 'rate'])).to.be.eql([
-          'items', 'children', '$', 'children', 'rate',
-        ]))
+    it('resolve the path for "items.0.rate"', () =>
+      expect(service.getSelectorPath(['items', '0', 'rate'])).to.be.eql([
+        'items', 'children', '$', 'children', 'rate',
+      ]))
 
-      it('resolve the path for "triangles"', () =>
-        expect(service.getSelectorPath(['triangles'])).to.be.eql(['triangles']))
+    it('resolve the path for "triangles"', () =>
+      expect(service.getSelectorPath(['triangles'])).to.be.eql(['triangles']))
 
-      it('resolve the path for "triangles.0"', () =>
-        expect(service.getSelectorPath(['triangles', '0'])).to.be.eql([
-          'triangles', 'children', '$',
-        ]))
+    it('resolve the path for "triangles.0"', () =>
+      expect(service.getSelectorPath(['triangles', '0'])).to.be.eql([
+        'triangles', 'children', '$',
+      ]))
 
-      it('resolve the path for "triangles.0.0"', () =>
-        expect(service.getSelectorPath(['triangles', '0', '0'])).to.be.eql([
-          'triangles', 'children', '$', 'children', '$',
-        ]))
+    it('resolve the path for "triangles.0.0"', () =>
+      expect(service.getSelectorPath(['triangles', '0', '0'])).to.be.eql([
+        'triangles', 'children', '$', 'children', '$',
+      ]))
 
-      it('resolve the path for "triangles.0.1"', () =>
-        expect(service.getSelectorPath(['triangles', '0', '1'])).to.be.eql([
-          'triangles', 'children', '$', 'children', '$',
-        ]))
+    it('resolve the path for "triangles.0.1"', () =>
+      expect(service.getSelectorPath(['triangles', '0', '1'])).to.be.eql([
+        'triangles', 'children', '$', 'children', '$',
+      ]))
 
-      it('resolve the path for "triangles.0.2"', () =>
-        expect(service.getSelectorPath(['triangles', '0', '2'])).to.be.eql([
-          'triangles', 'children', '$', 'children', '$',
-        ]))
+    it('resolve the path for "triangles.0.2"', () =>
+      expect(service.getSelectorPath(['triangles', '0', '2'])).to.be.eql([
+        'triangles', 'children', '$', 'children', '$',
+      ]))
 
-      it('throws an error when an invalid path is provided: "triangles.0.3"', () =>
-        expect(() => service.getSelectorPath(['triangles.0.3'])).to.throw(PathError))
+    it('throws an error when an invalid path is provided: "triangles.0.3"', () =>
+      expect(() => service.getSelectorPath(['triangles.0.3'])).to.throw(PathError))
+  })
+
+  describe('getSelector()', () => {
+    beforeEach(() => {
+      service = new FormService(ENEMY_MODEL, ENEMY_SELECTORS, onChangeSpy)
     })
 
-    describe('getSelector()', () => {
-      it('throws an error when an invalid path is provided: "asdf"', () =>
-        expect(() => service.getSelector(['asdf'])).to.throw(PathError))
+    it('throws an error when an invalid path is provided: "asdf"', () =>
+      expect(() => service.getSelector(['asdf'])).to.throw(PathError))
 
-      it('finds the selector for "name"', () =>
-        expect(service.getSelector(['name'])).to.be.eq(ENEMY_SELECTORS.name))
+    it('finds the selector for "name"', () =>
+      expect(service.getSelector(['name'])).to.be.eq(ENEMY_SELECTORS.name))
 
-      it('does not find a selector for "job"', () =>
-        expect(service.getSelector(['job'])).to.be.eq(undefined))
+    it('does not find a selector for "job"', () =>
+      expect(service.getSelector(['job'])).to.be.eq(undefined))
 
-      it('finds a selector for "stats"', () =>
-        expect(service.getSelector(['stats'])).to.be.eq(ENEMY_SELECTORS.stats))
+    it('finds a selector for "stats"', () =>
+      expect(service.getSelector(['stats'])).to.be.eq(ENEMY_SELECTORS.stats))
 
-      it('finds a selector for "stats.attack"', () =>
-        expect(service.getSelector(['stats', 'attack'])).to.be.eq(
-          ENEMY_SELECTORS.stats.children.attack,
-        ))
+    it('finds a selector for "stats.attack"', () =>
+      expect(service.getSelector(['stats', 'attack'])).to.be.eq(
+        ENEMY_SELECTORS.stats.children.attack,
+      ))
 
-      it('finds a selector for "stats.evasion"', () =>
-        expect(service.getSelector(['stats', 'evasion'])).to.be.eq(
-          ENEMY_SELECTORS.stats.children.evasion,
-        ))
+    it('finds a selector for "stats.evasion"', () =>
+      expect(service.getSelector(['stats', 'evasion'])).to.be.eq(
+        ENEMY_SELECTORS.stats.children.evasion,
+      ))
 
-      it('finds a selector for "stats.speed"', () =>
-        expect(service.getSelector(['stats', 'speed'])).to.be.eq(
-          ENEMY_SELECTORS.stats.children.speed,
-        ))
+    it('finds a selector for "stats.speed"', () =>
+      expect(service.getSelector(['stats', 'speed'])).to.be.eq(
+        ENEMY_SELECTORS.stats.children.speed,
+      ))
 
-      it('finds a selector for "stats.attributes"', () =>
-        expect(service.getSelector(['stats', 'attributes'])).to.be.eq(
-          ENEMY_SELECTORS.stats.children.attributes,
-        ))
+    it('finds a selector for "stats.attributes"', () =>
+      expect(service.getSelector(['stats', 'attributes'])).to.be.eq(
+        ENEMY_SELECTORS.stats.children.attributes,
+      ))
 
-      it('finds a selector for "stats.attributes.level"', () =>
-        expect(service.getSelector(['stats', 'attributes', 'level'])).to.be.eq(
-          ENEMY_SELECTORS.stats.children.attributes.children.level,
-        ))
+    it('finds a selector for "stats.attributes.level"', () =>
+      expect(service.getSelector(['stats', 'attributes', 'level'])).to.be.eq(
+        ENEMY_SELECTORS.stats.children.attributes.children.level,
+      ))
 
-      it('finds a selector for "stats.attributes.experience"', () =>
-        expect(service.getSelector(['stats', 'attributes', 'experience'])).to.be.eq(
-          ENEMY_SELECTORS.stats.children.attributes.children.experience,
-        ))
+    it('finds a selector for "stats.attributes.experience"', () =>
+      expect(service.getSelector(['stats', 'attributes', 'experience'])).to.be.eq(
+        ENEMY_SELECTORS.stats.children.attributes.children.experience,
+      ))
 
-      it('finds a selector for "stats.ailments"', () =>
-        expect(service.getSelector(['ailments'])).to.be.eq(ENEMY_SELECTORS.ailments))
+    it('finds a selector for "stats.ailments"', () =>
+      expect(service.getSelector(['ailments'])).to.be.eq(ENEMY_SELECTORS.ailments))
 
-      it('finds a selector for "ailments.0"', () =>
-        expect(service.getSelector(['ailments', '0'])).to.be.eq(
-          ENEMY_SELECTORS.ailments.children.$,
-        ))
+    it('finds a selector for "ailments.0"', () =>
+      expect(service.getSelector(['ailments', '0'])).to.be.eq(
+        ENEMY_SELECTORS.ailments.children.$,
+      ))
 
-      it('finds a selector for "items"', () =>
-        expect(service.getSelector(['items'])).to.be.eq(ENEMY_SELECTORS.items))
+    it('finds a selector for "items"', () =>
+      expect(service.getSelector(['items'])).to.be.eq(ENEMY_SELECTORS.items))
 
-      it('finds a selector for "items.0"', () =>
-        expect(service.getSelector(['items', '0'])).to.be.eq(
-          ENEMY_SELECTORS.items.children.$,
-        ))
+    it('finds a selector for "items.0"', () =>
+      expect(service.getSelector(['items', '0'])).to.be.eq(
+        ENEMY_SELECTORS.items.children.$,
+      ))
 
-      it('finds a selector for "items.0.id"', () =>
-        expect(service.getSelector(['items', '0', 'id'])).to.be.eq(
-          ENEMY_SELECTORS.items.children.$.children.id,
-        ))
+    it('finds a selector for "items.0.id"', () =>
+      expect(service.getSelector(['items', '0', 'id'])).to.be.eq(
+        ENEMY_SELECTORS.items.children.$.children.id,
+      ))
 
-      it('finds a selector for "items.0.rate"', () =>
-        expect(service.getSelector(['items', '0', 'rate'])).to.be.eq(
-          ENEMY_SELECTORS.items.children.$.children.rate,
-        ))
+    it('finds a selector for "items.0.rate"', () =>
+      expect(service.getSelector(['items', '0', 'rate'])).to.be.eq(
+        ENEMY_SELECTORS.items.children.$.children.rate,
+      ))
 
-      it('finds a selector for "triangles"', () =>
-        expect(service.getSelector(['triangles'])).to.be.eq(
-          ENEMY_SELECTORS.triangles,
-        ))
+    it('finds a selector for "triangles"', () =>
+      expect(service.getSelector(['triangles'])).to.be.eq(
+        ENEMY_SELECTORS.triangles,
+      ))
 
-      it('finds a selector for "triangles.0"', () =>
-        expect(service.getSelector(['triangles', '0'])).to.be.eq(
-          ENEMY_SELECTORS.triangles.children.$,
-        ))
+    it('finds a selector for "triangles.0"', () =>
+      expect(service.getSelector(['triangles', '0'])).to.be.eq(
+        ENEMY_SELECTORS.triangles.children.$,
+      ))
 
-      it('finds a selector for "triangles.0.0"', () =>
-        expect(service.getSelector(['triangles', '0', '0'])).to.be.eq(
-          ENEMY_SELECTORS.triangles.children.$.children.$,
-        ))
+    it('finds a selector for "triangles.0.0"', () =>
+      expect(service.getSelector(['triangles', '0', '0'])).to.be.eq(
+        ENEMY_SELECTORS.triangles.children.$.children.$,
+      ))
 
-      it('finds a selector for "triangles.0.1"', () =>
-        expect(service.getSelector(['triangles', '0', '1'])).to.be.eq(
-          ENEMY_SELECTORS.triangles.children.$.children.$,
-        ))
+    it('finds a selector for "triangles.0.1"', () =>
+      expect(service.getSelector(['triangles', '0', '1'])).to.be.eq(
+        ENEMY_SELECTORS.triangles.children.$.children.$,
+      ))
 
-      it('finds a selector for "triangles.0.2"', () =>
-        expect(service.getSelector(['triangles', '0', '2'])).to.be.eq(
-          ENEMY_SELECTORS.triangles.children.$.children.$,
-        ))
+    it('finds a selector for "triangles.0.2"', () =>
+      expect(service.getSelector(['triangles', '0', '2'])).to.be.eq(
+        ENEMY_SELECTORS.triangles.children.$.children.$,
+      ))
 
 
-      it('throws an error when an invalid path is provided: "triangles.0.3"', () =>
-        expect(() => service.getSelector(['triangles', '0', '3'])).to.throw(PathError))
-    })
+    it('throws an error when an invalid path is provided: "triangles.0.3"', () =>
+      expect(() => service.getSelector(['triangles', '0', '3'])).to.throw(PathError))
   })
 
   describe('apply()', () => {
@@ -381,11 +383,11 @@ describe.only('FormService', () => {
   })
 
   describe('addItem()', () => {
-    context('when adding a primitive item', () => {
-      const MODEL = {
-        items: [],
-      }
+    const MODEL = {
+      items: [],
+    }
 
+    context('when adding a primitive item', () => {
       const SELECTORS = {
         items: {
           genItem: () => '',
@@ -402,10 +404,6 @@ describe.only('FormService', () => {
     })
 
     context('when adding an object', () => {
-      const MODEL = {
-        items: [],
-      }
-
       const SELECTORS = {
         items: {
           genItem: () => ({ id: '' }),
@@ -422,10 +420,6 @@ describe.only('FormService', () => {
     })
 
     context('when adding an object and clipping errors for the array', () => {
-      const MODEL = {
-        items: [],
-      }
-
       const SELECTORS = {
         items: {
           genItem: () => ({ id: '' }),
@@ -443,10 +437,6 @@ describe.only('FormService', () => {
     })
 
     context('when adding an object and clipping errors for the array element', () => {
-      const MODEL = {
-        items: [],
-      }
-
       const SELECTORS = {
         items: { 
           genItem: () => ({ id: '' }),
