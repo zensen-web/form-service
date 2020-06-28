@@ -34,6 +34,7 @@ import {
   hoursToObj,
   objToHours,
   passValidator,
+  failValidator,
   phoneNumberValidator,
   segmentValidator,
   intervalValidator,
@@ -42,7 +43,6 @@ import {
 describe.only('FormService', () => {
   let sandbox
   let service
-  let requiredValidator
   let onChangeSpy
 
   const getLastChange = () => onChangeSpy.lastCall.args
@@ -50,8 +50,6 @@ describe.only('FormService', () => {
   beforeEach(() => {
     sandbox = sinon.createSandbox()
     onChangeSpy = sandbox.spy()
-
-    requiredValidator = { ...required() }
   })
 
   afterEach(() => {
@@ -372,52 +370,50 @@ describe.only('FormService', () => {
         true, EXPECTED_STATE, ENEMY_ERRORS,
       ]))
 
-      context('when modifying a null value to object', () => {  
+      context('when modifying a null value to object', () => {
         beforeEach(() => {
           service.apply('stats', ENEMY_MODEL.stats)
         })
-  
+
         it('invokes onChange', () => expect(getLastChange()).to.be.eql([
           false, ENEMY_MODEL, ENEMY_ERRORS,
         ]))
       })
     })
 
-    context('when modifying a key that does not exist', () => {  
+    context('when modifying a key that does not exist', () => {
       const NAME_INVALID = 'asdf'
       const fn = () => service.apply(NAME_INVALID)
-  
+
       it('throw an error', () =>
         expect(fn).to.throw(TypeError, `Invalid path: ${NAME_INVALID}`))
     })
 
-    context('when mutating an object to a primitive', () => {  
+    context('when mutating an object to a primitive', () => {
       const fn = () => service.apply('stats', '')
-  
+
       it('throw an error', () => expect(fn).to.throw(MutationError))
     })
 
-    context('when adding a rogue property to sub-object', () => {  
+    context('when adding a rogue property to sub-object', () => {
       const fn = () => service.apply('stats.asdf', 42)
-  
+
       it('throw an error', () => expect(fn).to.throw(MutationError))
     })
 
-    context('when modifying a key that does not have pristine status', () => {  
+    context('when modifying a key that does not have pristine status', () => {
       const fn = () => service.apply('stats', {
         attack: 'a',
         evasion: 'b',
         speed: 'c',
       })
-  
+
       it('throw an error', () => expect(fn).to.throw(PristineError))
     })
   })
 
   describe('addItem()', () => {
-    const MODEL = {
-      items: [],
-    }
+    const MODEL = { items: [] }
 
     context('when adding a primitive item', () => {
       const SELECTORS = {
@@ -451,7 +447,7 @@ describe.only('FormService', () => {
         expect(service.__errors).to.be.eql({ items: [{ id: '' }] }))
     })
 
-    context('when adding an object and clipping errors for the array', () => {
+    context('when adding an object with validators on the array selector', () => {
       const SELECTORS = {
         items: {
           genItem: () => ({ id: '' }),
@@ -470,7 +466,7 @@ describe.only('FormService', () => {
 
     context('when adding an object and clipping errors for the array element', () => {
       const SELECTORS = {
-        items: { 
+        items: {
           genItem: () => ({ id: '' }),
           children: {
             $: {
@@ -489,7 +485,6 @@ describe.only('FormService', () => {
         expect(service.__errors).to.be.eql({ items: [''] }))
     })
 
-    // FAILS due to schema clipping not working on shorthand validators
     context.skip('when adding an object item', () => {
       beforeEach(() => {
         service = new FormService(
@@ -534,27 +529,23 @@ describe.only('FormService', () => {
   })
 
   context('when converters are provided', () => {
+    let requiredSpy
+
     beforeEach(() => {
-      service = new FormService(
-        CHARGE_MODEL,
-        {
-          procedure: [requiredValidator],
-          modifiers: {
-            genItem: () => '',
-            validators: [
-              {
-                error: 'asdf',
-                validate: () => false,
-              },
-            ],
-          },
-          amount: {
-            format: v => toCurrency(v),
-            unformat: v => toNumeric(v),
-          },
+      const selectors = {
+        procedure: [required()],
+        modifiers: {
+          genItem: () => '',
+          validators: [failValidator],
         },
-        onChangeSpy,
-      )
+        amount: {
+          format: v => toCurrency(v),
+          unformat: v => toNumeric(v),
+        },
+      }
+
+      requiredSpy = sandbox.spy(selectors.procedure[0], 'validate')
+      service = new FormService(CHARGE_MODEL, selectors, onChangeSpy)
     })
 
     it('produces a state with the proper conversions', () =>
@@ -578,10 +569,8 @@ describe.only('FormService', () => {
 
       context('when an error is triggered', () => {
         const PROCEDURE_ERR_VAL = ''
-        let requiredSpy
 
         beforeEach(() => {
-          requiredSpy = sandbox.spy(requiredValidator, 'validate')
           service.apply('procedure', PROCEDURE_ERR_VAL)
         })
 
@@ -930,7 +919,7 @@ describe.only('FormService', () => {
     })
   })
 
-  describe('validation', () => {
+  describe('validate()', () => {
     let valid
 
     const NAME_MATCH = 'asdf'
@@ -1144,6 +1133,7 @@ describe.only('FormService', () => {
       })
     })
 
+    // FAILS due to schema clipping not working on shorthand validators
     context.skip('when errors are clipped', () => {
       beforeEach(() => {
         service = new FormService(

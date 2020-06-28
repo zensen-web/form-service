@@ -71,14 +71,14 @@ export default class FormService {
     this.__state = deepCopy(model)
     this.__state = this.__convert(model, 'format')
     this.__initialState = deepCopy(this.__state)
-    this.__errors = this.__buildSchema(this.__state, '', 'validators')
+    this.__refreshErrors()
     this.__refreshPristine()
     this.__change()
   }
 
   reset () {
     this.__state = deepCopy(this.__initialState)
-    this.__errors = this.__buildSchema(this.__state, '', 'validators')
+    this.__refreshErrors()
     this.__refreshPristine()
     this.__change()
   }
@@ -456,6 +456,10 @@ export default class FormService {
     }
 
     this.__spreadSchema('__errors', validatorPath)
+  }
+
+  __refreshErrors () {
+    this.__errors = this.__buildSchema(this.__state, '', 'validators')
   }
 
   __refreshPristine () {

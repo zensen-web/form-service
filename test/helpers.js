@@ -232,6 +232,11 @@ export const passValidator = {
   validator: () => true,
 }
 
+export const failValidator = {
+  error: 'asdf',
+  validate: () => false,
+}
+
 export const phoneNumberValidator = {
   error: 'Invalid phone number',
   validate: v => !v || pkg.isMobilePhone(v),
