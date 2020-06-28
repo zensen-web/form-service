@@ -23,6 +23,7 @@ import {
   PERIOD,
   ENEMY_MODEL,
   ENEMY_SELECTORS,
+  ENEMY_ERRORS,
   toNumeric,
   toCurrency,
   toPhoneNumber,
@@ -345,6 +346,81 @@ describe('FormService', () => {
 
       it('throws an error when an invalid path is provided: "triangles.0.3"', () =>
         expect(() => service.getSelector(['triangles', '0', '3'])).to.throw(PathError))
+    })
+  })
+
+  describe('apply()', () => {
+    const MODEL = ENEMY_MODEL
+    const ERRORS = ENEMY_ERRORS
+
+    beforeEach(() => {
+      service = new FormService(MODEL, {}, onChangeSpy)
+    })
+
+    it('invokes onChange', () =>
+      expect(getLastChange()).to.be.eql([false, MODEL, ERRORS]))
+
+    context('when modifying a top-level property', () => {
+      const EXPECTED_MODEL = {
+        ...MODEL,
+        name: 'Goblin',
+      }
+
+      beforeEach(() => {
+        service.apply('name', 'Goblin')
+      })
+
+      it('invokes onChange', () => expect(getLastChange()).to.be.eql([
+        true, EXPECTED_MODEL, ERRORS,
+      ]))
+    })
+
+    context('when modifying a sub-object property', () => {
+      const EXPECTED_MODEL = {
+        ...MODEL,
+        stats: {
+          ...MODEL.stats,
+          attack: 255,
+        },
+      }
+
+      beforeEach(() => {
+        service.apply('stats.attack', 255)
+      })
+
+      it('invokes onChange', () => expect(getLastChange()).to.be.eql([
+        true, EXPECTED_MODEL, ERRORS,
+      ]))
+    })
+
+    context('when modifying a key that does not exist', () => {  
+      const NAME_INVALID = 'asdf'
+      const fn = () => service.apply(NAME_INVALID)
+  
+      it('throw an error', () =>
+        expect(fn).to.throw(TypeError, `Invalid path: ${NAME_INVALID}`))
+    })
+
+    context('when mutating an object to a primitive', () => {  
+      const fn = () => service.apply('stats', '')
+  
+      it('throw an error', () => expect(fn).to.throw(MutationError))
+    })
+
+    context('when adding a rogue property to sub-object', () => {  
+      const fn = () => service.apply('stats.asdf', 42)
+  
+      it('throw an error', () => expect(fn).to.throw(MutationError))
+    })
+
+    context('when modifying a key that does not have pristine status', () => {  
+      const fn = () => service.apply('stats', {
+        attack: 'a',
+        evasion: 'b',
+        speed: 'c',
+      })
+  
+      it('throw an error', () => expect(fn).to.throw(PristineError))
     })
   })
 
