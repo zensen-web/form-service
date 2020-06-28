@@ -90,6 +90,119 @@ describe.only('FormService', () => {
     })
   })
 
+  describe('clipPristine', () => {
+    context(`when clipping an object`, () => {
+      const MODEL = {
+        id: '123',
+        name: 'Test',
+        type: {
+          label: 'Default',
+          value: null,
+        },
+      }
+
+      const EXPECTED_RESULT = {
+        id: true,
+        name: true,
+        type: true,
+      }
+
+      beforeEach(() => {
+        service = new FormService(
+          MODEL,
+          {
+            type: { clipPristine: true },
+          },
+          onChangeSpy,
+        )
+      })
+
+      it('returns the proper schema', () =>
+        expect(service.__pristine).to.be.eql(EXPECTED_RESULT))
+    })
+
+    context(`when clipping an array`, () => {
+      const MODEL = {
+        id: '123',
+        name: 'Test',
+        types: [{
+          label: 'Default',
+          value: null,
+        }],
+      }
+
+      const EXPECTED_RESULT = {
+        id: true,
+        name: true,
+        types: true,
+      }
+
+      beforeEach(() => {
+        service = new FormService(
+          MODEL,
+          {
+            types: { clipPristine: true },
+          },
+          onChangeSpy,
+        )
+      })
+
+      it('returns the proper schema', () =>
+        expect(service.__pristine).to.be.eql(EXPECTED_RESULT))
+    })
+
+    context(`when clipping an array's object-elements`, () => {
+      const MODEL = {
+        id: '123',
+        name: 'Test',
+        types: [{
+          label: 'Default',
+          value: null,
+        }],
+      }
+
+      const EXPECTED_RESULT = {
+        id: true,
+        name: true,
+        types: [true],
+      }
+
+      beforeEach(() => {
+        service = new FormService(
+          MODEL,
+          {
+            types: {
+              genItem: () => ({ label: '', value: null }),
+              children: {
+                $: {
+                  clipPristine: true,
+                },
+              },
+            },
+          },
+          onChangeSpy,
+        )
+      })
+
+      it('returns the proper schema', () =>
+        expect(service.__pristine).to.be.eql(EXPECTED_RESULT))
+
+      context('when adding an item', () => {
+        const RESULT_ADDED = {
+          ...EXPECTED_RESULT,
+          types: [true, true],
+        }
+
+        beforeEach(() => {
+          service.addItem('types')
+        })
+
+        it('clips the schema on the new item', () =>
+          expect(service.__pristine).to.be.eql(RESULT_ADDED))
+      })
+    })
+  })
+
   describe('formatters', () => {
     context('when converters are provided', () => {
       let requiredSpy
@@ -746,119 +859,6 @@ describe.only('FormService', () => {
 
     it('swaps the selected items in the pristine schema', () =>
       expect(service.__pristine.ailments).to.be.eql(EXPECTED_PRISTINE))
-  })
-
-  describe('clipPristine', () => {
-    context(`when clipping an object`, () => {
-      const MODEL = {
-        id: '123',
-        name: 'Test',
-        type: {
-          label: 'Default',
-          value: null,
-        },
-      }
-
-      const EXPECTED_RESULT = {
-        id: true,
-        name: true,
-        type: true,
-      }
-
-      beforeEach(() => {
-        service = new FormService(
-          MODEL,
-          {
-            type: { clipPristine: true },
-          },
-          onChangeSpy,
-        )
-      })
-
-      it('returns the proper schema', () =>
-        expect(service.__pristine).to.be.eql(EXPECTED_RESULT))
-    })
-
-    context(`when clipping an array`, () => {
-      const MODEL = {
-        id: '123',
-        name: 'Test',
-        types: [{
-          label: 'Default',
-          value: null,
-        }],
-      }
-
-      const EXPECTED_RESULT = {
-        id: true,
-        name: true,
-        types: true,
-      }
-
-      beforeEach(() => {
-        service = new FormService(
-          MODEL,
-          {
-            types: { clipPristine: true },
-          },
-          onChangeSpy,
-        )
-      })
-
-      it('returns the proper schema', () =>
-        expect(service.__pristine).to.be.eql(EXPECTED_RESULT))
-    })
-
-    context(`when clipping an array's object-elements`, () => {
-      const MODEL = {
-        id: '123',
-        name: 'Test',
-        types: [{
-          label: 'Default',
-          value: null,
-        }],
-      }
-
-      const EXPECTED_RESULT = {
-        id: true,
-        name: true,
-        types: [true],
-      }
-
-      beforeEach(() => {
-        service = new FormService(
-          MODEL,
-          {
-            types: {
-              genItem: () => ({ label: '', value: null }),
-              children: {
-                $: {
-                  clipPristine: true,
-                },
-              },
-            },
-          },
-          onChangeSpy,
-        )
-      })
-
-      it('returns the proper schema', () =>
-        expect(service.__pristine).to.be.eql(EXPECTED_RESULT))
-
-      context('when adding an item', () => {
-        const RESULT_ADDED = {
-          ...EXPECTED_RESULT,
-          types: [true, true],
-        }
-
-        beforeEach(() => {
-          service.addItem('types')
-        })
-
-        it('clips the schema on the new item', () =>
-          expect(service.__pristine).to.be.eql(RESULT_ADDED))
-      })
-    })
   })
 
   describe('validate()', () => {
