@@ -11,13 +11,13 @@ import {
   getKeyPaths,
 } from './utils'
 
-export class VerificationError extends Error {
+class ValidationError extends Error {
   constructor (message) {
     super(message)
   }
 }
 
-export class ValidationError extends Error {
+export class VerificationError extends Error {
   constructor (message) {
     super(message)
   }
