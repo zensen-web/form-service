@@ -239,11 +239,11 @@ export default class FormService {
   }
 
   __verifySelectors () {
-    traverse(this.__state, (childPath, v) => {
-      const validators = this.getValidators(childPath)
+    traverse(this.__state, (keyPath, v) => {
+      const validators = this.getValidators(keyPath)
 
       if (validators) {
-        const parentPath = childPath.slice(0, childPath.length - 1)
+        const parentPath = keyPath.slice(0, keyPath.length - 1)
 
         parentPath.forEach((_, index) => {
           const ancestorPath = parentPath.slice(0, index + 1)
@@ -251,12 +251,24 @@ export default class FormService {
 
           if (ancestorValidators) {
             throw new VerificationError(`Selector (${
-              childPath.join('.')
+              keyPath.join('.')
             }) has ancestor selector with validators: ${
               ancestorPath.join('.')
             }`)
           }
         })
+      }
+
+      if (typeof v === 'object') {
+        const selectors = this.getSelector(keyPath)
+
+        if (selectors && selectors.ignorePristine && !selectors.clipPristine) {
+          const msg = `ignorePristine set object-type key for path: ${
+            keyPath.join('.')
+          }. Perhaps you meant to use clipPristine?`
+
+          throw new VerificationError(msg)
+        }
       }
     })
   }

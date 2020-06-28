@@ -112,7 +112,7 @@ describe('FormService', () => {
       it('throw an error', () => expect(fn).to.throw(VerificationError))
     })
 
-    context.skip('when setting ignorePristine on object-type key', () => {
+    context('when setting ignorePristine on object-type key', () => {
       const MODEL = {
         stats: {
           a: '',
