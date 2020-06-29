@@ -14,6 +14,10 @@ import {
 const errCb = selector => Array.isArray(selector) || selector.validators
 const pristineCb = selector => selector.clipPristine
 
+function printValue (v) {
+  return typeof v === 'object' ? JSON.stringify(v, '', 2) : v
+}
+
 class ValidationError extends Error {
   constructor (message) {
     super(message)
@@ -23,26 +27,30 @@ class ValidationError extends Error {
 export class VerificationError extends Error {
   constructor (message) {
     super(message)
+    this.name = 'VerificationError'
   }
 }
 
 export class PristineError extends Error {
   constructor (keyPath) {
     super(`Selector (${keyPath.join('.')}) cannot have pristine state`)
+    this.name = 'PristineError'
   }
 }
 
 export class MutationError extends Error {
   constructor (keyPath, oldValue, newValue) {
     super(`Reshaping on mutation not allowed at path: ${keyPath}
-Old Value: ${oldValue}
-New Value: ${value}`)
+Old Value: ${printValue(oldValue)}
+New Value: ${printValue(newValue)}`)
+    this.name = 'MutationError'
   }
 }
 
 export class PathError extends Error {
   constructor(keyPath) {
     super(`No key found in state for path: ${keyPath.join('.')}`)
+    this.name = 'PathError'
   }
 }
 
@@ -88,11 +96,18 @@ export default class FormService {
 
   apply (name, value) {
     const keyPath = name.split('.')
+    const pristine = getValueByPath(this.__pristine, keyPath)
+
+    if (typeof pristine === 'object') {
+      throw new PristineError(keyPath)
+    }
 
     this.__verifyValue(keyPath, value)
     setValueByPath(this.__state, keyPath, value)
 
     this.validateKey(keyPath)
+    setValueByPath(this.__pristine, keyPath, false)
+
     this.__spreadSchema('__state', keyPath)
     this.__modify(keyPath)
   }
@@ -187,15 +202,9 @@ export default class FormService {
     const validators = this.getValidators(validatorPath)
     const pristine = getValueByPath(this.__pristine, keyPath)
 
-    if (typeof pristine === 'object') {
-      throw new PristineError(keyPath)
-    }
-
     if (validators && !pristine) {
       this.__processValidator(keyPath, validatorPath, validators)
     }
-
-    setValueByPath(this.__pristine, keyPath, false)
   }
 
   getSelectorPath (keyPath, ignoreCheck = false) {

@@ -748,7 +748,19 @@ describe('FormService', () => {
     })
 
     context('when mutating an object to a primitive', () => {
+      const SELECTORS = {
+        children: {
+          stats: {
+            clipPristine: true,
+          },
+        },
+      }
+
       const fn = () => service.apply('stats', '')
+
+      beforeEach(() => {
+        service = new FormService(ENEMY_MODEL, SELECTORS, onChangeSpy)
+      })
 
       it('throw an error', () => expect(fn).to.throw(MutationError))
     })
