@@ -826,7 +826,7 @@ describe.only('FormService', () => {
         expect(service.__errors).to.be.eql({ items: [''] }))
     })
 
-    context.skip('when adding an object item', () => {
+    context('when adding an object item', () => {
       beforeEach(() => {
         service = new FormService(
           {
@@ -893,8 +893,7 @@ describe.only('FormService', () => {
     })
   })
 
-  // FAILS due to schema clipping not working on shorthand validators
-  describe.skip('moveItem()', () => {
+  describe('moveItem()', () => {
     const EXPECTED_STATE = [7, 3, 4]
     const EXPECTED_PRISTINE = [false, true, true]
     const EXPECTED_ERRORS = 'asdf'
@@ -904,6 +903,8 @@ describe.only('FormService', () => {
 
     beforeEach(() => {
       service = new FormService(ENEMY_MODEL, SELECTORS, onChangeSpy)
+
+      service.apply('ailments.2', 7)
       service.apply('ailments.2', 7)
       service.moveItem('ailments', 2, 0)
     })
@@ -918,8 +919,7 @@ describe.only('FormService', () => {
       expect(service.__pristine.ailments).to.be.eql(EXPECTED_PRISTINE))
   })
 
-  // FAILS due to schema clipping not working on shorthand validators
-  describe.skip('swapItems()', () => {
+  describe('swapItems()', () => {
     const EXPECTED_STATE = [7, 4, 3]
     const EXPECTED_PRISTINE = [false, true, false]
     const EXPECTED_ERRORS = 'asdf'
@@ -929,6 +929,7 @@ describe.only('FormService', () => {
 
     beforeEach(() => {
       service = new FormService(ENEMY_MODEL, SELECTORS, onChangeSpy)
+      service.apply('ailments.2', 7)
       service.apply('ailments.2', 7)
       service.swapItems('ailments', 2, 0)
     })

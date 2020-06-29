@@ -11,6 +11,9 @@ import {
   getKeyPaths,
 } from './utils'
 
+const errCb = selector => Array.isArray(selector) || selector.validators
+const pristineCb = selector => selector.clipPristine
+
 class ValidationError extends Error {
   constructor (message) {
     super(message)
@@ -104,8 +107,8 @@ export default class FormService {
 
     items.splice(shiftedIndex, 0, item)
     this.__spreadSchema('__state', [...keyPath, shiftedIndex])
-    this.__addItemToSchema('__errors', 'validators', keyPath, shiftedIndex, item, '')
-    this.__addItemToSchema('__pristine', 'clipPristine', keyPath, shiftedIndex, item, true)
+    this.__addItemToSchema('__errors', keyPath, shiftedIndex, item, '', errCb)
+    this.__addItemToSchema('__pristine', keyPath, shiftedIndex, item, true, pristineCb)
     this.__modifyPristineItem([...keyPath, shiftedIndex])
     this.__modify(keyPath)
     this.__change()
@@ -174,9 +177,8 @@ export default class FormService {
   validateKey (keyPath) {
     const clippedPathIndex = keyPath.findIndex((_, index) => {
       const subPath = keyPath.slice(0, index)
-      const selector = this.getSelector(subPath)
 
-      return selector && selector.validators
+      return this.getValidators(subPath)
     })
 
     const validatorPathLength = clippedPathIndex !== -1
@@ -297,13 +299,13 @@ export default class FormService {
     }
   }
 
-  __buildSchema (refSchema, initialValue, clipKey, rootPath = []) {
+  __buildSchema (refSchema, initialValue, fn, rootPath = []) {
     const rootSelector = this.getSelector(rootPath)
 
     if (rootSelector) {
       const children = rootSelector.children
 
-      if (children && children.$ && children.$[clipKey]) {
+      if (children && children.$ && fn(children.$)) {
         return initialValue
       }
     }
@@ -315,7 +317,7 @@ export default class FormService {
       if (!dateType && value !== null && typeof value === 'object') {
         const selector = this.getSelector([...rootPath, ...keyPath])
 
-        if (selector && selector[clipKey]) {
+        if (selector && fn(selector)) {
           setValueByPath(result, keyPath, initialValue)
           return false
         }
@@ -375,12 +377,12 @@ export default class FormService {
     }
   }
 
-  __addItemToSchema (schemaKey, clipKey, keyPath, index, item, defaultValue) {
+  __addItemToSchema (schemaKey, keyPath, index, item, defaultValue, fn) {
     const value = getValueByPath(this[schemaKey], keyPath)
 
     if (typeof value === 'object') {
       const subObj = (typeof item === 'object')
-        ? this.__buildSchema(item, defaultValue, clipKey, keyPath)
+        ? this.__buildSchema(item, defaultValue, fn, keyPath)
         : defaultValue
 
       value.splice(index, 0, subObj)
@@ -459,11 +461,14 @@ export default class FormService {
   }
 
   __refreshErrors () {
-    this.__errors = this.__buildSchema(this.__state, '', 'validators')
+    this.__errors = this.__buildSchema(this.__state, '', selector =>
+      Array.isArray(selector) || selector.validators)
   }
 
   __refreshPristine () {
-    this.__pristine = this.__buildSchema(this.__state, true, 'clipPristine')
+    this.__pristine = this.__buildSchema(this.__state, true, selector =>
+      selector.clipPristine)
+
     traverse(this.__pristine, keyPath => {
       const selector = this.getSelector(keyPath)
 
