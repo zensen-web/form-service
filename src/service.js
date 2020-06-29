@@ -115,7 +115,7 @@ export default class FormService {
   }
 
   addItem (name, index = -1) {
-    const keyPath = name.split('.')
+    const keyPath = name ? name.split('.') : []
     const items = getValueByPath(this.__state, keyPath)
     const shiftedIndex = index !== -1 ? index : items.length
     const selector = this.getSelector(keyPath)
@@ -132,7 +132,7 @@ export default class FormService {
   }
 
   removeItem (name, index = -1) {
-    const keyPath = name.split('.')
+    const keyPath = name ? name.split('.') : []
     const items = getValueByPath(this.__state, keyPath)
     const shiftedIndex = index === -1 ? items.length - 1 : index
 
@@ -375,7 +375,8 @@ export default class FormService {
   }
 
   __spreadSchema (schemaKey, keyPath) {
-    this[schemaKey] = { ...this[schemaKey] }
+    const ref = this[schemaKey]
+    this[schemaKey] = Array.isArray(ref) ? [...ref] : { ...ref }
 
     if (keyPath.length > 1) {
       keyPath.slice(0, keyPath.length - 1).forEach((_, index) => {

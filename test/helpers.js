@@ -148,6 +148,7 @@ export const ITEMS_MODEL = [
 ]
 
 export const ITEMS_SELECTORS = {
+  genItem: () => ({ id: '', name: '' }),
   format: v => v,
   unformat: v => v,
   children: {

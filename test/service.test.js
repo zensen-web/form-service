@@ -882,6 +882,22 @@ describe('FormService', () => {
 
       it('throw an error', () => expect(fn).to.throw(PristineError))
     })
+
+    describe('array model', () => {
+      context('when modifying an item', () => {
+        beforeEach(() => {
+          service = new FormService(ITEMS_MODEL, {}, onChangeSpy)
+          service.apply('0.name', 'asdf')
+        })
+  
+        it('invokes the callback', () =>
+          expect(getLastChange()).to.be.eql([
+            true,
+            [{ id: '', name: 'asdf' }],
+            [{ id: '', name: '' }],
+          ]))
+      })
+    })
   })
 
   describe('addItem()', () => {
@@ -1111,6 +1127,30 @@ describe('FormService', () => {
           ],
         }))
     })
+
+    describe('array model', () => {
+      context('when adding an item with validators', () => {
+        const SELECTORS = {
+          genItem: () => ({ id: '', name: '' }),
+          validators: [],
+        }
+
+        beforeEach(() => {
+          service = new FormService(ITEMS_MODEL, SELECTORS, onChangeSpy)
+          service.addItem('')
+        })
+  
+        it('invokes the callback', () =>
+          expect(getLastChange()).to.be.eql([
+            true,
+            [
+              { id: '', name: '' },
+              { id: '', name: '' },
+            ],
+            '',
+          ]))
+      })
+    })
   })
 
   describe('removeItem()', () => {
@@ -1134,6 +1174,18 @@ describe('FormService', () => {
 
       it('removes it', () =>
         expect(service.__state.ailments).to.be.eql([4, 7]))
+    })
+
+    describe('array model', () => {
+      context('when removing an item', () => {
+        beforeEach(() => {
+          service = new FormService(ITEMS_MODEL, {}, onChangeSpy)
+          service.removeItem('')
+        })
+  
+        it('invokes the callback', () =>
+          expect(getLastChange()).to.be.eql([true, [], []]))
+      })
     })
   })
 
@@ -1625,6 +1677,7 @@ describe('FormService', () => {
 
     context('when model is an array', () => {
       const SELECTORS = {
+        genItem: () => ({ id: '', name: '' }),
         validators: [{
           error: 'Invalid',
           validate: v => v[0].name === 'asdf',
