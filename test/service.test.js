@@ -1560,4 +1560,82 @@ describe('FormService', () => {
       })
     })
   })
+
+  describe('refresh()', () => {
+    const UPDATED_MODEL = {
+      name: 'Cecil',
+      job: 'dark_knight',
+      stats: {
+        attack: 7,
+        evasion: 3,
+        speed: 3,
+        attributes: {
+          level: 5,
+          experience: 0,
+        },
+      },
+      ailments: [],
+      items: [
+        { id: 1, rate: 0.1 },
+      ],
+      triangles: [],
+    }
+
+    const UPDATED_ERRORS = {
+      name: '',
+      job: '',
+      stats: {
+        attack: '',
+        evasion: '',
+        speed: '',
+        attributes: {
+          level: '',
+          experience: '',
+        },
+      },
+      ailments: [],
+      items: [
+        { id: '', rate: '' },
+      ],
+      triangles: [],
+    }
+
+    const SELECTORS = {
+      children: {
+        name: [failValidator],
+      },
+    }
+
+    beforeEach(() => {
+      service = new FormService(ENEMY_MODEL, SELECTORS, onChangeSpy)
+      service.apply('name', 'asdf')
+      service.validate()
+      service.refresh(UPDATED_MODEL)
+    })
+
+    it('reverts state, errors and dirtiness back', () =>
+      expect(getLastChange()).to.be.eql([
+        false, UPDATED_MODEL, UPDATED_ERRORS,
+      ]))
+  })
+
+  describe('reset()', () => {
+    const SELECTORS = {
+      children: {
+        name: [failValidator],
+      },
+    }
+
+    beforeEach(() => {
+      service = new FormService(ENEMY_MODEL, SELECTORS, onChangeSpy)
+      service.apply('name', 'asdf')
+      service.validate()
+      service.reset()
+    })
+
+    it('reverts state, errors and dirtiness back', () =>
+      expect(getLastChange()).to.be.eql([
+        false, ENEMY_MODEL, ENEMY_ERRORS,
+      ]))
+  })
 })
