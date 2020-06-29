@@ -234,7 +234,7 @@ describe('FormService', () => {
             genItem: () => ITEM_ADDED_HOURS,
             children: {
               $: {
-                validators: [],
+                // validators: [],
                 format: v => hoursToObj(v),
                 unformat: v => objToHours(v),
               },
@@ -1620,6 +1620,34 @@ describe('FormService', () => {
               { name: '', rate: '0 - 100' },
             ],
           }))
+      })
+    })
+
+    context('when model is an array', () => {
+      const SELECTORS = {
+        validators: [{
+          error: 'Invalid',
+          validate: v => v[0].name === 'asdf',
+        }],
+      }
+
+      let valid
+
+      beforeEach(() => {
+        service = new FormService(ITEMS_MODEL, SELECTORS, onChangeSpy)
+        service.apply('0.name', 'asdf')
+        valid = service.validate()
+      })
+
+      it('passes validation', () => expect(valid).to.be.true)
+
+      context('when validation fails', () => {
+        beforeEach(() => {
+          service.apply('0.name', '')
+          valid = service.validate()
+        })
+  
+        it('fails', () => expect(valid).to.be.false)
       })
     })
   })

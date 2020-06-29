@@ -189,6 +189,22 @@ describe('misc', () => {
           ])))
     })
 
+    context('when traversing with root enabled', () => {
+      const PATHS = [[], ...KEY_PATHS]
+
+      beforeEach(() => {
+        onKeyStub = sandbox.stub()
+        traverse(SCHEMA, onKeyStub, true)
+      })
+
+      PATHS.map((path, index) =>
+        it(`returns path: ${path}`, () =>
+          expect(onKeyStub.getCall(index).args).to.be.eql([
+            path,
+            getValueByPath(SCHEMA, path),
+          ])))
+    })
+
     context('when mutating the object while traversing', () => {
       const schema = { ...SCHEMA }
       const expectedResult = [...KEY_PATHS]

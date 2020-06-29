@@ -34,7 +34,7 @@ export function swap (arr, index1, index2) {
   return result
 }
 
-export function traverse (obj, onKey) {
+export function traverse (obj, onKey, includeRoot = false) {
   const path = ['']
 
   const fn = target => {
@@ -52,6 +52,10 @@ export function traverse (obj, onKey) {
         path.pop()
       }
     })
+  }
+
+  if (includeRoot) {
+    onKey([], obj)
   }
 
   fn(obj)

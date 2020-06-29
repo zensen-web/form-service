@@ -64,7 +64,9 @@ export default class FormService {
       Object.values(obj).filter(v =>
         (typeof v === 'object' ? fn(v) : v)).length > 0
 
-    return fn(this.__errors)
+    return typeof this.__errors === 'object'
+      ? fn(this.__errors)
+      : Boolean(this.__errors)
   }
 
   constructor (model, selectors, onChange) {
@@ -203,7 +205,7 @@ export default class FormService {
     const pristine = getValueByPath(this.__pristine, keyPath)
 
     if (validators && !pristine) {
-      this.__processValidator(keyPath, validatorPath, validators)
+      this.__processValidator(validatorPath, validators)
     }
   }
 
@@ -310,6 +312,11 @@ export default class FormService {
 
   __buildSchema (refSchema, initialValue, fn, rootPath = []) {
     const result = Array.isArray(refSchema) ? [] : {}
+    const rootSelector = this.getSelector(rootPath)
+
+    if (rootSelector && fn(rootSelector)) {
+      return initialValue
+    }
 
     traverse(refSchema, (keyPath, value) => {
       const dateType = value instanceof Date
@@ -327,7 +334,7 @@ export default class FormService {
       } else {
         setValueByPath(result, keyPath, initialValue)
       }
-    })
+    }, true)
 
     return result
   }
@@ -449,31 +456,38 @@ export default class FormService {
     this.__change()
   }
 
-  __processValidator (keyPath, validatorPath, validators) {
-    const value = getValueByPath(this.__state, validatorPath)
+  __processValidator (keyPath, validators) {
+    const value = getValueByPath(this.__state, keyPath)
 
     try {
       validators.forEach(validator => {
-        if (!validator.validate(value, validatorPath, this.__state, this)) {
+        if (!validator.validate(value, keyPath, this.__state, this)) {
           throw new ValidationError(validator.error)
         }
       })
 
-      setValueByPath(this.__errors, validatorPath, '')
+      this.__setError(keyPath, '')
     } catch (e) {
       if (e instanceof ValidationError) {
-        setValueByPath(this.__errors, validatorPath, e.message)
+        this.__setError(keyPath, e.message)
       } else {
         throw e
       }
     }
-
-    this.__spreadSchema('__errors', validatorPath)
   }
 
   __refreshErrors () {
     this.__errors = this.__buildSchema(this.__state, '', selector =>
       Array.isArray(selector) || selector.validators)
+  }
+
+  __setError (keyPath, message) {
+    if (keyPath.length) {
+      setValueByPath(this.__errors, keyPath, message)
+      this.__spreadSchema('__errors', keyPath)
+    } else {
+      this.__errors = message
+    }
   }
 
   __refreshPristine () {
