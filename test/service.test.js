@@ -300,6 +300,25 @@ describe('FormService', () => {
       it('unformats the state', () =>
         expect(model).to.be.eql(MODEL))
     })
+
+    context('when formatting the root (object)', () => {
+      const MODEL = { amount: 42 }
+      const SELECTORS = {
+        format: v => ({ amount: toCurrency(v.amount / 100) }),
+        unformat: v => ({ amount: Number(toNumeric(v.amount, true)) * 100 }),
+      }
+
+      beforeEach(() => {
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        model = service.buildModel()
+      })
+
+      it('formats the field', () =>
+        expect(service.__state).to.be.eql({ amount: '$0.42' }))
+
+      it('unformats the field', () =>
+        expect(model).to.be.eql({ amount: 42 }))
+    })
   })
 
   // TODO: add formatters, and verify pristine

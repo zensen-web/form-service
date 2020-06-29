@@ -333,7 +333,10 @@ export default class FormService {
   }
 
   __convert (data, op, rootPath = []) {
-    const result = typeof data === 'object' ? deepCopy(data) : data
+    const rootSelector = this.getSelector([], true)
+    const action = rootSelector && rootSelector[op]
+    const copy = typeof data === 'object' ? deepCopy(data) : data
+    const result = action ? action(copy) : copy
 
     traverse(result, (keyPath, value) => {
       const fullPath = [...rootPath, ...keyPath]
@@ -390,7 +393,7 @@ export default class FormService {
         fn(selector.children.$)
 
       const subObj = !clipElement && (typeof item === 'object')
-        ? this.__buildSchema(item, defaultValue, fn, [...keyPath, '0'])
+        ? this.__buildSchema(item, defaultValue, fn, [...keyPath, index])
         : defaultValue
 
       value.splice(index, 0, subObj)
