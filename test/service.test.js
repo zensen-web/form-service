@@ -36,7 +36,7 @@ import {
   intervalValidator,
 } from './helpers'
 
-describe.only('FormService', () => {
+describe('FormService', () => {
   let sandbox
   let service
   let model
