@@ -108,6 +108,8 @@ const SELECTORS = {
 
 # Clearer Syntax for Declaring Selectors for Array Elements
 
+- Also supports nested arrays
+
 ```js
 const MODEL = {
   emails: [
@@ -176,8 +178,6 @@ const SELECTORS = {
   },
 }
 ```
-
-- Nested arrays are supported
 
 - Changed `genItem()` to return data in the model-form as FormService will convert it to state
 - Remove `clipErrors` as the existence of `validators` will clip them going forward
