@@ -343,6 +343,9 @@ describe('misc', () => {
       e: '456',
     }
 
+    it('gets root value (returns self)', () =>
+      expect(getValueByPath(SCHEMA, [])).to.be.eq(SCHEMA))
+
     it('gets the top-level value', () =>
       expect(getValueByPath(SCHEMA, ['a'])).to.be.eq(12))
 
