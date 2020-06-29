@@ -314,7 +314,7 @@ describe('FormService', () => {
         },
       }
 
-      const SELECTOR = {
+      const SELECTORS = {
         children: {
           type: { clipPristine: true },
         },
@@ -327,7 +327,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTOR, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
       })
 
       it('returns the proper schema', () =>
@@ -344,7 +344,7 @@ describe('FormService', () => {
         }],
       }
 
-      const SELECTOR = {
+      const SELECTORS = {
         children: {
           types: { clipPristine: true },
         },
@@ -357,7 +357,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTOR, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
       })
 
       it('returns the proper schema', () =>
