@@ -198,7 +198,7 @@ export default class FormService {
     setValueByPath(this.__pristine, keyPath, false)
   }
 
-  getSelectorPath (keyPath, ignoreCheck) {
+  getSelectorPath (keyPath, ignoreCheck = false) {
     if (!ignoreCheck) {
       const value = getValueByPath(this.__state, keyPath)
 
@@ -215,7 +215,7 @@ export default class FormService {
       return (index < keyPath.length - 1)
         ? [...accum, key, 'children']
         : [...accum, key]
-    }, [])
+    }, ['children'])
   }
 
   getSelector (keyPath, ignoreCheck = false) {

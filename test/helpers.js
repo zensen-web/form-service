@@ -57,89 +57,91 @@ export const ENEMY_ERRORS = {
 }
 
 export const ENEMY_SELECTORS = {
-  name: {
-    format: v => v,
-    unformat: v => v,
-  },
-  // 'job' is intentionally left out...
-  stats: {
-    format: v => v,
-    unformat: v => v,
-    children: {
-      attack: {
-        format: v => v,
-        unformat: v => v,
-      },
-      evasion: {
-        format: v => v,
-        unformat: v => v,
-      },
-      speed: {
-        format: v => v,
-        unformat: v => v,
-      },
-      attributes: {
-        format: v => v,
-        unformat: v => v,
-        children: {
-          level: {
-            format: v => v,
-            unformat: v => v,
-          },
-          experience: {
-            format: v => v,
-            unformat: v => v,
+  children: {
+    name: {
+      format: v => v,
+      unformat: v => v,
+    },
+    // 'job' is intentionally left out...
+    stats: {
+      format: v => v,
+      unformat: v => v,
+      children: {
+        attack: {
+          format: v => v,
+          unformat: v => v,
+        },
+        evasion: {
+          format: v => v,
+          unformat: v => v,
+        },
+        speed: {
+          format: v => v,
+          unformat: v => v,
+        },
+        attributes: {
+          format: v => v,
+          unformat: v => v,
+          children: {
+            level: {
+              format: v => v,
+              unformat: v => v,
+            },
+            experience: {
+              format: v => v,
+              unformat: v => v,
+            },
           },
         },
       },
     },
-  },
-  ailments: {
-    format: v => v,
-    unformat: v => v,
-    children: {
-      $: {
-        format: v => v,
-        unformat: v => v,
+    ailments: {
+      format: v => v,
+      unformat: v => v,
+      children: {
+        $: {
+          format: v => v,
+          unformat: v => v,
+        },
       },
     },
-  },
-  items: {
-    format: v => v,
-    unformat: v => v,
-    children: {
-      $: {
-        format: v => v,
-        unformat: v => v,
-        children: {
-          id: {
-            format: v => v,
-            unformat: v => v,
-          },
-          rate: {
-            format: v => v,
-            unformat: v => v,
+    items: {
+      format: v => v,
+      unformat: v => v,
+      children: {
+        $: {
+          format: v => v,
+          unformat: v => v,
+          children: {
+            id: {
+              format: v => v,
+              unformat: v => v,
+            },
+            rate: {
+              format: v => v,
+              unformat: v => v,
+            },
           },
         },
       },
     },
-  },
-  triangles: {
-    format: v => v,
-    unformat: v => v,
-    children: {
-      $: {
-        format: v => v,
-        unformat: v => v,
-        children: {
-          $: {
-            format: v => v,
-            unformat: v => v,
+    triangles: {
+      format: v => v,
+      unformat: v => v,
+      children: {
+        $: {
+          format: v => v,
+          unformat: v => v,
+          children: {
+            $: {
+              format: v => v,
+              unformat: v => v,
+            },
           },
         },
       },
     },
-  },
+  }
 }
 
 export function capitalize (str) {

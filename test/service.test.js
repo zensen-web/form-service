@@ -62,10 +62,12 @@ describe('FormService', () => {
 
     context('when nested validators are found', () => {
       const SELECTORS = {
-        stats: {
-          validators: [passValidator],
-          children: {
-            a: [passValidator],
+        children: {
+          stats: {
+            validators: [passValidator],
+            children: {
+              a: [passValidator],
+            },
           },
         },
       }
@@ -77,8 +79,10 @@ describe('FormService', () => {
 
     context('when setting ignorePristine on object-type key', () => {
       const SELECTORS = {
-        stats: {
-          ignorePristine: true,
+        children: {
+          stats: {
+            ignorePristine: true,
+          },
         },
       }
 
@@ -99,8 +103,10 @@ describe('FormService', () => {
     context('when formatting a field only', () => {
       const MODEL = { amount: 42 }
       const SELECTORS = {
-        amount: {
-          format: v => toCurrency(v / 100)
+        children: {
+          amount: {
+            format: v => toCurrency(v / 100)
+          },
         },
       }
 
@@ -119,8 +125,10 @@ describe('FormService', () => {
     context('when unformatting a field only', () => {
       const MODEL = { amount: '$0.42' }
       const SELECTORS = {
-        amount: {
-          unformat: v => Number(toNumeric(v, true)) * 100,
+        children: {
+          amount: {
+            unformat: v => Number(toNumeric(v, true)) * 100,
+          },
         },
       }
 
@@ -139,9 +147,11 @@ describe('FormService', () => {
     context('when both converters are both provided', () => {
       const MODEL = { amount: 42 }
       const SELECTORS = {
-        amount: {
-          format: v => toCurrency(v / 100),
-          unformat: v => Number(toNumeric(v, true)) * 100,
+        children: {
+          amount: {
+            format: v => toCurrency(v / 100),
+            unformat: v => Number(toNumeric(v, true)) * 100,
+          },
         },
       }
 
@@ -160,9 +170,11 @@ describe('FormService', () => {
     context('when formatting from primitive to object', () => {
       const MODEL = { time: TIME_NUM }
       const SELECTORS = {
-        time: {
-          format: v => hoursToObj(v),
-          unformat: v => objToHours(v),
+        children: {
+          time: {
+            format: v => hoursToObj(v),
+            unformat: v => objToHours(v),
+          },
         },
       }
 
@@ -181,9 +193,11 @@ describe('FormService', () => {
     context('when formatting from object to primitive', () => {
       const MODEL = { time: TIME_OBJ }
       const SELECTORS = {
-        time: {
-          format: v => objToHours(v),
-          unformat: v => hoursToObj(v),
+        children: {
+          time: {
+            format: v => objToHours(v),
+            unformat: v => hoursToObj(v),
+          },
         },
       }
 
@@ -213,13 +227,15 @@ describe('FormService', () => {
       }
   
       const SELECTORS = {
-        items: {
-          genItem: () => ITEM_ADDED_HOURS,
-          children: {
-            $: {
-              validators: [],
-              format: v => hoursToObj(v),
-              unformat: v => objToHours(v),
+        children: {
+          items: {
+            genItem: () => ITEM_ADDED_HOURS,
+            children: {
+              $: {
+                validators: [],
+                format: v => hoursToObj(v),
+                unformat: v => objToHours(v),
+              },
             },
           },
         },
@@ -253,15 +269,17 @@ describe('FormService', () => {
       }
 
       const SELECTORS = {
-        phones: {
-          format: v => padArray(v),
-          unformat: v => filterEmpty(v),
-          children: {
-            $: {
-              children: {
-                number: {
-                  format: v => toPhoneNumber(v),
-                  unformat: v => toNumeric(v),
+        children: {
+          phones: {
+            format: v => padArray(v),
+            unformat: v => filterEmpty(v),
+            children: {
+              $: {
+                children: {
+                  number: {
+                    format: v => toPhoneNumber(v),
+                    unformat: v => toNumeric(v),
+                  },
                 },
               },
             },
@@ -294,6 +312,12 @@ describe('FormService', () => {
         },
       }
 
+      const SELECTOR = {
+        children: {
+          type: { clipPristine: true },
+        },
+      }
+
       const EXPECTED_RESULT = {
         id: true,
         name: true,
@@ -303,9 +327,7 @@ describe('FormService', () => {
       beforeEach(() => {
         service = new FormService(
           MODEL,
-          {
-            type: { clipPristine: true },
-          },
+          SELECTOR,
           onChangeSpy,
         )
       })
@@ -324,6 +346,12 @@ describe('FormService', () => {
         }],
       }
 
+      const SELECTOR = {
+        children: {
+          types: { clipPristine: true },
+        },
+      }
+
       const EXPECTED_RESULT = {
         id: true,
         name: true,
@@ -333,9 +361,7 @@ describe('FormService', () => {
       beforeEach(() => {
         service = new FormService(
           MODEL,
-          {
-            types: { clipPristine: true },
-          },
+          SELECTOR,
           onChangeSpy,
         )
       })
@@ -354,6 +380,19 @@ describe('FormService', () => {
         }],
       }
 
+      const SELECTORS = {
+        children: {
+          types: {
+            genItem: () => ({ label: '', value: null }),
+            children: {
+              $: {
+                clipPristine: true,
+              },
+            },
+          },
+        },
+      }
+
       const EXPECTED_RESULT = {
         id: true,
         name: true,
@@ -363,16 +402,7 @@ describe('FormService', () => {
       beforeEach(() => {
         service = new FormService(
           MODEL,
-          {
-            types: {
-              genItem: () => ({ label: '', value: null }),
-              children: {
-                $: {
-                  clipPristine: true,
-                },
-              },
-            },
-          },
+          SELECTORS,
           onChangeSpy,
         )
       })
@@ -405,91 +435,91 @@ describe('FormService', () => {
       expect(() => service.getSelectorPath(['asdf'])).to.throw(PathError))
 
     it('resolve the path for "name"', () =>
-      expect(service.getSelectorPath(['name'])).to.be.eql(['name']))
+      expect(service.getSelectorPath(['name'])).to.be.eql(['children', 'name']))
 
     it('resolve the path for "job"', () =>
-      expect(service.getSelectorPath(['job'])).to.be.eql(['job']))
+      expect(service.getSelectorPath(['job'])).to.be.eql(['children', 'job']))
 
     it('resolve the path for "stats"', () =>
-      expect(service.getSelectorPath(['stats'])).to.be.eql(['stats']))
+      expect(service.getSelectorPath(['stats'])).to.be.eql(['children', 'stats']))
 
     it('resolve the path for "stats.attack"', () =>
       expect(service.getSelectorPath(['stats', 'attack'])).to.be.eql([
-        'stats', 'children', 'attack',
+        'children', 'stats', 'children', 'attack',
       ]))
 
     it('resolve the path for "stats.evasion"', () =>
       expect(service.getSelectorPath(['stats', 'evasion'])).to.be.eql([
-        'stats', 'children', 'evasion',
+        'children', 'stats', 'children', 'evasion',
       ]))
 
     it('resolve the path for "stats.speed"', () =>
       expect(service.getSelectorPath(['stats', 'speed'])).to.be.eql([
-        'stats', 'children', 'speed',
+        'children', 'stats', 'children', 'speed',
       ]))
 
     it('resolve the path for "stats.attributes"', () =>
       expect(service.getSelectorPath(['stats', 'attributes'])).to.be.eql([
-        'stats', 'children', 'attributes',
+        'children', 'stats', 'children', 'attributes',
       ]))
 
     it('resolve the path for "stats.attributes.level"', () =>
       expect(service.getSelectorPath(['stats', 'attributes', 'level'])).to.be.eql([
-        'stats', 'children', 'attributes', 'children', 'level',
+        'children', 'stats', 'children', 'attributes', 'children', 'level',
       ]))
 
     it('resolve the path for "stats.attributes.experience"', () =>
       expect(service.getSelectorPath(['stats', 'attributes', 'experience'])).to.be.eql([
-        'stats', 'children', 'attributes', 'children', 'experience',
+        'children', 'stats', 'children', 'attributes', 'children', 'experience',
       ]))
 
     it('resolve the path for "stats.ailments"', () =>
-      expect(service.getSelectorPath(['ailments'])).to.be.eql(['ailments']))
+      expect(service.getSelectorPath(['ailments'])).to.be.eql(['children', 'ailments']))
 
     it('resolve the path for "ailments.0"', () =>
       expect(service.getSelectorPath(['ailments', '0'])).to.be.eql([
-        'ailments', 'children', '$',
+        'children', 'ailments', 'children', '$',
       ]))
 
     it('resolve the path for "items"', () =>
-      expect(service.getSelectorPath(['items'])).to.be.eql(['items']))
+      expect(service.getSelectorPath(['items'])).to.be.eql(['children', 'items']))
 
     it('resolve the path for "items.0"', () =>
       expect(service.getSelectorPath(['items', '0'])).to.be.eql([
-        'items', 'children', '$',
+        'children', 'items', 'children', '$',
       ]))
 
     it('resolve the path for "items.0.id"', () =>
       expect(service.getSelectorPath(['items', '0', 'id'])).to.be.eql([
-        'items', 'children', '$', 'children', 'id',
+        'children', 'items', 'children', '$', 'children', 'id',
       ]))
 
     it('resolve the path for "items.0.rate"', () =>
       expect(service.getSelectorPath(['items', '0', 'rate'])).to.be.eql([
-        'items', 'children', '$', 'children', 'rate',
+        'children', 'items', 'children', '$', 'children', 'rate',
       ]))
 
     it('resolve the path for "triangles"', () =>
-      expect(service.getSelectorPath(['triangles'])).to.be.eql(['triangles']))
+      expect(service.getSelectorPath(['triangles'])).to.be.eql(['children', 'triangles']))
 
     it('resolve the path for "triangles.0"', () =>
       expect(service.getSelectorPath(['triangles', '0'])).to.be.eql([
-        'triangles', 'children', '$',
+        'children', 'triangles', 'children', '$',
       ]))
 
     it('resolve the path for "triangles.0.0"', () =>
       expect(service.getSelectorPath(['triangles', '0', '0'])).to.be.eql([
-        'triangles', 'children', '$', 'children', '$',
+        'children', 'triangles', 'children', '$', 'children', '$',
       ]))
 
     it('resolve the path for "triangles.0.1"', () =>
       expect(service.getSelectorPath(['triangles', '0', '1'])).to.be.eql([
-        'triangles', 'children', '$', 'children', '$',
+        'children', 'triangles', 'children', '$', 'children', '$',
       ]))
 
     it('resolve the path for "triangles.0.2"', () =>
       expect(service.getSelectorPath(['triangles', '0', '2'])).to.be.eql([
-        'triangles', 'children', '$', 'children', '$',
+        'children', 'triangles', 'children', '$', 'children', '$',
       ]))
 
     it('throws an error when an invalid path is provided: "triangles.0.3"', () =>
@@ -505,93 +535,101 @@ describe('FormService', () => {
       expect(() => service.getSelector(['asdf'])).to.throw(PathError))
 
     it('finds the selector for "name"', () =>
-      expect(service.getSelector(['name'])).to.be.eq(ENEMY_SELECTORS.name))
+      expect(service.getSelector(['name'])).to.be.eq(
+        ENEMY_SELECTORS.children.name,
+      ))
 
     it('does not find a selector for "job"', () =>
       expect(service.getSelector(['job'])).to.be.eq(undefined))
 
     it('finds a selector for "stats"', () =>
-      expect(service.getSelector(['stats'])).to.be.eq(ENEMY_SELECTORS.stats))
+      expect(service.getSelector(['stats'])).to.be.eq(
+        ENEMY_SELECTORS.children.stats,
+      ))
 
     it('finds a selector for "stats.attack"', () =>
       expect(service.getSelector(['stats', 'attack'])).to.be.eq(
-        ENEMY_SELECTORS.stats.children.attack,
+        ENEMY_SELECTORS.children.stats.children.attack,
       ))
 
     it('finds a selector for "stats.evasion"', () =>
       expect(service.getSelector(['stats', 'evasion'])).to.be.eq(
-        ENEMY_SELECTORS.stats.children.evasion,
+        ENEMY_SELECTORS.children.stats.children.evasion,
       ))
 
     it('finds a selector for "stats.speed"', () =>
       expect(service.getSelector(['stats', 'speed'])).to.be.eq(
-        ENEMY_SELECTORS.stats.children.speed,
+        ENEMY_SELECTORS.children.stats.children.speed,
       ))
 
     it('finds a selector for "stats.attributes"', () =>
       expect(service.getSelector(['stats', 'attributes'])).to.be.eq(
-        ENEMY_SELECTORS.stats.children.attributes,
+        ENEMY_SELECTORS.children.stats.children.attributes,
       ))
 
     it('finds a selector for "stats.attributes.level"', () =>
       expect(service.getSelector(['stats', 'attributes', 'level'])).to.be.eq(
-        ENEMY_SELECTORS.stats.children.attributes.children.level,
+        ENEMY_SELECTORS.children.stats.children.attributes.children.level,
       ))
 
     it('finds a selector for "stats.attributes.experience"', () =>
       expect(service.getSelector(['stats', 'attributes', 'experience'])).to.be.eq(
-        ENEMY_SELECTORS.stats.children.attributes.children.experience,
+        ENEMY_SELECTORS.children.stats.children.attributes.children.experience,
       ))
 
     it('finds a selector for "stats.ailments"', () =>
-      expect(service.getSelector(['ailments'])).to.be.eq(ENEMY_SELECTORS.ailments))
+      expect(service.getSelector(['ailments'])).to.be.eq(
+        ENEMY_SELECTORS.children.ailments,
+      ))
 
     it('finds a selector for "ailments.0"', () =>
       expect(service.getSelector(['ailments', '0'])).to.be.eq(
-        ENEMY_SELECTORS.ailments.children.$,
+        ENEMY_SELECTORS.children.ailments.children.$,
       ))
 
     it('finds a selector for "items"', () =>
-      expect(service.getSelector(['items'])).to.be.eq(ENEMY_SELECTORS.items))
+      expect(service.getSelector(['items'])).to.be.eq(
+        ENEMY_SELECTORS.children.items,
+      ))
 
     it('finds a selector for "items.0"', () =>
       expect(service.getSelector(['items', '0'])).to.be.eq(
-        ENEMY_SELECTORS.items.children.$,
+        ENEMY_SELECTORS.children.items.children.$,
       ))
 
     it('finds a selector for "items.0.id"', () =>
       expect(service.getSelector(['items', '0', 'id'])).to.be.eq(
-        ENEMY_SELECTORS.items.children.$.children.id,
+        ENEMY_SELECTORS.children.items.children.$.children.id,
       ))
 
     it('finds a selector for "items.0.rate"', () =>
       expect(service.getSelector(['items', '0', 'rate'])).to.be.eq(
-        ENEMY_SELECTORS.items.children.$.children.rate,
+        ENEMY_SELECTORS.children.items.children.$.children.rate,
       ))
 
     it('finds a selector for "triangles"', () =>
       expect(service.getSelector(['triangles'])).to.be.eq(
-        ENEMY_SELECTORS.triangles,
+        ENEMY_SELECTORS.children.triangles,
       ))
 
     it('finds a selector for "triangles.0"', () =>
       expect(service.getSelector(['triangles', '0'])).to.be.eq(
-        ENEMY_SELECTORS.triangles.children.$,
+        ENEMY_SELECTORS.children.triangles.children.$,
       ))
 
     it('finds a selector for "triangles.0.0"', () =>
       expect(service.getSelector(['triangles', '0', '0'])).to.be.eq(
-        ENEMY_SELECTORS.triangles.children.$.children.$,
+        ENEMY_SELECTORS.children.triangles.children.$.children.$,
       ))
 
     it('finds a selector for "triangles.0.1"', () =>
       expect(service.getSelector(['triangles', '0', '1'])).to.be.eq(
-        ENEMY_SELECTORS.triangles.children.$.children.$,
+        ENEMY_SELECTORS.children.triangles.children.$.children.$,
       ))
 
     it('finds a selector for "triangles.0.2"', () =>
       expect(service.getSelector(['triangles', '0', '2'])).to.be.eq(
-        ENEMY_SELECTORS.triangles.children.$.children.$,
+        ENEMY_SELECTORS.children.triangles.children.$.children.$,
       ))
 
 
@@ -669,8 +707,10 @@ describe('FormService', () => {
 
     context('when modifying an object to null', () => {
       const SELECTORS = {
-        stats: {
-          clipPristine: true,
+        children: {
+          stats: {
+            clipPristine: true,
+          },
         },
       }
 
@@ -735,8 +775,10 @@ describe('FormService', () => {
 
     context('when adding a primitive item', () => {
       const SELECTORS = {
-        items: {
-          genItem: () => '',
+        children: {
+          items: {
+            genItem: () => '',
+          },
         },
       }
 
@@ -773,8 +815,10 @@ describe('FormService', () => {
 
     context('when adding an object', () => {
       const SELECTORS = {
-        items: {
-          genItem: () => ({ id: '' }),
+        children: {
+          items: {
+            genItem: () => ({ id: '' }),
+          },
         },
       }
 
@@ -793,9 +837,11 @@ describe('FormService', () => {
 
     context('when adding an object with validators on the array selector', () => {
       const SELECTORS = {
-        items: {
-          genItem: () => ({ id: '' }),
-          validators: [],
+        children: {
+          items: {
+            genItem: () => ({ id: '' }),
+            validators: [],
+          },
         },
       }
 
@@ -814,11 +860,13 @@ describe('FormService', () => {
 
     context('when adding an object with validators on the array element selector', () => {
       const SELECTORS = {
-        items: {
-          genItem: () => ({ id: '' }),
-          children: {
-            $: {
-              validators: [],
+        children: {
+          items: {
+            genItem: () => ({ id: '' }),
+            children: {
+              $: {
+                validators: [],
+              },
             },
           },
         },
@@ -839,15 +887,17 @@ describe('FormService', () => {
 
     context('when adding an object with formatter on element', () => {
       const SELECTORS = {
-        items: {
-          genItem: () => ({
-            id: '',
-            name: '',
-            amount: 0,
-          }),
-          children: {
-            $: {
-              format: v => ({ ...v, amount: toCurrency(v.amount) }),
+        children: {
+          items: {
+            genItem: () => ({
+              id: '',
+              name: '',
+              amount: 0,
+            }),
+            children: {
+              $: {
+                format: v => ({ ...v, amount: toCurrency(v.amount) }),
+              },
             },
           },
         },
@@ -870,17 +920,19 @@ describe('FormService', () => {
 
     context('when adding an object with formatter on property of element', () => {
       const SELECTORS = {
-        items: {
-          genItem: () => ({
-            id: '',
-            name: '',
-            amount: 0,
-          }),
-          children: {
-            $: {
-              children: {
-                amount: {
-                  format: v => toCurrency(v),
+        children: {
+          items: {
+            genItem: () => ({
+              id: '',
+              name: '',
+              amount: 0,
+            }),
+            children: {
+              $: {
+                children: {
+                  amount: {
+                    format: v => toCurrency(v),
+                  },
                 },
               },
             },
@@ -904,35 +956,36 @@ describe('FormService', () => {
     })
 
     context('when adding an object item', () => {
-      beforeEach(() => {
-        service = new FormService(
+      const MODEL = {
+        items: [
           {
-            items: [
-              {
-                start: { hours: 8, minutes: 0, period: PERIOD.AM },
-                end: { hours: 12, minutes: 0, period: PERIOD.PM },
-              },
-            ],
+            start: { hours: 8, minutes: 0, period: PERIOD.AM },
+            end: { hours: 12, minutes: 0, period: PERIOD.PM },
           },
-          {
-            items: {
-              genItem: () => ({
-                start: { hours: 7, minutes: 0, period: PERIOD.AM },
-                end: { hours: 17, minutes: 0, period: PERIOD.PM },
-              }),
-              children: {
-                $: {
-                  children: {
-                    start: [segmentValidator, intervalValidator],
-                    end: [segmentValidator, intervalValidator],
-                  },
+        ],
+      }
+
+      const SELECTORS = {
+        children: {
+          items: {
+            genItem: () => ({
+              start: { hours: 7, minutes: 0, period: PERIOD.AM },
+              end: { hours: 17, minutes: 0, period: PERIOD.PM },
+            }),
+            children: {
+              $: {
+                children: {
+                  start: [segmentValidator, intervalValidator],
+                  end: [segmentValidator, intervalValidator],
                 },
               },
             },
           },
-          onChangeSpy,
-        )
+        },
+      }
 
+      beforeEach(() => {
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
         service.addItem('items')
       })
 
@@ -975,7 +1028,9 @@ describe('FormService', () => {
     const EXPECTED_PRISTINE = [false, true, true]
     const EXPECTED_ERRORS = 'asdf'
     const SELECTORS = {
-      ailments: [failValidator],
+      children: {
+        ailments: [failValidator],
+      },
     }
 
     beforeEach(() => {
@@ -1001,7 +1056,9 @@ describe('FormService', () => {
     const EXPECTED_PRISTINE = [false, true, false]
     const EXPECTED_ERRORS = 'asdf'
     const SELECTORS = {
-      ailments: [failValidator],
+      children: {
+        ailments: [failValidator],
+      },
     }
 
     beforeEach(() => {
@@ -1032,16 +1089,19 @@ describe('FormService', () => {
 
     context('when invalid data is provided (single validator)', () => {
       beforeEach(() => {
-        service = new FormService(
-          {
-            name: '',
-            description: '',
-            amount: '',
-          },
-          { name: [required()] },
-          onChangeSpy,
-        )
+        const MODEL = {
+          name: '',
+          description: '',
+          amount: '',
+        }
 
+        const SELECTORS = {
+          children: {
+            name: [required()]
+          },
+        }
+
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
         valid = service.validate()
       })
 
@@ -1072,13 +1132,16 @@ describe('FormService', () => {
     })
 
     context('when valid data is provided (single validator)', () => {
-      beforeEach(() => {
-        service = new FormService(
-          { name: 'asdf' },
-          { name: [required()] },
-          onChangeSpy,
-        )
+      const MODEL = { name: 'asdf' }
 
+      const SELECTORS = {
+        children: {
+          name: [required()],
+        },
+      }
+
+      beforeEach(() => {
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
         valid = service.validate()
       })
 
@@ -1092,13 +1155,16 @@ describe('FormService', () => {
     })
 
     context('when invalid data is provided (multiple validators)', () => {
-      beforeEach(() => {
-        service = new FormService(
-          { name: 'Wronguy' },
-          { name: [required(), VALIDATOR_NAME_MATCH] },
-          onChangeSpy,
-        )
+      const MODEL = { name: 'Wronguy' }
 
+      const SELECTORS = {
+        children: {
+          name: [required(), VALIDATOR_NAME_MATCH],
+        },
+      }
+
+      beforeEach(() => {
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
         valid = service.validate()
       })
 
@@ -1127,13 +1193,15 @@ describe('FormService', () => {
     })
 
     context('when invalid data is provided (multiple validators)', () => {
-      beforeEach(() => {
-        service = new FormService(
-          { name: NAME_MATCH },
-          { name: [required(), VALIDATOR_NAME_MATCH] },
-          onChangeSpy,
-        )
+      const MODEL = { name: NAME_MATCH }
+      const SELECTORS = {
+        children: {
+          name: [required(), VALIDATOR_NAME_MATCH],
+        },
+      }
 
+      beforeEach(() => {
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
         valid = service.validate()
       })
 
@@ -1147,22 +1215,22 @@ describe('FormService', () => {
     })
 
     context('when validating across multiple levels of selectors', () => {
-      beforeEach(() => {
-        service = new FormService(
-          { tax: { name: '', rate: '' } },
-          {
-            tax: {
-              children: {
-                rate: [
-                  requiredIf('name'),
-                  range(0, 100, false, false, '0 - 100'),
-                ],
-              },
+      const MODEL = { tax: { name: '', rate: '' } }
+      const SELECTORS = {
+        children: {
+          tax: {
+            children: {
+              rate: [
+                requiredIf('name'),
+                range(0, 100, false, false, '0 - 100'),
+              ],
             },
           },
-          onChangeSpy,
-        )
+        },
+      }
 
+      beforeEach(() => {
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
         valid = service.validate()
       })
 
@@ -1236,43 +1304,44 @@ describe('FormService', () => {
     })
 
     context('when errors are clipped', () => {
-      beforeEach(() => {
-        service = new FormService(
+      const MODEL = {
+        items: [
           {
-            items: [
-              {
-                start: { hours: 8, minutes: 0, period: PERIOD.AM },
-                end: { hours: 12, minutes: 0, period: PERIOD.PM },
-              },
-              {
-                start: { hours: 13, minutes: 0, period: PERIOD.PM },
-                end: { hours: 17, minutes: 0, period: PERIOD.PM },
-              },
-              {
-                start: { hours: 16, minutes: 0, period: PERIOD.PM },
-                end: { hours: 18, minutes: 0, period: PERIOD.PM },
-              },
-            ],
+            start: { hours: 8, minutes: 0, period: PERIOD.AM },
+            end: { hours: 12, minutes: 0, period: PERIOD.PM },
           },
           {
-            items: {
-              genItem: () => ({
-                start: { hours: 7, minutes: 0, period: PERIOD.AM },
-                end: { hours: 17, minutes: 0, period: PERIOD.PM },
-              }),
-              children: {
-                $: {
-                  children: {
-                    start: [segmentValidator, intervalValidator],
-                    end: [segmentValidator, intervalValidator],
-                  },
+            start: { hours: 13, minutes: 0, period: PERIOD.PM },
+            end: { hours: 17, minutes: 0, period: PERIOD.PM },
+          },
+          {
+            start: { hours: 16, minutes: 0, period: PERIOD.PM },
+            end: { hours: 18, minutes: 0, period: PERIOD.PM },
+          },
+        ],
+      }
+
+      const SELECTORS = {
+        children: {
+          items: {
+            genItem: () => ({
+              start: { hours: 7, minutes: 0, period: PERIOD.AM },
+              end: { hours: 17, minutes: 0, period: PERIOD.PM },
+            }),
+            children: {
+              $: {
+                children: {
+                  start: [segmentValidator, intervalValidator],
+                  end: [segmentValidator, intervalValidator],
                 },
               },
             },
           },
-          onChangeSpy,
-        )
+        },
+      }
 
+      beforeEach(() => {
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
         valid = service.validate()
       })
 
@@ -1289,26 +1358,25 @@ describe('FormService', () => {
 
     context('when validating an array', () => {
       const SCHEMA_PHONES_EMPTY = new Array(2).fill({ number: '', type: '' })
-
-      beforeEach(() => {
-        service = new FormService(
-          { phones: SCHEMA_PHONES_EMPTY },
-          {
-            phones: {
-              genItem: () => ({ number: '', type: '' }),
-              children: {
-                $: {
-                  children: {
-                    number: [phoneNumberValidator],
-                    type: [requiredIf('number')],
-                  },
+      const MODEL = { phones: SCHEMA_PHONES_EMPTY }
+      const SELECTORS = {
+        children: {
+          phones: {
+            genItem: () => ({ number: '', type: '' }),
+            children: {
+              $: {
+                children: {
+                  number: [phoneNumberValidator],
+                  type: [requiredIf('number')],
                 },
               },
             },
           },
-          onChangeSpy,
-        )
+        },
+      }
 
+      beforeEach(() => {
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
         valid = service.validate()
       })
 
@@ -1341,18 +1409,18 @@ describe('FormService', () => {
     })
 
     context('when ignoring pristine status of a key', () => {
-      beforeEach(() => {
-        service = new FormService(
-          { rate: '' },
-          {
-            rate: {
-              ignorePristine: true,
-              validators: [range(0, 100, false, false, '0 - 100')],
-            },
+      const MODEL = { rate: '' }
+      const SELECTORS = {
+        children: {
+          rate: {
+            ignorePristine: true,
+            validators: [range(0, 100, false, false, '0 - 100')],
           },
-          onChangeSpy,
-        )
+        },
+      }
 
+      beforeEach(() => {
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
         service.apply('rate', 101)
       })
 
@@ -1361,23 +1429,23 @@ describe('FormService', () => {
     })
 
     context('when ignoring pristine status of a key (array)', () => {
-      beforeEach(() => {
-        service = new FormService(
-          { rates: [''] },
-          {
-            rates: {
-              genItem: () => '',
-              children: {
-                $: {
-                  ignorePristine: true,
-                  validators: [range(0, 100, false, false, '0 - 100')],
-                },
+      const MODEL = { rates: [''] }
+      const SELECTORS = {
+        children: {
+          rates: {
+            genItem: () => '',
+            children: {
+              $: {
+                ignorePristine: true,
+                validators: [range(0, 100, false, false, '0 - 100')],
               },
             },
           },
-          onChangeSpy,
-        )
+        },
+      }
 
+      beforeEach(() => {
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
         service.apply('rates.0', 101)
       })
 
@@ -1396,27 +1464,27 @@ describe('FormService', () => {
     })
 
     context('when ignoring pristine status of a key (array-child)', () => {
-      beforeEach(() => {
-        service = new FormService(
-          { taxes: [{ name: '', rate: '' }] },
-          {
-            taxes: {
-              genItem: () => ({ name: '', rate: '' }),
-              children: {
-                $: {
-                  children: {
-                    rate: {
-                      ignorePristine: true,
-                      validators: [range(0, 100, false, false, '0 - 100')],
-                    },
+      const MODEL = { taxes: [{ name: '', rate: '' }] }
+      const SELECTORS = {
+        children: {
+          taxes: {
+            genItem: () => ({ name: '', rate: '' }),
+            children: {
+              $: {
+                children: {
+                  rate: {
+                    ignorePristine: true,
+                    validators: [range(0, 100, false, false, '0 - 100')],
                   },
                 },
               },
             },
           },
-          onChangeSpy,
-        )
+        },
+      }
 
+      beforeEach(() => {
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
         service.apply('taxes.0.rate', 101)
       })
 
