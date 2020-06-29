@@ -299,7 +299,7 @@ export default class FormService {
     }
   }
 
-  __buildSchema (refSchema, initialValue, fn, rootPath = []) {
+  __buildSchema (refSchema, initialValue, fn, rootPath = [], forArr = false) {
     const rootSelector = this.getSelector(rootPath)
 
     if (rootSelector) {
@@ -315,7 +315,9 @@ export default class FormService {
       const dateType = value instanceof Date
 
       if (!dateType && value !== null && typeof value === 'object') {
-        const selector = this.getSelector([...rootPath, ...keyPath])
+        const arrTerm = forArr ? '0' : ''
+        const fullPath = [...rootPath, arrTerm, ...keyPath].filter(item => item)
+        const selector = this.getSelector(fullPath)
 
         if (selector && fn(selector)) {
           setValueByPath(result, keyPath, initialValue)
@@ -382,7 +384,7 @@ export default class FormService {
 
     if (typeof value === 'object') {
       const subObj = (typeof item === 'object')
-        ? this.__buildSchema(item, defaultValue, fn, keyPath)
+        ? this.__buildSchema(item, defaultValue, fn, keyPath, true)
         : defaultValue
 
       value.splice(index, 0, subObj)

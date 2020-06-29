@@ -730,7 +730,6 @@ describe.only('FormService', () => {
     })
   })
 
-  // TODO: test with converters
   describe('addItem()', () => {
     const MODEL = { items: [] }
 
@@ -784,8 +783,12 @@ describe.only('FormService', () => {
         service.addItem('items')
       })
 
-      it('provides the correct errors', () =>
-        expect(service.__errors).to.be.eql({ items: [{ id: '' }] }))
+      it('invokes the callback', () =>
+        expect(getLastChange()).to.be.eql([
+          true,
+          { items: [{ id: '' }] },
+          { items: [{ id: '' }] },
+        ]))
     })
 
     context('when adding an object with validators on the array selector', () => {
@@ -801,11 +804,15 @@ describe.only('FormService', () => {
         service.addItem('items')
       })
 
-      it('provides the correct errors', () =>
-        expect(service.__errors).to.be.eql({ items: '' }))
+      it('invokes the callback', () =>
+        expect(getLastChange()).to.be.eql([
+          true,
+          { items: [{ id: '' }] },
+          { items: '' },
+        ]))
     })
 
-    context('when adding an object and clipping errors for the array element', () => {
+    context('when adding an object with validators on the array element selector', () => {
       const SELECTORS = {
         items: {
           genItem: () => ({ id: '' }),
@@ -823,7 +830,77 @@ describe.only('FormService', () => {
       })
 
       it('invokes the callback', () =>
-        expect(service.__errors).to.be.eql({ items: [''] }))
+        expect(getLastChange()).to.be.eql([
+          true,
+          { items: [{ id: '' }] },
+          { items: [''] },
+        ]))
+    })
+
+    context('when adding an object with formatter on element', () => {
+      const SELECTORS = {
+        items: {
+          genItem: () => ({
+            id: '',
+            name: '',
+            amount: 0,
+          }),
+          children: {
+            $: {
+              format: v => ({ ...v, amount: toCurrency(v.amount) }),
+            },
+          },
+        },
+      }
+
+      beforeEach(() => {
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service.addItem('items')
+      })
+
+      it('invokes the callback', () =>
+        expect(service.__state).to.be.eql({
+          items: [{
+            id: '',
+            name: '',
+            amount: '$0.00',
+          }],
+        }))
+    })
+
+    context('when adding an object with formatter on property of element', () => {
+      const SELECTORS = {
+        items: {
+          genItem: () => ({
+            id: '',
+            name: '',
+            amount: 0,
+          }),
+          children: {
+            $: {
+              children: {
+                amount: {
+                  format: v => toCurrency(v),
+                },
+              },
+            },
+          },
+        },
+      }
+
+      beforeEach(() => {
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service.addItem('items')
+      })
+
+      it('invokes the callback', () =>
+        expect(service.__state).to.be.eql({
+          items: [{
+            id: '',
+            name: '',
+            amount: '$0.00',
+          }],
+        }))
     })
 
     context('when adding an object item', () => {
@@ -1158,8 +1235,7 @@ describe.only('FormService', () => {
       })
     })
 
-    // FAILS due to schema clipping not working on shorthand validators
-    context.skip('when errors are clipped', () => {
+    context('when errors are clipped', () => {
       beforeEach(() => {
         service = new FormService(
           {
