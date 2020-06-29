@@ -40,7 +40,7 @@ export class PristineError extends Error {
 
 export class MutationError extends Error {
   constructor (keyPath, oldValue, newValue) {
-    super(`Reshaping on mutation not allowed at path: ${keyPath}
+    super(`Reshaping on mutation not allowed at path: ${keyPath.join('.')}
 Old Value: ${printValue(oldValue)}
 New Value: ${printValue(newValue)}`)
     this.name = 'MutationError'
@@ -287,24 +287,27 @@ export default class FormService {
   }
 
   __verifyValue (keyPath, value) {
+    const selector = this.getSelector(keyPath, true)
     const oldValue = getValueByPath(this.__state, keyPath)
 
-    if (oldValue === undefined) {
-      throw new TypeError(`Invalid path: ${keyPath.join('.')}`)
-    }
+    if (!selector || !selector.unsafe) {
+      if (oldValue === undefined) {
+        throw new TypeError(`Invalid path: ${keyPath.join('.')}`)
+      }
 
-    if (oldValue !== null && value !== null) {
-      if (typeof oldValue === 'object') {
-        const oldPathMap = getKeyPaths(oldValue)
+      if (oldValue !== null && value !== null) {
+        if (typeof oldValue === 'object') {
+          const oldPathMap = getKeyPaths(oldValue)
 
-        if (typeof value === 'object') {
-          const pathMap = getKeyPaths(value)
+          if (typeof value === 'object') {
+            const pathMap = getKeyPaths(value)
 
-          if (!equal(oldPathMap, pathMap)) {
-            throw new MutationError(keyPath, value, oldValue)
+            if (!equal(oldPathMap, pathMap)) {
+              throw new MutationError(keyPath, oldValue, value)
+            }
+          } else {
+            throw new MutationError(keyPath, oldValue, value)
           }
-        } else {
-          throw new MutationError(keyPath, value, oldValue)
         }
       }
     }

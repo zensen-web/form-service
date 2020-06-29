@@ -187,3 +187,4 @@ const SELECTORS = {
 - Validation workflow with `apply()`:
   - Execute if key has `validators`
   - Execute `validators` on any parent keys that have them
+- `unsafe` modifier to disable certain safety checks

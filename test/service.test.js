@@ -864,13 +864,54 @@ describe('FormService', () => {
         service = new FormService(ENEMY_MODEL, SELECTORS, onChangeSpy)
       })
 
-      it('throw an error', () => expect(fn).to.not.throw(MutationError))
+      it('throw an error', () => expect(fn).to.not.throw())
     })
 
     context('when adding a rogue property to sub-object', () => {
       const fn = () => service.apply('stats.asdf', 42)
 
       it('throw an error', () => expect(fn).to.throw(MutationError))
+    })
+
+    context('when mutating an array', () => {
+      const MODEL = { items: [{ id: '', name: '' }] }
+
+      const SELECTORS = {
+        children: {
+          items: {
+            clipPristine: true,
+          },
+        },
+      }
+
+      const fn = () => service.apply('items', [])
+
+      beforeEach(() => {
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+      })
+
+      it('throws an error', () => expect(fn).to.throw(MutationError))
+    })
+
+    context('when mutating an array while allowing unsafe mutations', () => {
+      const MODEL = { items: [{ id: '', name: '' }] }
+
+      const SELECTORS = {
+        children: {
+          items: {
+            unsafe: true,
+            clipPristine: true,
+          },
+        },
+      }
+
+      const fn = () => service.apply('items', [])
+
+      beforeEach(() => {
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+      })
+
+      it('does not throw an error', () => expect(fn).to.not.throw())
     })
 
     context('when modifying a key that does not have pristine status', () => {
