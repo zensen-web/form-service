@@ -216,6 +216,8 @@ export default class FormService {
       }
     }
 
+    const initialValue = keyPath.length ? ['children'] : []
+
     return keyPath.reduce((accum, curr, index) => {
       const parentPath = keyPath.slice(0, index)
       const parent = getValueByPath(this.__state, parentPath)
@@ -224,7 +226,7 @@ export default class FormService {
       return (index < keyPath.length - 1)
         ? [...accum, key, 'children']
         : [...accum, key]
-    }, ['children'])
+    }, initialValue)
   }
 
   getSelector (keyPath, ignoreCheck = false) {

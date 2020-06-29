@@ -24,6 +24,8 @@ import {
   ENEMY_MODEL,
   ENEMY_ERRORS,
   ENEMY_SELECTORS,
+  ITEMS_MODEL,
+  ITEMS_SELECTORS,
   toNumeric,
   toCurrency,
   toPhoneNumber,
@@ -325,11 +327,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(
-          MODEL,
-          SELECTOR,
-          onChangeSpy,
-        )
+        service = new FormService(MODEL, SELECTOR, onChangeSpy)
       })
 
       it('returns the proper schema', () =>
@@ -359,11 +357,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(
-          MODEL,
-          SELECTOR,
-          onChangeSpy,
-        )
+        service = new FormService(MODEL, SELECTOR, onChangeSpy)
       })
 
       it('returns the proper schema', () =>
@@ -400,11 +394,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(
-          MODEL,
-          SELECTORS,
-          onChangeSpy,
-        )
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
       })
 
       it('returns the proper schema', () =>
@@ -433,6 +423,9 @@ describe('FormService', () => {
 
     it('throws an error when an invalid path is provided: "asdf"', () =>
       expect(() => service.getSelectorPath(['asdf'])).to.throw(PathError))
+
+    it('resovle the path for root', () =>
+      expect(service.getSelectorPath([])).to.be.eql([]))
 
     it('resolve the path for "name"', () =>
       expect(service.getSelectorPath(['name'])).to.be.eql(['children', 'name']))
@@ -524,6 +517,28 @@ describe('FormService', () => {
 
     it('throws an error when an invalid path is provided: "triangles.0.3"', () =>
       expect(() => service.getSelectorPath(['triangles.0.3'])).to.throw(PathError))
+
+    describe('array model', () => {
+      beforeEach(() => {
+        service = new FormService(ITEMS_MODEL, ITEMS_SELECTORS, onChangeSpy)
+      })
+
+      it('resolve the path for root', () =>
+        expect(service.getSelectorPath([])).to.be.eql([]))
+
+      it('resolve the path for "0"', () =>
+        expect(service.getSelectorPath(['0'])).to.be.eql(['children', '$']))
+
+      it('resolve the path for "0.id"', () =>
+        expect(service.getSelectorPath(['0', 'id'])).to.be.eql([
+          'children', '$', 'children', 'id',
+        ]))
+
+      it('resolve the path for "0.name"', () =>
+        expect(service.getSelectorPath(['0', 'name'])).to.be.eql([
+          'children', '$', 'children', 'name',
+        ]))
+    })
   })
 
   describe('getSelector()', () => {
@@ -533,6 +548,9 @@ describe('FormService', () => {
 
     it('throws an error when an invalid path is provided: "asdf"', () =>
       expect(() => service.getSelector(['asdf'])).to.throw(PathError))
+
+    it('finds the selector for root', () =>
+      expect(service.getSelector([])).to.be.eq(ENEMY_SELECTORS))
 
     it('finds the selector for "name"', () =>
       expect(service.getSelector(['name'])).to.be.eq(
@@ -632,9 +650,30 @@ describe('FormService', () => {
         ENEMY_SELECTORS.children.triangles.children.$.children.$,
       ))
 
-
     it('throws an error when an invalid path is provided: "triangles.0.3"', () =>
       expect(() => service.getSelector(['triangles', '0', '3'])).to.throw(PathError))
+
+    describe('array model', () => {
+      beforeEach(() => {
+        service = new FormService(ITEMS_MODEL, ITEMS_SELECTORS, onChangeSpy)
+      })
+
+      it('finds a selector for root', () =>
+        expect(service.getSelector([])).to.be.eql(ITEMS_SELECTORS))
+
+      it('finds a selector for "0"', () =>
+        expect(service.getSelector(['0'])).to.be.eql(ITEMS_SELECTORS.children.$))
+
+      it('finds a selector for "0.id"', () =>
+        expect(service.getSelector(['0', 'id'])).to.be.eql(
+          ITEMS_SELECTORS.children.$.children.id,
+        ))
+
+      it('finds a selector for "0.name"', () =>
+        expect(service.getSelector(['0', 'name'])).to.be.eql(
+          ITEMS_SELECTORS.children.$.children.name,
+        ))
+    })
   })
 
   describe('apply()', () => {

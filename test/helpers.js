@@ -2,9 +2,6 @@ import pkg from 'validator'
 
 import { map, getValueByPath } from '../src/utils'
 
-export const DATE = new Date(2020, 0, 1, 0, 0, 0, 0)
-export const MODIFIERS = ['ab', 'cd', 'ef', 'gh']
-
 export const PERIOD = {
   AM: 'am',
   PM: 'pm',
@@ -57,6 +54,8 @@ export const ENEMY_ERRORS = {
 }
 
 export const ENEMY_SELECTORS = {
+  format: v => v,
+  unformat: v => v,
   children: {
     name: {
       format: v => v,
@@ -142,6 +141,31 @@ export const ENEMY_SELECTORS = {
       },
     },
   }
+}
+
+export const ITEMS_MODEL = [
+  { id: '', name: '' },
+]
+
+export const ITEMS_SELECTORS = {
+  format: v => v,
+  unformat: v => v,
+  children: {
+    $: {
+      format: v => v,
+      unformat: v => v,
+      children: {
+        id: {
+          format: v => v,
+          unformat: v => v,
+        },
+        name: {
+          format: v => v,
+          unformat: v => v,
+        },
+      },
+    },
+  },
 }
 
 export function capitalize (str) {
