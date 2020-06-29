@@ -804,6 +804,24 @@ describe('FormService', () => {
       it('throw an error', () => expect(fn).to.throw(MutationError))
     })
 
+    context('when mutating an object to have a different shape', () => {
+      const SELECTORS = {
+        children: {
+          stats: {
+            clipPristine: true,
+          },
+        },
+      }
+
+      const fn = () => service.apply('stats', { id: '' })
+
+      beforeEach(() => {
+        service = new FormService(ENEMY_MODEL, SELECTORS, onChangeSpy)
+      })
+
+      it('throw an error', () => expect(fn).to.throw(MutationError))
+    })
+
     context('when adding a rogue property to sub-object', () => {
       const fn = () => service.apply('stats.asdf', 42)
 
