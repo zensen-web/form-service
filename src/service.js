@@ -308,24 +308,14 @@ export default class FormService {
     }
   }
 
-  __buildSchema (refSchema, initialValue, fn, rootPath = [], forArr = false) {
-    const rootSelector = this.getSelector(rootPath)
-
-    if (rootSelector) {
-      const children = rootSelector.children
-
-      if (children && children.$ && fn(children.$)) {
-        return initialValue
-      }
-    }
-
+  __buildSchema (refSchema, initialValue, fn, rootPath = []) {
     const result = Array.isArray(refSchema) ? [] : {}
+
     traverse(refSchema, (keyPath, value) => {
       const dateType = value instanceof Date
 
       if (!dateType && value !== null && typeof value === 'object') {
-        const arrTerm = forArr ? '0' : ''
-        const fullPath = [...rootPath, arrTerm, ...keyPath].filter(item => item)
+        const fullPath = [...rootPath, ...keyPath].filter(item => item)
         const selector = this.getSelector(fullPath)
 
         if (selector && fn(selector)) {
@@ -392,8 +382,15 @@ export default class FormService {
     const value = getValueByPath(this[schemaKey], keyPath)
 
     if (typeof value === 'object') {
-      const subObj = (typeof item === 'object')
-        ? this.__buildSchema(item, defaultValue, fn, keyPath, true)
+      const selector = this.getSelector(keyPath)
+      const clipElement =
+        selector &&
+        selector.children &&
+        selector.children.$ &&
+        fn(selector.children.$)
+
+      const subObj = !clipElement && (typeof item === 'object')
+        ? this.__buildSchema(item, defaultValue, fn, [...keyPath, '0'])
         : defaultValue
 
       value.splice(index, 0, subObj)
