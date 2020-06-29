@@ -172,7 +172,7 @@ export default class FormService {
     const prevErrors = this.__errors
 
     this.__pristine = map(this.__pristine, () => false)
-    traverse(this.__state, (keyPath, value) => {
+    traverse(this.__state, keyPath => {
       const pristine = getValueByPath(this.__pristine, keyPath)
 
       if (typeof pristine !== 'object') {
