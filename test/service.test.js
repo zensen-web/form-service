@@ -924,6 +924,12 @@ describe('FormService', () => {
       it('throw an error', () => expect(fn).to.throw(PristineError))
     })
 
+    context('when state is accidentally set on a value', () => {
+      const fn = () => service.apply('asdf', service.__state)
+
+      it('throw the error', () => expect(fn).to.throw(MutationError))
+    })
+
     describe('array model', () => {
       context('when modifying an item', () => {
         beforeEach(() => {

@@ -98,8 +98,12 @@ export default class FormService {
 
   apply (name, value) {
     const keyPath = name.split('.')
-    const pristine = getValueByPath(this.__pristine, keyPath)
 
+    if (name && value === this.__state) {
+      throw new MutationError(keyPath, value, this.__state)
+    }
+
+    const pristine = getValueByPath(this.__pristine, keyPath)
     if (typeof pristine === 'object') {
       throw new PristineError(keyPath)
     }
@@ -325,7 +329,7 @@ export default class FormService {
       const dateType = value instanceof Date
 
       if (!dateType && value !== null && typeof value === 'object') {
-        const fullPath = [...rootPath, ...keyPath].filter(item => item)
+        const fullPath = [...rootPath, ...keyPath]
         const selector = this.getSelector(fullPath)
 
         if (selector && fn(selector)) {
@@ -384,10 +388,10 @@ export default class FormService {
     if (keyPath.length > 1) {
       keyPath.slice(0, keyPath.length - 1).forEach((_, index) => {
         const subPath = keyPath.slice(0, index + 1)
-        const subObj = getValueByPath(this.__state, subPath)
+        const subObj = getValueByPath(this[schemaKey], subPath)
         const result = Array.isArray(subObj) ? [...subObj] : { ...subObj }
 
-        setValueByPath(this.__state, subPath, result)
+        setValueByPath(this[schemaKey], subPath, result)
       })
     }
   }
@@ -404,7 +408,7 @@ export default class FormService {
         fn(selector.children.$)
 
       const subObj = !clipElement && (typeof item === 'object')
-        ? this.__buildSchema(item, defaultValue, fn, [...keyPath, index])
+        ? this.__buildSchema(item, defaultValue, fn, [...keyPath, `${index}`])
         : defaultValue
 
       value.splice(index, 0, subObj)
