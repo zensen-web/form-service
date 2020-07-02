@@ -1,5 +1,5 @@
 /.circleci
-/.nye_output
+/.nyc_output
 /.storybook
 /coverage
 /examples
