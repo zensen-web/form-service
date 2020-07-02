@@ -18,6 +18,12 @@ function printValue (v) {
   return typeof v === 'object' ? JSON.stringify(v, '', 2) : v
 }
 
+function pathToKeyPath (path) {
+  const str = `${path}`
+
+  return str ? str.split('.') : []
+}
+
 class ValidationError extends Error {
   constructor (message) {
     super(message)
@@ -96,10 +102,10 @@ export default class FormService {
     this.__change()
   }
 
-  apply (name, value) {
-    const keyPath = name.split('.')
+  apply (path, value) {
+    const keyPath = pathToKeyPath(path)
 
-    if (name && value === this.__state) {
+    if (path && value === this.__state) {
       throw new MutationError(keyPath, value, this.__state)
     }
 
@@ -118,8 +124,8 @@ export default class FormService {
     this.__modify(keyPath)
   }
 
-  addItem (name, index = -1) {
-    const keyPath = name ? name.split('.') : []
+  addItem (path, index = -1) {
+    const keyPath = pathToKeyPath(path)
     const items = getValueByPath(this.__state, keyPath)
     const shiftedIndex = index !== -1 ? index : items.length
     const selector = this.getSelector(keyPath)
@@ -135,8 +141,8 @@ export default class FormService {
     this.__change()
   }
 
-  removeItem (name, index = -1) {
-    const keyPath = name ? name.split('.') : []
+  removeItem (path, index = -1) {
+    const keyPath = pathToKeyPath(path)
     const items = getValueByPath(this.__state, keyPath)
     const shiftedIndex = index === -1 ? items.length - 1 : index
 
@@ -148,8 +154,8 @@ export default class FormService {
     this.__change()
   }
 
-  moveItem (name, fromIndex, toIndex) {
-    const keyPath = name.split('.')
+  moveItem (path, fromIndex, toIndex) {
+    const keyPath = pathToKeyPath(path)
 
     this.__moveItemInSchema('__state', keyPath, fromIndex, toIndex)
     this.__moveItemInSchema('__errors', keyPath, fromIndex, toIndex)
@@ -157,8 +163,8 @@ export default class FormService {
     this.__change()
   }
 
-  swapItems (name, index1, index2) {
-    const keyPath = name.split('.')
+  swapItems (path, index1, index2) {
+    const keyPath = pathToKeyPath(path)
 
     this.__swapItemsInSchema('__state', keyPath, index1, index2)
     this.__swapItemsInSchema('__errors', keyPath, index1, index2)
@@ -438,7 +444,12 @@ export default class FormService {
         return item
       })
 
-      setValueByPath(this[schemaKey], keyPath, result)
+      if (keyPath.length) {
+        setValueByPath(this[schemaKey], keyPath, result)
+      } else {
+        this[schemaKey] = result
+      }
+
       this.__spreadSchema(schemaKey, keyPath)
     }
   }
@@ -449,7 +460,12 @@ export default class FormService {
     if (Array.isArray(items)) {
       const result = swap(items, index1, index2)
 
-      setValueByPath(this[schemaKey], keyPath, result)
+      if (keyPath.length) {
+        setValueByPath(this[schemaKey], keyPath, result)
+      } else {
+        this[schemaKey] = result
+      }
+
       this.__spreadSchema(schemaKey, [...keyPath, index1])
       this.__spreadSchema(schemaKey, [...keyPath, index2])
     }

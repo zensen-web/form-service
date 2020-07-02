@@ -931,6 +931,32 @@ describe('FormService', () => {
     })
 
     describe('array model', () => {
+      context('when path is empty', () => {
+        const MODEL = ['']
+        const SELECTORS = {
+          clipPristine: true,
+        }
+
+        const fn = () => service.apply('', ['asdf'])
+
+        beforeEach(() => {
+          service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        })
+
+        it('does not throw an error', () => expect(fn).to.not.throw())
+      })
+
+      context('when path is numeric', () => {
+        const MODEL = ['']
+        const fn = () => service.apply(0, 'asdf')
+
+        beforeEach(() => {
+          service = new FormService(MODEL, {}, onChangeSpy)
+        })
+
+        it('does not throw an error', () => expect(fn).to.not.throw())
+      })
+
       context('when modifying an item', () => {
         beforeEach(() => {
           service = new FormService(ITEMS_MODEL, {}, onChangeSpy)
@@ -1004,7 +1030,7 @@ describe('FormService', () => {
         service.addItem('items')
       })
 
-      it('invokes the callback', () =>
+      it('adds the item', () =>
         expect(getLastChange()).to.be.eql([
           true,
           { items: [{ id: '' }] },
@@ -1027,7 +1053,7 @@ describe('FormService', () => {
         service.addItem('items')
       })
 
-      it('invokes the callback', () =>
+      it('adds the item', () =>
         expect(getLastChange()).to.be.eql([
           true,
           { items: [{ id: '' }] },
@@ -1054,7 +1080,7 @@ describe('FormService', () => {
         service.addItem('items')
       })
 
-      it('invokes the callback', () =>
+      it('adds the item', () =>
         expect(getLastChange()).to.be.eql([
           true,
           { items: [{ id: '' }] },
@@ -1085,7 +1111,7 @@ describe('FormService', () => {
         service.addItem('items')
       })
 
-      it('invokes the callback', () =>
+      it('adds the item', () =>
         expect(service.__state).to.be.eql({
           items: [{
             id: '',
@@ -1122,7 +1148,7 @@ describe('FormService', () => {
         service.addItem('items')
       })
 
-      it('invokes the callback', () =>
+      it('adds the item', () =>
         expect(service.__state).to.be.eql({
           items: [{
             id: '',
@@ -1176,6 +1202,21 @@ describe('FormService', () => {
     })
 
     describe('array model', () => {
+      context('when path is empty', () => {
+        const MODEL = ['']
+        const SELECTORS = {
+          genItem: () => '',
+        }
+
+        beforeEach(() => {
+          service = new FormService(MODEL, SELECTORS, onChangeSpy)
+          service.addItem('')
+        })
+
+        it('adds the item', () =>
+          expect(service.__state).to.be.eql(['', '']))
+      })
+
       context('when adding an item with validators', () => {
         const SELECTORS = {
           genItem: () => ({ id: '', name: '' }),
@@ -1224,14 +1265,16 @@ describe('FormService', () => {
     })
 
     describe('array model', () => {
-      context('when removing an item', () => {
+      context('when path is empty', () => {
+        const MODEL = ['']
+
         beforeEach(() => {
-          service = new FormService(ITEMS_MODEL, {}, onChangeSpy)
+          service = new FormService(MODEL, {}, onChangeSpy)
           service.removeItem('')
         })
-  
-        it('invokes the callback', () =>
-          expect(getLastChange()).to.be.eql([true, [], []]))
+
+        it('removes the item', () =>
+          expect(service.__state).to.be.eql([]))
       })
     })
   })
@@ -1262,6 +1305,20 @@ describe('FormService', () => {
 
     it('reorders the item in the pristine schema', () =>
       expect(service.__pristine.ailments).to.be.eql(EXPECTED_PRISTINE))
+
+    describe('array model', () => {
+      context('when path is empty', () => {
+        const MODEL = ['a', 'b', 'c']
+
+        beforeEach(() => {
+          service = new FormService(MODEL, {}, onChangeSpy)
+          service.moveItem('', 2, 1)
+        })
+
+        it('moves the item', () =>
+          expect(service.__state).to.be.eql(['a', 'c', 'b']))
+      })
+    })
   })
 
   describe('swapItems()', () => {
@@ -1289,6 +1346,20 @@ describe('FormService', () => {
 
     it('swaps the selected items in the pristine schema', () =>
       expect(service.__pristine.ailments).to.be.eql(EXPECTED_PRISTINE))
+
+    describe('array model', () => {
+      context('when path is empty', () => {
+        const MODEL = ['a', 'b', 'c']
+
+        beforeEach(() => {
+          service = new FormService(MODEL, {}, onChangeSpy)
+          service.swapItems('', 2, 0)
+        })
+
+        it('swaps the items', () =>
+          expect(service.__state).to.be.eql(['c', 'b', 'a']))
+      })
+    })
   })
 
   describe('validate()', () => {
