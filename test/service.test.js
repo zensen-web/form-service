@@ -231,7 +231,7 @@ describe('FormService', () => {
       const SELECTORS = {
         children: {
           items: {
-            genItem: () => ITEM_ADDED_HOURS,
+            createItem: () => ITEM_ADDED_HOURS,
             children: {
               $: {
                 // validators: [],
@@ -396,7 +396,7 @@ describe('FormService', () => {
       const SELECTORS = {
         children: {
           types: {
-            genItem: () => ({ label: '', value: null }),
+            createItem: () => ({ label: '', value: null }),
             children: {
               $: {
                 clipPristine: true,
@@ -980,7 +980,7 @@ describe('FormService', () => {
       const SELECTORS = {
         children: {
           items: {
-            genItem: () => '',
+            createItem: () => '',
           },
         },
       }
@@ -1020,7 +1020,7 @@ describe('FormService', () => {
       const SELECTORS = {
         children: {
           items: {
-            genItem: () => ({ id: '' }),
+            createItem: () => ({ id: '' }),
           },
         },
       }
@@ -1042,7 +1042,7 @@ describe('FormService', () => {
       const SELECTORS = {
         children: {
           items: {
-            genItem: () => ({ id: '' }),
+            createItem: () => ({ id: '' }),
             validators: [],
           },
         },
@@ -1065,7 +1065,7 @@ describe('FormService', () => {
       const SELECTORS = {
         children: {
           items: {
-            genItem: () => ({ id: '' }),
+            createItem: () => ({ id: '' }),
             children: {
               $: {
                 validators: [],
@@ -1092,7 +1092,7 @@ describe('FormService', () => {
       const SELECTORS = {
         children: {
           items: {
-            genItem: () => ({
+            createItem: () => ({
               id: '',
               name: '',
               amount: 0,
@@ -1125,7 +1125,7 @@ describe('FormService', () => {
       const SELECTORS = {
         children: {
           items: {
-            genItem: () => ({
+            createItem: () => ({
               id: '',
               name: '',
               amount: 0,
@@ -1171,7 +1171,7 @@ describe('FormService', () => {
       const SELECTORS = {
         children: {
           items: {
-            genItem: () => ({
+            createItem: () => ({
               start: { hours: 7, minutes: 0, period: PERIOD.AM },
               end: { hours: 17, minutes: 0, period: PERIOD.PM },
             }),
@@ -1205,7 +1205,7 @@ describe('FormService', () => {
       context('when path is empty', () => {
         const MODEL = ['']
         const SELECTORS = {
-          genItem: () => '',
+          createItem: () => '',
         }
 
         beforeEach(() => {
@@ -1219,7 +1219,7 @@ describe('FormService', () => {
 
       context('when adding an item with validators', () => {
         const SELECTORS = {
-          genItem: () => ({ id: '', name: '' }),
+          createItem: () => ({ id: '', name: '' }),
           validators: [],
         }
 
@@ -1608,7 +1608,7 @@ describe('FormService', () => {
       const SELECTORS = {
         children: {
           items: {
-            genItem: () => ({
+            createItem: () => ({
               start: { hours: 7, minutes: 0, period: PERIOD.AM },
               end: { hours: 17, minutes: 0, period: PERIOD.PM },
             }),
@@ -1646,7 +1646,7 @@ describe('FormService', () => {
       const SELECTORS = {
         children: {
           phones: {
-            genItem: () => ({ number: '', type: '' }),
+            createItem: () => ({ number: '', type: '' }),
             children: {
               $: {
                 children: {
@@ -1717,7 +1717,7 @@ describe('FormService', () => {
       const SELECTORS = {
         children: {
           rates: {
-            genItem: () => '',
+            createItem: () => '',
             children: {
               $: {
                 ignorePristine: true,
@@ -1752,7 +1752,7 @@ describe('FormService', () => {
       const SELECTORS = {
         children: {
           taxes: {
-            genItem: () => ({ name: '', rate: '' }),
+            createItem: () => ({ name: '', rate: '' }),
             children: {
               $: {
                 children: {
@@ -1795,7 +1795,7 @@ describe('FormService', () => {
 
     context('when model is an array', () => {
       const SELECTORS = {
-        genItem: () => ({ id: '', name: '' }),
+        createItem: () => ({ id: '', name: '' }),
         validators: [{
           error: 'Invalid',
           validate: v => v[0].name === 'asdf',

@@ -179,7 +179,8 @@ const SELECTORS = {
 }
 ```
 
-- Changed `genItem()` to return data in the model-form as FormService will convert it to state
+- Renamed `genItem()` to `createItem()`
+- Changed `createItem()` to return data in the model-form as `FormService` will convert it to state
 - Remove `clipErrors` as the existence of `validators` will clip them going forward
 - `validators` can be applied to a selector as long as none of their ancestor selectors apply `validators`
 - Throw an error if `validators` is defined on selectors with parent selectors that also define `validators`
@@ -188,3 +189,8 @@ const SELECTORS = {
   - Execute if key has `validators`
   - Execute `validators` on any parent keys that have them
 - `unsafe` modifier to disable certain safety checks
+
+## v2.1 (Pre-Release)
+
+- `createItem()` will pass parameters like so: `createItem(path, index, state, service, opts)`
+- Add `manualValidation` flag

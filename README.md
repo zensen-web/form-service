@@ -30,7 +30,7 @@ $ yarn add @zensen/form-service
 
 ### Initialization
 
-The `FormService` is an ES6, so it can be instantiated via constructor.
+The `FormService` is an ES6 class, so it can be instantiated via constructor.
 
 ```js
 import { FormService } from '@zensen/form-service'
@@ -46,7 +46,6 @@ const onChange = (dirty, state, errors) => {
 }
 
 const formService = new FormService(MODEL, SELECTORS, onChange)
-
 ```
 
 Arguments: 
@@ -62,7 +61,7 @@ A deep copy of the input model is made when passed to `FormService`'s constructo
 
 During this process, selectors may be invoked on keys to transform the copied data into a format that is consumable for your web components.
 
-_NOTE:_ The input data model is never mutated.
+_NOTE_: The input data model is never mutated.
 
 A common example of this is when a form key property with a value of type `Number` in the model will be represented as a value in a textfield.
 
@@ -70,7 +69,7 @@ The textfield will want to manipulate it as a string:
 
 ```js
 import { FormService } from '@zensen/form-service'
-import { toCurrency } from './formatters'
+import { toCurrency, toNumeric } from './formatters'
 
 const MODEL = {
   id: '2ea17eaf-e855-4887-8312-27f991a5b327',
@@ -79,14 +78,15 @@ const MODEL = {
 }
 
 const SELECTORS = {
-  price: {
-    format: v => toCurrency(v),
+  children: {
+    price: {
+      format: v => toCurrency(v),
+      unformat: v => toNumeric(v),
+    },
   },
 }
 
-const onChange = (_dirty, state) => {
-  console.log('state:', state)
-}
+const onChange = (_dirty, state) => console.log('state:', state)
 
 const formService = new FormService(MODEL, SELECTORS, onChange)
 ```
@@ -105,189 +105,113 @@ state: {
 
 The `FormService` copied the `id` and `name` keys over as-in, but the `price` was changed from a `Number` type to a `String` with additional formatting.
 
-### Exporting State with `buildModel()`
-
-This method returns a new copy of the form's current state in an agnostic format. Selectors may be invoked on keys that define the `unformat()` property like so:
+Arrays are allowed as well:
 
 ```js
 import { FormService } from '@zensen/form-service'
-import { toCurrency, toNumber } from './formatters'
+import { toCurrency, toNumeric } from './formatters'
 
-const MODEL = {
-  id: '2ea17eaf-e855-4887-8312-27f991a5b327',
-  name: 'Beer',
-  price: 4,
-}
+const MODEL = [
+  {
+    id: '1',
+    name: 'Potion',
+    price: 200,
+  },
+  {
+    id: '2',
+    name: 'Hi-Potion',
+    price: 1000,
+  },
+  {
+    id: '3',
+    name: 'Phoenix Down',
+    price: 500,
+  },
+]
 
 const SELECTORS = {
-  price: {
-    format: v => toCurrency(v),
-    unformat: v => toNumber(v),
+  children: {
+    $: {
+      children: {
+        price: {
+          format: v => `${v} Gil`,
+          unformat: v => v.split(' ')[0],
+        },
+      },
+    },
   },
-}
-
-const onChange = (_dirty, state) => {
-  console.log('state:', state)
-}
-
-const formService = new FormService(MODEL, SELECTORS, onChange)
-
-const result = formService.buildModel()
-console.log('result:', result)
-```
-
-```console
-state: {
-  id: '2ea17eaf-e855-4887-8312-27f991a5b327',
-  name: 'Beer',
-  price: '$4.00',
-}
-
-result: {
-  id: '2ea17eaf-e855-4887-8312-27f991a5b327',
-  name: 'Beer',
-  price: 4,
-}
-```
-
-The `FormService` copied over its state as usual by formatting the `price` key to a currency-formatted string, and the model that was returned provided the `price` key's value as a `Number` as a result of `unformat()` being defined on its selector.
-
-_NOTE:_ It's a best practice to always provide selectors with `unformat()` alongside with `format()` and vice-versa to maintain data-context consistency.
-
-### Changing State with `apply()`
-
-This method is used to make changes to the form's state that deviate from its initial state. This is generally called as a result of a web component changing due to user interaction. Making changes is simple:
-
-```js
-import { FormService } from '@zensen/form-service'
-import { toCurrency, toNumber } from './formatters'
-
-const MODEL = {
-  id: '6d415b5d-2b70-4dd5-b739-b76c4ff7c6ef',
-  name: 'Tony Stark',
 }
 
 const onChange = (_dirty, state) => console.log('state:', state)
 
-const formService = new FormService(MODEL, {}, onChange)
-
-formService.apply('name', 'Anthony Stark')
+const formService = new FormService(MODEL, SELECTORS, onChange)
 ```
 
 ```console
-// state when initialized
-state: {
-  id: '6d415b5d-2b70-4dd5-b739-b76c4ff7c6ef',
-  name: 'Tony Stark',
-}
-
-// state when change is applied
-state: {
-  id: '6d415b5d-2b70-4dd5-b739-b76c4ff7c6ef',
-  name: 'Anthony Stark',
-}
+state: [
+  {
+    id: '1',
+    name: 'Potion',
+    price: '200 Gil',
+  },
+  {
+    id: '2',
+    name: 'Hi-Potion',
+    price: '1000 Gil',
+  },
+  {
+    id: '3',
+    name: 'Phoenix Down',
+    price: '500 Gil',
+  },
+]
 ```
 
-### Dirtiness
+### Selectors and Modifiers
 
-Another deep copy is performed on the state during initialization. This serves as an initial snapshot, so `FormService` can keep track of deviations in state when its state is manipulated.
+Selectors are metadata that can be associated with certain keys in `FormService`'s state to give them special properties for formating to and from model/state and validation. These selectors are objects that contain a set of _modifiers_ that describe certain properties about that model/state key.
 
-For example, given the scenario:
+In the example above, a set of formatter modifiers are applied to `state.price`. Note that the `SELECTORS` object doesn't directly contain the `price` property like the model/state does. Instead, it's wrapped in a `children` block because `price` is a _child_ property to the root, in this case. This way _modifiers_ can be applied to the parent object, and there's no namespace collision between modifier names such as `format`, `unformat`, `validators`, etc and your model/state's key names.
+
+As implied, this means that modifiers can be applied to the entire model/state by defining them at the root of of the selectors object:
 
 ```js
 import { FormService } from '@zensen/form-service'
-import { toCurrency, toNumber } from './formatters'
 
 const MODEL = {
-  id: '2ea17eaf-e855-4887-8312-27f991a5b327',
-  name: 'Beer',
-  price: 4,
+  id: '',
+  username: 'SomeOne@iUsedToKnow.com',
+  password: 'asdf',
 }
 
 const SELECTORS = {
-  price: {
-    format: v => toCurrency(v),
-    unformat: v => toNumber(v),
-  },
+  format: v => ({
+    id: v.id || '123',
+    username: v.username.toLowerCase(),
+    password: 'gotem',
+  }),
 }
 
-const onChange = (dirty, state) => {
-  console.log('dirty:', dirty, 'state:', state)
-}
+const onChange = (_dirty, state) => console.log('state:', state)
 
 const formService = new FormService(MODEL, SELECTORS, onChange)
 ```
 
-Here is the initial output:
+Here's the output:
 
 ```console
-dirty: false,
 state: {
-  id: '2ea17eaf-e855-4887-8312-27f991a5b327',
-  name: 'Beer',
-  price: '$4.00',
+  id: '123',
+  username: 'someone@iusedtoknow.com',
+  password: 'gotem',
 }
 ```
-
-Then, let's apply a change to dirtiness:
-
-```js
-formService.apply('name', 'Craft Beer')
-```
-
-Yields the following output:
-
-```console
-dirty: true,
-state: {
-  id: '2ea17eaf-e855-4887-8312-27f991a5b327',
-  name: 'Craft Beer',
-  price: '$4.00',
-}
-```
-
-We can apply another change to make the state match its initial state like so:
-
-```js
-formService.apply('name', 'Beer')
-```
-
-```console
-dirty: false,
-state: {
-  id: '2ea17eaf-e855-4887-8312-27f991a5b327',
-  name: 'Beer',
-  price: '$4.00',
-}
-```
-
-### Updating State from Model with `refresh()`
-
-Sometimes the input model changes due to outside circumstances.
-
-A common example is when an updated version of the model has been returned from an API request, and now `FormService` must be reinitialized. The `refresh()` method does just that:
-
-```js
-const onResponse => model => formService.refresh(model)
-```
-
-This will build a new state and reset any errors. It also rebuilds the initial state, so its dirtiness status is also reset.
-
-### Reverting State with `reset()`
-
-This method current state of `FormService` needs to be reverted back to its initial state, then `reset()`.
-
-```js
-const onCancel => () => formService.reset()
-```
-
-This also resets dirtiness status.
-
-### Nested Selectors
 
 Selectors can be defined on child keys of sub-objects by defining the `children` property on the parent selector:
 
 ```js
+import { FormService } from '@zensen/form-service'
+
 const MODEL = {
   name: 'Some one',
   phone: {
@@ -297,11 +221,13 @@ const MODEL = {
 }
 
 const SELECTORS = {
-  phone: {
-    children: {
-      number: {
-        format: v => toPhoneNumber(v),
-        unformat: v => toNumeric(v),
+  children: {
+    phone: {
+      children: {
+        number: {
+          format: v => toPhoneNumber(v),
+          unformat: v => toNumeric(v),
+        },
       },
     },
   },
@@ -335,37 +261,458 @@ result: {
 }
 ```
 
-The `apply()` method can directly modify nested selectors as well via dot-syntax:
+Selectors can be applied to array elements via the `$` wildcard selector:
 
 ```js
-formService.apply('phone.type', 'home')
+import { FormService } from '@zensen/form-service'
+import { toCurrency, toNumeric } from './formatters'
+
+const MODEL = [
+  {
+    id: '1',
+    name: 'Potion',
+    price: 200,
+  },
+  {
+    id: '2',
+    name: 'Hi-Potion',
+    price: 1000,
+  },
+  {
+    id: '3',
+    name: 'Phoenix Down',
+    price: 500,
+  },
+]
+
+const SELECTORS = {
+  children: {
+    $: {
+      children: {
+        price: {
+          format: v => `${v} Gil`,
+          unformat: v => v.split(' ')[0],
+        },
+      },
+    },
+  },
+}
+
+const onChange = (_dirty, state) => console.log('state:', state)
+
+const formService = new FormService(MODEL, SELECTORS, onChange)
+```
+
+```console
+state: [
+  {
+    id: '1',
+    name: 'Potion',
+    price: '200 Gil',
+  },
+  {
+    id: '2',
+    name: 'Hi-Potion',
+    price: '1000 Gil',
+  },
+  {
+    id: '3',
+    name: 'Phoenix Down',
+    price: '500 Gil',
+  },
+]
+```
+
+In the case of formatting, it's applied to all elements.
+
+### Exporting State with `buildModel()`
+
+Once the form has been modified and is ready for submission, it's a common need to convert parts of the form from UI-state back to a more agnostic data model for submitting to an API or long-term storage. This method creates a new `model` by making a deep copy of `state`, executing any `unformat` modifiers that are defined on selectors.
+
+```js
+import { FormService } from '@zensen/form-service'
+import { toCurrency, toNumber } from './formatters'
+
+const MODEL = {
+  id: '2ea17eaf-e855-4887-8312-27f991a5b327',
+  name: 'Beer',
+  price: 4,
+}
+
+const SELECTORS = {
+  price: {
+    format: v => toCurrency(v),
+    unformat: v => toNumber(v),
+  },
+}
+
+const onChange = (_dirty, state) => console.log('state:', state)
+
+const formService = new FormService(MODEL, SELECTORS, onChange)
+
+const result = formService.buildModel()
+console.log('result:', result)
 ```
 
 ```console
 state: {
-  name: 'Some one',
-  phone: {
-    number: '(800) 555-1234',
-    type: 'home',
+  id: '2ea17eaf-e855-4887-8312-27f991a5b327',
+  name: 'Beer',
+  price: '$4.00',
+}
+
+result: {
+  id: '2ea17eaf-e855-4887-8312-27f991a5b327',
+  name: 'Beer',
+  price: 4,
+}
+```
+
+The `FormService` copied over its state as usual by formatting the `price` key to a currency-formatted string, and the model that was returned provided the `price` key's value as a `Number` as a result of `unformat()` being defined on its selector.
+
+_NOTE_: It's a best practice to always provide selectors with `unformat()` alongside with `format()` and vice-versa to maintain data-context consistency.
+
+### Modifying State with `apply()`
+
+This method is used to make changes to the form's state that deviate from its initial state. This is generally called as a result of a web component changing due to user interaction:
+
+```js
+import { FormService } from '@zensen/form-service'
+
+const MODEL = [
+  enabled: true,
+  week: [
+    {
+      day: 'Monday',
+      segments: [
+        {
+          start: { hours: 8, minutes: 0, period: 'AM' },
+          end: { hours: 12, minutes: 0, period: 'PM' },
+        },
+        {
+          start: { hours: 1, minutes: 0, period: 'PM' },
+          end: { hours: 5, minutes: 0, period: 'PM' },
+        },
+      ],
+    },
+    {
+      day: 'Wednesday',
+      segments: [
+        {
+          start: { hours: 8, minutes: 0, period: 'AM' },
+          end: { hours: 12, minutes: 0, period: 'PM' },
+        },
+      ],
+    },
+  ],
+]
+
+const onChange = (_dirty, state) => console.log('state:', state)
+
+const formService = new FormService(MODEL, {}, onChange)
+
+formService.apply('enabled', false)
+formService.apply('week.0.segments.1.start.hours', 9)
+formService.apply('week.1.day', 'Thursday')
+```
+
+```console
+state: [
+  enabled: false,
+  week: [
+    {
+      day: 'Monday',
+      segments: [
+        {
+          start: { hours: 9, minutes: 0, period: 'AM' },
+          end: { hours: 12, minutes: 0, period: 'PM' },
+        },
+        {
+          start: { hours: 1, minutes: 0, period: 'PM' },
+          end: { hours: 5, minutes: 0, period: 'PM' },
+        },
+      ],
+    },
+    {
+      day: 'Thursday',
+      segments: [
+        {
+          start: { hours: 8, minutes: 0, period: 'AM' },
+          end: { hours: 12, minutes: 0, period: 'PM' },
+        },
+      ],
+    },
+  ],
+]
+```
+
+#### Pristine Status
+
+Each key in the state has its own pristine flag associated to it. When the state is first built, a `pristine` schema is built internally to match the shape of the state like so:
+
+```js
+/* pristine */ [
+  enabled: true,
+  week: [
+    {
+      day: true,
+      segments: [
+        {
+          start: { hours: true, minutes: true, period: true },
+          end: { hours: true, minutes: true, period: true },
+        },
+        {
+          start: { hours: true, minutes: true, period: true },
+          end: { hours: true, minutes: true, period: true },
+        },
+      ],
+    },
+    {
+      day: true,
+      segments: [
+        {
+          start: { hours: true, minutes: true, period: true },
+          end: { hours: true, minutes: true, period: true },
+        },
+      ],
+    },
+  ],
+]
+```
+
+Pristine flags are generated for each leaf-most key by default. Pristine flags are meant to line up with keys in the state that are associated with input components in the UI. Pristine is set to `false` once `apply()` has been called on that key.
+
+There will be cases where an input component will take an object-type key as input instead of a leaf-like value such as a `Boolean`, `Number`, or `String`. Common examples are select/dropdowns and date pickers. If these components call `apply()` on a key where its corresponding pristine key is an object instead of a boolean flag, then an error will be thrown. To remedy this, the `clipPristine` modifier can be set to `true` for that key's selector:
+
+```js
+const SELECTORS = {
+  children: {
+    week: {
+      children: {
+        $: {
+          children: {
+            segments: {
+              $: {
+                children: {
+                  start: { clipPristine: true },
+                  end: { clipPristine: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   },
 }
 ```
 
-`apply()` also invokes a shallow copy against the parent key, and all ancestor keys of the key that was modified from the deepest level upward.
+#### Restrictions
 
-Here's a simplified illustration of the previous call to `apply()` from above:
+- Only a single key can ever be modified along its branch in the `state` tree
+- `apply()` cannot be applied to object-type keys unless `clipPristine` is set on that key's selector
+- Objects that can be modified must not alter the shape of that schema with the exception of going between null/object states
+- The `unsafe` modifier flag can be set on keys in exceptional cases (such as multi-selects) where object/array mutations are required
+
+### Adding an Item to an Array with `addItem()`
+
+Arrays are a bit special when it comes to state mutations because it's commonplace to modify its size as a result of form actions.
+
+The `addItem(path, index = -1)` method can be called on a key-path to an array in the state. The index is an optional parameter for cases where the new item should be inserting within the array, otherwise it will be inserted at the end of the array. The `createItem` modifier must be defined that array key's selector:
 
 ```js
-this.__state.phone.type = 'home'
-this.__state.phone = { ...this.__state.phone }
+const MODEL = [
+  {
+    id: '123',
+    name: 'Apples',
+    price: 329, // cents
+  },
+  {
+    id: '456',
+    name: 'Oranges',
+    price: 499, // cents
+  },
+]
+
+const SELECTORS = {
+  products: {
+    createItem: () => ({
+      id: '',
+      name: '',
+      price: 0,
+    }),
+    children: {
+      price: {
+        format: v => toCurrency(v),
+        unformat: v => toNumeric(v, false), // false = strip decimal
+      },
+    },
+  },
+}
+
+const onChange = (_dirty, state) => console.log('state:', state)
+
+const formService = new FormService(MODEL, SELECTORS, onChange)
+
+formService.addItem('') // empty path will apply to the root
+
+console.log('state:', state)
+```
+
+```console
+state: [
+  {
+    id: '123',
+    name: 'Apples',
+    price: '$3.29',
+  },
+  {
+    id: '456',
+    name: 'Oranges',
+    price: '$4.99',
+  },
+  {
+    id: '',
+    name: '',
+    price: '$0.00',
+  },
+]
+```
+
+The data returned by `createItem()` must be in the model format as `FormService` will execute any relevant formatters against it.
+
+`createItem()` can also return primitive types as well as objects and arrays of any complexity. Just make sure that their data structures match the general data structure of each element.
+
+### Removing an Item from an Array with `removeItem()`
+
+`FormService` also provides a `removeItem(path, index = -1)` method for removing items. Just like `addItem()`, the `index` argument is optional. It will remove the last item in the array by default if not provided.
+
+### Moving an Item in an Array with `moveItem()`
+
+A single item can be moved within an array by calling `moveItem(path, toIndex, fromIndex)`.
+
+### Swapping Items in an Array with `swapItems()`
+
+Two items can be swapped within an array by calling `swapItem(path, index1, index2)`.
+
+### Cascading Re-renders Guaranteed
+
+All mutation operations also invokes a shallow copy against the parent key, and all ancestor keys of the key that was modified from the deepest level upward.
+
+Here's a simplified illustration of how the ancestor keys are updated under-the-hood when modifying the key for:
+
+`week.0.segments.1.start.hours`
+
+```js
+this.__state.week[0].segments[1].start.hours = 9
+this.__state.week[0].segments[1].start = { ...this.__state.week[0].segments[1].start }
+this.__state.week[0].segments[1] = { ...this.__state.week[0].segments[1] }
+this.__state.week[0].segments = [ ...this.__state.week[0].segments ]
+this.__state.week[0] = { ...this.__state.week[0] }
+this.__state.week = [ ...this.__state.week ]
 this.__state = { ...this.__state }
 ```
 
 This is done to guarantee re-renders for reactive component libraries such as `LitElement` and `React` at every level. This is ideal for cases where the project has wrapper components that group input field components together for higher reusability.
 
-For example: it might make sense for the project to have a _phone-item_ component which takes a phone object as a renderable prop containing `number` and `type` keys which it assigns to its own child components: a _textfield_ _select_ component respectively.
+For example: it might make sense for the project to have a _name-group_ component which takes a `name` object as a renderable prop containing `first` and `last` keys which it assigns to its own child components textfields components.
 
-If `this.__state.phone` wasn't re-assigned, then the _phone-item_ component wouldn't re-render. If `this.__state` wasn't re-assigned, then the form component itself wouldn't re-render. Both re-assignments are required to sync the UI with `FormService`'s state.
+If `this.__state.name` wasn't re-assigned, then the _name-group_ component wouldn't re-render. If `this.__state` wasn't re-assigned, then the form component itself wouldn't re-render. Both re-assignments are required to sync the UI with `FormService`'s state.
+
+### Dirtiness
+
+`FormService` keeps a copy of the initial state of the form. Whenever changes are made to the form's current state, it's compared against this intial state to determine whether or not it's _dirty_.
+
+For example, given the scenario:
+
+```js
+import { FormService } from '@zensen/form-service'
+import { toCurrency, toNumber } from './formatters'
+
+const MODEL = {
+  id: '2ea17eaf-e855-4887-8312-27f991a5b327',
+  name: 'Beer',
+  price: 4,
+}
+
+const SELECTORS = {
+  children: {
+    price: {
+      format: v => toCurrency(v),
+      unformat: v => toNumber(v),
+    },
+  },
+}
+
+const onChange = (dirty, state) => console.log('dirty:', dirty, 'state:', state)
+
+const formService = new FormService(MODEL, SELECTORS, onChange)
+```
+
+Here is the initial output:
+
+```console
+dirty: false,
+state: {
+  id: '2ea17eaf-e855-4887-8312-27f991a5b327',
+  name: 'Beer',
+  price: '$4.00',
+}
+```
+
+Then, let's apply a change to dirtiness:
+
+```js
+formService.apply('name', 'Craft Beer')
+```
+
+Yields the following output:
+
+```console
+dirty: true,
+state: {
+  id: '2ea17eaf-e855-4887-8312-27f991a5b327',
+  name: 'Craft Beer',
+  price: '$4.00',
+}
+```
+
+We can manually revert dirtiness by apply another change to make the state match its initial state like so:
+
+```js
+formService.apply('name', 'Beer')
+```
+
+```console
+dirty: false,
+state: {
+  id: '2ea17eaf-e855-4887-8312-27f991a5b327',
+  name: 'Beer',
+  price: '$4.00',
+}
+```
+
+### Updating State from Model with `refresh()`
+
+Sometimes the input model changes due to outside circumstances.
+
+A common example is when an updated version of the model has been returned from an API request, and now `FormService` must be reinitialized. The `refresh()` method does just that:
+
+```js
+const onResponse => model => formService.refresh(model)
+```
+
+This will build a new state, resetting dirtiness-status, unsetting all errors, and pristineness.
+
+### Reverting State with `reset()`
+
+This method current state of `FormService` needs to be reverted back to its initial state, then `reset()`.
+
+```js
+const onCancel => () => formService.reset()
+```
+
+This also resets dirtiness status.
 
 ### Using Validators
 
@@ -374,18 +721,22 @@ One of the most powerful feature of `FormService` is its validation framework. I
 Validators are applied to selectors like so:
 
 ```js
+import { FormService } from '@zensen/form-service'
+
 const MODEL = {
   phone: { number: '', type: '' },
 }
 
 const SELECTOR = {
-  email: [isEmail],
-  phone: {
-    children: {
-      number: {
-        format: v => toPhoneNumber(v),
-        unformat: v => toNumeric(v),
-        validators: [isPhoneNumber],
+  children: {
+    email: [isEmail],
+    phone: {
+      children: {
+        number: {
+          format: v => toPhoneNumber(v),
+          unformat: v => toNumeric(v),
+          validators: [isPhoneNumber],
+        },
       },
     },
   },
@@ -394,14 +745,16 @@ const SELECTOR = {
 const onChange = (_dirty, _state, errors) => console.log('errors:', errors)
 
 const formService = new FormService(MODEL, SELECTOR, onChange)
+```
 
+The `validators` modifier has been added to the selectors for the `email` and `phone.number` keys. The `validators` modifier is always an array, and they can be applied directly to the key as a form of short-hand if they're the only modifier associated with that key as seen with the `email` key above.
+
+```js
 formService.apply('email', 'asdf')
 formService.apply('phone.number', 'asdf')
 ```
 
-The `validators` key has been added to the `email` and `phone.number` keys. The `validators` property is always an array.
-
-Validation is invoked on the key whenever a new value is directly applied to it. When this happens, each validator is invoked in order, and the loop will break upon the first failed validation, and then update set the error.
+Validation is invoked on the key whenever a new value is directly applied to it or one of its descendent keys as long as it doesn't have pristine status. When this happens, each validator is invoked in the order they're placed in the array, and the loop will break upon the first failed validation, assigning an error to that previous key.
 
 Also notice that selectors that only need the `validators` key can just assign an array of validators to the selector key as a form of shorthand instead of declaring a sub-object with a `validators` property.
 
@@ -412,19 +765,19 @@ Let's look at the console output:
 errors: {
   email: '',
   phone: { number: '', type: '' },
-},
+}
 
 // when incorrect email format is applied
 errors: {
   email: 'Invalid email',
   phone: { number: '', type: '' },
-},
+}
 
 // when an invalid phone number is applied
 errors: {
   email: '',
   phone: { number: 'Invalid phone number', type: '' },
-},
+}
 ```
 
 ### Creating Validators
@@ -460,7 +813,7 @@ The `error` property is generally a string, but it's also common to use `Boolean
 Up until now, we've only seen the `validate` function define a single parameter, `v`, but it actually has more data passed to it. The full signature of this function looks like this:
 
 ```js
-validate(value, keyPath, state)
+validate(value, keyPath, state, service)
 ```
 
 We're already familiar with `value`, so let's go to the next one: `keyPath`. This value is the path in the state to the key that is being validated. This is a typical key path, except broken up as an array. For example:
@@ -471,214 +824,16 @@ The array-path is used for convenience for making it slightly easier to generate
 
 With these two parameters, it is easy to look up the values of nearby keys. This can be really useful for validators for keys to objects in the form's state.
 
-### Validation Errors as Objects _Partially Implemented_
+Finally, we have the `service` parameter. This is the instance of the `FormService` that invoked this validator. This is useful in cases where we might want to validate other keys as a result of this one being invoked.
 
-Errors can also objects like so:
+## Modifiers
 
-```js
-export function requiredIf (primaryKey, secondaryKey, error = 'Required') {
-  return {
-    error: { [secondaryKey]: error },
-    validate: v => !v[primaryKey] || v[secondaryKey],
-  }
-}
-```
-
-This is useful when applying validators to object-type keys. In the example above, the all sub-keys in the `error` object are applied relative to the selector that this validator is applied to.
-
-```js
-const MODEL = {
-  contact: {
-    email: '',
-    phone: { number: '', phone: '' },
-  },
-}
-
-const SELECTOR = {
-  contact: {
-    children: {
-      phones: [requiredIf('number', 'type')],
-    },
-  },
-}
-```
-
-If the `number` key has a truthy value and `type` is falsy, then an error message will be set on `errors.contact.phones.type` because the validator is set on `errors.contact.phones`.
-
-_NOTE_: When `error` is an object, each key in its path is applied to the relative key path of the `FormService`'s `errors` schema instead of outright replacing the current error object with validator's `error` object as this could lead to data loss and other undesirable side effects.
-
-### Cascading Validators _Partially Implemented_
-
-Another powerful feature of `FormService`'s validation framework are cascading validators. If the key being validated is part of a sub-object, then its parent selector's validators will be executed regardless of whether or not validation failed on the original child key. This is because these validators are being across the entire parent object. Once those validators are done, that selector's parent selector will executes its validators, if any, and so on and so forth until the root of the selector tree is reached.
-
-This is a work-in-progress, but there will likely be more selector properties to control the span of validation execution to provide additional flexibility if needed.
-
-Cascading currently only works well when executing up one level from the original key's validation. A better algorithm is currently being worked on.
-
-### Working with Arrays
-
-The `FormService` has array support as well.
-
-Elements can be modified via the dot-syntax like so:
-
-```js
-const MODEL = {
-  name: 'Thor',
-  emails: [
-    'todinson@avengers.io',
-  ],
-  phones: [
-    { number: '8885551234', type: 'work' },
-  ],
-}
-
-const onChange = () => {}
-
-const formService = new FormService(MODEL, {})
-
-formService.apply('emails.0', 'asdf@asdf.com')
-formService.apply('emails.0', 'asdf@asdf.com')
-```
-
-The index is merely a key within the keypath given above.
-
-Selectors can be applied to them as well:
-
-```js
-const genEmptyPhone = () => ({ number: '', type: '' })
-const padArray = (arr, filler) => arr.length ? arr : [filler]
-function filterEmpty = arr => arr.filter(item => (typeof item === 'object'
-  ? Object.keys(item).every(key => item[key])
-  : item))
-
-const fixEmail = email => email.findIndex('@') === -1
-  ? `${email}@avengers.io`
-  : email
-
-const SELECTORS = {
-  email: {
-    children: {
-      format: v => fixEmail(v),
-    },
-  },
-  phones: {
-    format: v => padArray(v, genEmptyPhone()),
-    unformat: v => filterEmpty(v),
-    children: {
-      number: {
-        format: v => toPhoneNumber(v),
-        unformat: v => toNumeric(v),
-      },
-    },
-  },
-}
-```
-
-Let's start with `phones`. This selector has `format()` and `unformat()` applied to it. These properties operate on the entire array as a single value.
-
-`phones` also has a child selector: `number`. The `number` selector is applied to the array element's sub-keys. In the case of `format()` and `unformat()`, they are invoked on each element during model/state conversions.
-
-The `email` selector is interesting because it applies the `format()` property to its `children` property. This will apply `format()` to the element itself instead of sub-properties since the elements discrete values instead of objects.
-
-### Adding/Removing Items with `addItem()` and `removeItem()`
-
-Arrays are a bit special when it comes to state mutations because it's commonplace to modify its size as a result of form actions.
-
-The `genItem()` selector property must be defined on a selector that represents an array in the state. It doesn't take any parameters because it's meant to fill space, and define the item's shape in cases where the item is an object.
-
-Then, the `addItem(name, index)` method is called to create a new item. The `name` parameter is the dot-notation path to the key in the state, and the `index` is an optional parameter that determines where the item should be inserted in the array. If no index is provided, the item will be added to the end of the array.
-
-```js
-const MODEL = {
-  phones: [
-    { number: '8888888888', type: 'fax' }
-  ],
-}
-
-const SELECTORS = {
-  phones: {
-    genItem: () => ({ number: '', type: '' }),
-  },
-}
-
-const onChange = (_dirty, state) => console.log('state:', state)
-
-const formService = new FormService(MODEL, SELECTORS)
-
-formService.addItem('phones')
-formService.apply('phones.1', { number: '8005551234', type: 'home' })
-formService.addItem('phones', 0)
-formService.apply('phones.0', { number: '8881115678', type: 'work' })
-```
-
-```console
-// initialized
-state: {
-  phones: [
-    { number: '8888888888', type: 'fax' },
-  ],
-}
-
-// added first item (added to the end)
-state: {
-  phones: [
-    { number: '8888888888', type: 'fax' },
-    { number: '', type: '' },
-  ],
-}
-
-// modified newly-created item
-state: {
-  phones: [
-    { number: '8888888888', type: 'fax' },
-    { number: '8005551234', type: 'home' },
-  ],
-}
-
-// added second item (inserted in front)
-state: {
-  phones: [
-    { number: '', type: '' },
-    { number: '8888888888', type: 'fax' },
-    { number: '8005551234', type: 'home' },
-  ],
-}
-
-// modified second item (inserted in front)
-state: {
-  phones: [
-    { number: '8881115678', type: 'work' },
-    { number: '8888888888', type: 'fax' },
-    { number: '8005551234', type: 'home' },
-  ],
-}
-```
-
-_NOTE_: There is currently no functionality for bulk-adding items.
-
-To remove an item, use the `removeItem(name, index)` method. It works just like `addItem()`, except for removing items.
-
-## Utility Functions _Coming Soon_
-
-The `FormService` is a very "meta" framework for handling form state where the very shape of the input model's object can provide many ways of creating rules for facilitating, manipulating, and governing form state.
-
-There are a few useful helper functions that will eventually be exposed in this package's interface, and they will be documented here.
-
-## Selector Properties
-
-### Flags
-- `clipErrors`: flag for object-type keys which will clip its corresponding key in the `errors` schema to a single value instead of an object of values
-- `clipPristine`: flag for object-type keys which will clip its corresponding key in the `pristine` schema to a single value instead of an object of values
+- `unsafe`: flag for object-type keys which will ignore integrity checks when mutating entire objects (useful for replacing arrays)
+- `clipPristine`: flag for object-type keys which will clip its corresponding key in the `pristine` schema to a single value
 - `ignorePristine`: removes pristine status from a key
 
-### Strings
-- `alias` _Coming Soon_: overrides the key name when copying the input model's value over
-
-### Functions
-- `addItem`: function that generates a new array item for that selector
+- `createItem`: function that generates a new array item for that selector
 - `format`: transforms the affect's key's value coming from the input model
 - `unformat`: transforms the affect's key's value coming from the state
-- `validators`: an array of validators that to invoke against the value of its corresponding key's value whenever its value, or a descendent-key's value is modified
-
-### Objects
+- `validators`: an array of validators that can be invoked against the current value of the key
 - `children`: used to define child-selectors

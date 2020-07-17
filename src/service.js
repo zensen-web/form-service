@@ -129,7 +129,7 @@ export default class FormService {
     const items = getValueByPath(this.__state, keyPath)
     const shiftedIndex = index !== -1 ? index : items.length
     const selector = this.getSelector(keyPath)
-    const rawItem = selector.genItem()
+    const rawItem = selector.createItem()
     const item = this.__convertItem(rawItem, keyPath)
 
     items.splice(shiftedIndex, 0, item)
