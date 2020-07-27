@@ -65,6 +65,16 @@ export default class FormService {
     return !equal(this.__state, this.__initialState)
   }
 
+  get isPristine () {
+    const fn = obj =>
+      !Object.values(obj).filter(v =>
+        (typeof v === 'object' ? fn(v) : v)).length
+
+    return typeof this.__pristine === 'object'
+      ? fn(this.__pristine)
+      : this.__pristine
+  }
+
   get hasErrors () {
     const fn = obj =>
       Object.values(obj).filter(v =>
@@ -258,7 +268,7 @@ export default class FormService {
   }
 
   __change () {
-    this.__onChange(this.isDirty, this.__state, this.__errors)
+    this.__onChange(this.isDirty, this.__state, this.__errors, this.__pristine)
   }
 
   __verifySelectors () {

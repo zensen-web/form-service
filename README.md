@@ -831,7 +831,6 @@ Finally, we have the `service` parameter. This is the instance of the `FormServi
 - `unsafe`: flag for object-type keys which will ignore integrity checks when mutating entire objects (useful for replacing arrays)
 - `clipPristine`: flag for object-type keys which will clip its corresponding key in the `pristine` schema to a single value
 - `ignorePristine`: removes pristine status from a key
-
 - `createItem`: function that generates a new array item for that selector
 - `format`: transforms the affect's key's value coming from the input model
 - `unformat`: transforms the affect's key's value coming from the state

@@ -11,6 +11,7 @@ import {
 import {
   filterEmpty,
   padArray,
+  map,
 } from '../src/utils'
 
 import {
@@ -23,6 +24,7 @@ import {
   PERIOD,
   ENEMY_MODEL,
   ENEMY_ERRORS,
+  ENEMY_PRISTINE,
   ENEMY_SELECTORS,
   ITEMS_MODEL,
   ITEMS_SELECTORS,
@@ -701,7 +703,9 @@ describe('FormService', () => {
     })
 
     it('invokes onChange', () =>
-      expect(getLastChange()).to.be.eql([false, ENEMY_MODEL, ENEMY_ERRORS]))
+      expect(getLastChange()).to.be.eql([
+        false, ENEMY_MODEL, ENEMY_ERRORS, ENEMY_PRISTINE,
+      ]))
 
     context('when modifying a top-level property', () => {
       const EXPECTED_STATE = {
@@ -709,16 +713,32 @@ describe('FormService', () => {
         name: 'Goblin',
       }
 
+      const PRISTINE = {
+        ...ENEMY_PRISTINE,
+        name: false,
+      }
+
       beforeEach(() => {
         service.apply('name', 'Goblin')
       })
 
+      it('is not longer pristine', () =>
+        expect(service.isPristine).to.be.false)
+
       it('invokes onChange', () => expect(getLastChange()).to.be.eql([
-        true, EXPECTED_STATE, ENEMY_ERRORS,
+        true, EXPECTED_STATE, ENEMY_ERRORS, PRISTINE,
       ]))
     })
 
     context('when modifying a sub-object property', () => {
+      const PRISTINE = {
+        ...ENEMY_PRISTINE,
+        stats: {
+          ...ENEMY_PRISTINE.stats,
+          attack: false,
+        },
+      }
+
       const EXPECTED_STATE = {
         ...ENEMY_MODEL,
         stats: {
@@ -732,7 +752,7 @@ describe('FormService', () => {
       })
 
       it('invokes onChange', () => expect(getLastChange()).to.be.eql([
-        true, EXPECTED_STATE, ENEMY_ERRORS,
+        true, EXPECTED_STATE, ENEMY_ERRORS, PRISTINE,
       ]))
     })
 
@@ -772,6 +792,11 @@ describe('FormService', () => {
         },
       }
 
+      const PRISTINE = {
+        ...ENEMY_PRISTINE,
+        stats: false,
+      }
+
       const EXPECTED_STATE = {
         ...ENEMY_MODEL,
         stats: null,
@@ -783,7 +808,7 @@ describe('FormService', () => {
       })
 
       it('invokes onChange', () => expect(getLastChange()).to.be.eql([
-        true, EXPECTED_STATE, ENEMY_ERRORS,
+        true, EXPECTED_STATE, ENEMY_ERRORS, PRISTINE,
       ]))
 
       context('when modifying a null value to object', () => {
@@ -792,7 +817,7 @@ describe('FormService', () => {
         })
 
         it('invokes onChange', () => expect(getLastChange()).to.be.eql([
-          false, ENEMY_MODEL, ENEMY_ERRORS,
+          false, ENEMY_MODEL, ENEMY_ERRORS, PRISTINE,
         ]))
       })
     })
@@ -968,6 +993,7 @@ describe('FormService', () => {
             true,
             [{ id: '', name: 'asdf' }],
             [{ id: '', name: '' }],
+            [{ id: true, name: false }],
           ]))
       })
     })
@@ -1035,6 +1061,7 @@ describe('FormService', () => {
           true,
           { items: [{ id: '' }] },
           { items: [{ id: '' }] },
+          { items: [{ id: true }] },
         ]))
     })
 
@@ -1058,6 +1085,7 @@ describe('FormService', () => {
           true,
           { items: [{ id: '' }] },
           { items: '' },
+          { items: [{ id: true }] },
         ]))
     })
 
@@ -1085,6 +1113,7 @@ describe('FormService', () => {
           true,
           { items: [{ id: '' }] },
           { items: [''] },
+          { items: [{ id: true }] },
         ]))
     })
 
@@ -1236,6 +1265,10 @@ describe('FormService', () => {
               { id: '', name: '' },
             ],
             '',
+            [
+              { id: true, name: true },
+              { id: true, name: true },
+            ],
           ]))
       })
     })
@@ -1371,7 +1404,7 @@ describe('FormService', () => {
       validate: v => v === NAME_MATCH,
     }
 
-    context('when invalid data is provided (single validator)', () => {
+    context('when invalid data is provided', () => {
       beforeEach(() => {
         const MODEL = {
           name: '',
@@ -1412,10 +1445,15 @@ describe('FormService', () => {
           description: '',
           amount: '',
         },
+        {
+          name: false,
+          description: false,
+          amount: false,
+        },
       ]))
     })
 
-    context('when valid data is provided (single validator)', () => {
+    context('when valid data is provided', () => {
       const MODEL = { name: 'asdf' }
 
       const SELECTORS = {
@@ -1435,6 +1473,7 @@ describe('FormService', () => {
         false,
         { name: 'asdf' },
         { name: '' },
+        { name: false },
       ]))
     })
 
@@ -1458,6 +1497,7 @@ describe('FormService', () => {
         false,
         { name: 'Wronguy' },
         { name: 'Invalid' },
+        { name: false },
       ]))
 
       context('when failing on the first validator', () => {
@@ -1471,31 +1511,10 @@ describe('FormService', () => {
             true,
             { name: '' },
             { name: 'Required' },
+            { name: false },
           ])
         )
       })
-    })
-
-    context('when invalid data is provided (multiple validators)', () => {
-      const MODEL = { name: NAME_MATCH }
-      const SELECTORS = {
-        children: {
-          name: [required(), VALIDATOR_NAME_MATCH],
-        },
-      }
-
-      beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
-        valid = service.validate()
-      })
-
-      it('passes', () => expect(valid).to.be.true)
-
-      it('invokes callback', () => expect(getLastChange()).to.be.eql([
-        false,
-        { name: NAME_MATCH },
-        { name: '' },
-      ]))
     })
 
     context('when validating across multiple levels of selectors', () => {
@@ -1522,8 +1541,9 @@ describe('FormService', () => {
 
       it('invokes callback', () => expect(getLastChange()).to.be.eql([
         false,
+        MODEL,
         { tax: { name: '', rate: '' } },
-        { tax: { name: '', rate: '' } },
+        { tax: { name: false, rate: false } },
       ]))
 
       context('when setting a name', () => {
@@ -1538,6 +1558,7 @@ describe('FormService', () => {
           true,
           { tax: { name: 'asdf', rate: '' } },
           { tax: { name: '', rate: 'Required' } },
+          { tax: { name: false, rate: false } },
         ]))
 
         context('when providing an INVALID rate', () => {
@@ -1552,6 +1573,7 @@ describe('FormService', () => {
             true,
             { tax: { name: 'asdf', rate: '-10' } },
             { tax: { name: '', rate: '0 - 100' } },
+            { tax: { name: false, rate: false } },
           ]))
 
           context('when providing a VALID rate', () => {
@@ -1566,11 +1588,12 @@ describe('FormService', () => {
               true,
               { tax: { name: 'asdf', rate: '10' } },
               { tax: { name: '', rate: '' } },
+              { tax: { name: false, rate: false } },
             ]))
           })
         })
 
-        context('when removing the name', () => {
+        context('when clearing the name', () => {
           beforeEach(() => {
             service.apply('tax.name', '')
             valid = service.validate()
@@ -1582,6 +1605,7 @@ describe('FormService', () => {
             false,
             { tax: { name: '', rate: '' } },
             { tax: { name: '', rate: '' } },
+            { tax: { name: false, rate: false } },
           ]))
         })
       })
@@ -1643,6 +1667,8 @@ describe('FormService', () => {
     context('when validating an array', () => {
       const SCHEMA_PHONES_EMPTY = new Array(2).fill({ number: '', type: '' })
       const MODEL = { phones: SCHEMA_PHONES_EMPTY }
+      const ERRORS = map(MODEL, () => '')
+      const PRISTINE = map(ERRORS, () => false)
       const SELECTORS = {
         children: {
           phones: {
@@ -1668,8 +1694,9 @@ describe('FormService', () => {
 
       it('invokes callback', () => expect(getLastChange()).to.be.eql([
         false,
-        { phones: SCHEMA_PHONES_EMPTY },
-        { phones: SCHEMA_PHONES_EMPTY },
+        MODEL,
+        ERRORS,
+        PRISTINE,
       ]))
 
       context('when errors are present', () => {
@@ -1862,6 +1889,8 @@ describe('FormService', () => {
       triangles: [],
     }
 
+    const UPDATED_PRISTINE = map(UPDATED_ERRORS, () => true)
+
     const SELECTORS = {
       children: {
         name: [failValidator],
@@ -1875,9 +1904,9 @@ describe('FormService', () => {
       service.refresh(UPDATED_MODEL)
     })
 
-    it('reverts state, errors and dirtiness back', () =>
+    it('reverts state, errors, pristine, and dirtiness back', () =>
       expect(getLastChange()).to.be.eql([
-        false, UPDATED_MODEL, UPDATED_ERRORS,
+        false, UPDATED_MODEL, UPDATED_ERRORS, UPDATED_PRISTINE,
       ]))
   })
 
@@ -1895,9 +1924,9 @@ describe('FormService', () => {
       service.reset()
     })
 
-    it('reverts state, errors and dirtiness back', () =>
+    it('reverts state, errors, pristine and dirtiness back', () =>
       expect(getLastChange()).to.be.eql([
-        false, ENEMY_MODEL, ENEMY_ERRORS,
+        false, ENEMY_MODEL, ENEMY_ERRORS, ENEMY_PRISTINE,
       ]))
   })
 })

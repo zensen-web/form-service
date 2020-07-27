@@ -53,6 +53,8 @@ export const ENEMY_ERRORS = {
   ],
 }
 
+export const ENEMY_PRISTINE = map(ENEMY_ERRORS, () => true)
+
 export const ENEMY_SELECTORS = {
   format: v => v,
   unformat: v => v,
