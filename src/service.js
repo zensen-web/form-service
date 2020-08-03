@@ -98,7 +98,7 @@ export default class FormService {
 
   refresh (model) {
     this.__state = deepCopy(model)
-    this.__state = this.__convert(model, 'format')
+    this.__state = this.convert(model, 'format')
     this.__initialState = deepCopy(this.__state)
     this.__refreshErrors()
     this.__refreshPristine()
@@ -186,8 +186,36 @@ export default class FormService {
     this.__change()
   }
 
+  convert (data, op, rootPath = []) {
+    const rootSelector = this.getSelector([], true)
+    const action = rootSelector && rootSelector[op]
+    const copy = typeof data === 'object' ? deepCopy(data) : data
+    const result = action ? action(copy) : copy
+
+    traverse(result, (keyPath, value) => {
+      const fullPath = [...rootPath, ...keyPath]
+      const selector = this.getSelector(fullPath, true)
+
+      if (selector && selector[op]) {
+        const selVal = selector[op](value)
+
+        if (selVal !== null && typeof selVal === 'object') {
+          const copy = selVal instanceof Date
+            ? new Date(selVal.getTime())
+            : deepCopy(selVal)
+
+          setValueByPath(result, keyPath, copy)
+        } else {
+          setValueByPath(result, keyPath, selVal)
+        }
+      }
+    })
+
+    return result
+  }
+
   buildModel () {
-    return this.__convert(this.__state, 'unformat')
+    return this.convert(this.__state, 'unformat')
   }
 
   validate () {
@@ -362,37 +390,9 @@ export default class FormService {
     return result
   }
 
-  __convert (data, op, rootPath = []) {
-    const rootSelector = this.getSelector([], true)
-    const action = rootSelector && rootSelector[op]
-    const copy = typeof data === 'object' ? deepCopy(data) : data
-    const result = action ? action(copy) : copy
-
-    traverse(result, (keyPath, value) => {
-      const fullPath = [...rootPath, ...keyPath]
-      const selector = this.getSelector(fullPath, true)
-
-      if (selector && selector[op]) {
-        const selVal = selector[op](value)
-
-        if (selVal !== null && typeof selVal === 'object') {
-          const copy = selVal instanceof Date
-            ? new Date(selVal.getTime())
-            : deepCopy(selVal)
-
-          setValueByPath(result, keyPath, copy)
-        } else {
-          setValueByPath(result, keyPath, selVal)
-        }
-      }
-    })
-
-    return result
-  }
-
   __convertItem (data, rootPath = []) {
     const item = typeof data === 'object' ? deepCopy(data) : data
-    const result = this.__convert([item], 'format', rootPath)
+    const result = this.convert([item], 'format', rootPath)
 
     return result[0]
   }
