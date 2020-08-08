@@ -1848,7 +1848,93 @@ describe('FormService', () => {
         it('fails', () => expect(valid).to.be.false)
       })
     })
+
+    context('when selector validates against unformatted value', () => {
+      const AMOUNT_RAW = 3.5
+      const MODEL = {
+        amount: AMOUNT_RAW,
+      }
+
+      const SELECTORS = {
+        children: {
+          amount: {
+            validateRaw: true,
+            format: v => toCurrency(v),
+            unformat: v => Number(toNumeric(v, true)),
+            validators: [
+              {
+                error: 'asdf',
+                validate: raw => raw,
+              }
+            ],
+          },
+        },
+      }
+
+      let validator
+
+      beforeEach(() => {
+        validator = SELECTORS.children.amount.validators[0]
+        validator.validate = sandbox.stub().returns(true)
+
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service.validate()
+      })
+
+      it('unformats the value', () =>
+        expect(validator.validate).to.be.calledOnceWith(
+          AMOUNT_RAW,
+          ['amount'],
+          MODEL,
+        ))
+    })
+
+    context('when manually validating a key', () => {
+      const AMOUNT_RAW = 3.5
+      const MODEL = {
+        amount: AMOUNT_RAW,
+      }
+
+      const SELECTORS = {
+        children: {
+          amount: {
+            validateManually: true,
+            format: v => toCurrency(v),
+            unformat: v => Number(toNumeric(v, true)),
+            validators: [
+              {
+                error: 'asdf',
+                validate: v => v,
+              }
+            ],
+          },
+        },
+      }
+
+      let validator
+
+      beforeEach(() => {
+        validator = SELECTORS.children.amount.validators[0]
+        validator.validate = sandbox.stub().returns(true)
+
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+      })
+
+      it('does not invoke the validator', () =>
+        expect(validator.validate).to.not.be.called)
+
+      context('when manually validating', () => {
+        beforeEach(() => {
+          service.validate()
+        })
+
+        it('invokes the validator', () =>
+          expect(validator.validate).to.be.calledOnce)
+      })
+    })
   })
+
+  
 
   describe('refresh()', () => {
     const UPDATED_MODEL = {

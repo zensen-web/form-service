@@ -834,5 +834,7 @@ Finally, we have the `service` parameter. This is the instance of the `FormServi
 - `createItem`: function that generates a new array item for that selector
 - `format`: transforms the affect's key's value coming from the input model
 - `unformat`: transforms the affect's key's value coming from the state
+- `validateRaw`: validators for this selector receive unformatted versions of the `value`, and receive `model` instead of `state`
+- `validateManually`: validators are only invoked when `validate()` is called
 - `validators`: an array of validators that can be invoked against the current value of the key
 - `children`: used to define child-selectors

@@ -86,6 +86,7 @@ export default class FormService {
   }
 
   constructor (model, selectors, onChange) {
+    this.__manualValidation = false
     this.__state = {}
     this.__errors = {}
     this.__pristine = {}
@@ -222,13 +223,17 @@ export default class FormService {
     const prevErrors = this.__errors
 
     this.__pristine = map(this.__pristine, () => false)
+    this.__manualValidation = true
+
     traverse(this.__state, keyPath => {
       const pristine = getValueByPath(this.__pristine, keyPath)
 
       if (typeof pristine !== 'object') {
-        this.validateKey(keyPath)
+        this.validateKey(keyPath, false)
       }
     })
+
+    this.__manualValidation = false
 
     if (prevErrors !== this.__errors) {
       this.__change()
@@ -253,7 +258,12 @@ export default class FormService {
     const pristine = getValueByPath(this.__pristine, keyPath)
 
     if (validators && !pristine) {
-      this.__processValidator(validatorPath, validators)
+      const selector = this.getSelector(validatorPath)
+      const useRaw = selector.validateRaw || false
+
+      if (!selector.validateManually || this.__manualValidation) {
+        this.__processValidator(validatorPath, validators, useRaw)
+      }
     }
   }
 
@@ -490,12 +500,13 @@ export default class FormService {
     this.__change()
   }
 
-  __processValidator (keyPath, validators) {
-    const value = getValueByPath(this.__state, keyPath)
+  __processValidator (keyPath, validators, useRaw) {
+    const data = useRaw ? this.convert(this.__state, 'unformat') : this.__state
+    const value = getValueByPath(data, keyPath)
 
     try {
       validators.forEach(validator => {
-        if (!validator.validate(value, keyPath, this.__state, this)) {
+        if (!validator.validate(value, keyPath, data, this)) {
           throw new ValidationError(validator.error)
         }
       })
