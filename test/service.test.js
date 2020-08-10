@@ -12,6 +12,7 @@ import {
   filterEmpty,
   padArray,
   map,
+  getValueByPath,
 } from '../src/utils'
 
 import {
@@ -116,7 +117,7 @@ describe('FormService', () => {
 
       beforeEach(() => {
         service = new FormService(MODEL, SELECTORS, onChangeSpy)
-        model = service.buildModel()
+        model = service.build()
       })
 
       it('formats the field', () =>
@@ -138,7 +139,7 @@ describe('FormService', () => {
 
       beforeEach(() => {
         service = new FormService(MODEL, SELECTORS, onChangeSpy)
-        model = service.buildModel()
+        model = service.build()
       })
 
       it('does not change the field', () =>
@@ -161,7 +162,7 @@ describe('FormService', () => {
 
       beforeEach(() => {
         service = new FormService(MODEL, SELECTORS, onChangeSpy)
-        model = service.buildModel()
+        model = service.build()
       })
 
       it('formats the field', () =>
@@ -184,7 +185,7 @@ describe('FormService', () => {
 
       beforeEach(() => {
         service = new FormService(MODEL, SELECTORS, onChangeSpy)
-        model = service.buildModel()
+        model = service.build()
       })
 
       it('formats the field', () =>
@@ -207,7 +208,7 @@ describe('FormService', () => {
 
       beforeEach(() => {
         service = new FormService(MODEL, SELECTORS, onChangeSpy)
-        model = service.buildModel()
+        model = service.build()
       })
 
       it('formats the field', () =>
@@ -247,7 +248,7 @@ describe('FormService', () => {
   
       beforeEach(() => {
         service = new FormService(MODEL, SELECTORS, onChangeSpy)
-        model = service.buildModel()
+        model = service.build()
       })
   
       it('formats the state', () =>
@@ -293,7 +294,7 @@ describe('FormService', () => {
 
       beforeEach(() => {
         service = new FormService(MODEL, SELECTORS, onChangeSpy)
-        model = service.buildModel()
+        model = service.build()
       })
 
       it('formats the state', () =>
@@ -312,7 +313,7 @@ describe('FormService', () => {
 
       beforeEach(() => {
         service = new FormService(MODEL, SELECTORS, onChangeSpy)
-        model = service.buildModel()
+        model = service.build()
       })
 
       it('formats the field', () =>
@@ -1001,6 +1002,48 @@ describe('FormService', () => {
 
   describe('addItem()', () => {
     const MODEL = { items: [] }
+
+    context('when an object is added', () => {
+      const MODEL = {
+        items: [1, 2, 3, 5, 8],
+      }
+
+      const SELECTORS = {
+        children: {
+          items: {
+            createItem: (keyPath, _index, model) => {
+              const items = getValueByPath(model, keyPath)
+              const prevTwo = items.slice(items.length - 2, items.length)
+
+              return (prevTwo[0] || 0) + (prevTwo[1] || 0)
+            },
+            children: {
+              $: {
+                format: v => toCurrency(v / 100),
+                unformat: v => Number(toNumeric(v)),
+              },
+            },
+          },
+        },
+      }
+
+      let spy
+      let result
+
+      beforeEach(() => {
+        spy = sandbox.spy(SELECTORS.children.items, 'createItem')
+
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service.addItem('items')
+        result = service.build().items
+      })
+
+      it('invokes createItem() with the correct arguments', () =>
+        expect(spy).to.be.calledWith(['items'], 5, MODEL, service))
+
+      it('adds the next Fibonacci number in the sequence', () =>
+        expect(result).to.be.eql([1, 2, 3, 5, 8, 13]))
+    })
 
     context('when adding a primitive item', () => {
       const SELECTORS = {
@@ -1933,8 +1976,6 @@ describe('FormService', () => {
       })
     })
   })
-
-  
 
   describe('refresh()', () => {
     const UPDATED_MODEL = {

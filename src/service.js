@@ -140,7 +140,8 @@ export default class FormService {
     const items = getValueByPath(this.__state, keyPath)
     const shiftedIndex = index !== -1 ? index : items.length
     const selector = this.getSelector(keyPath)
-    const rawItem = selector.createItem()
+    const model = this.convert(this.__state, 'unformat')
+    const rawItem = selector.createItem(keyPath, shiftedIndex, model, this)
     const item = this.__convertItem(rawItem, keyPath)
 
     items.splice(shiftedIndex, 0, item)
@@ -215,7 +216,7 @@ export default class FormService {
     return result
   }
 
-  buildModel () {
+  build () {
     return this.convert(this.__state, 'unformat')
   }
 

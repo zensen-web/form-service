@@ -236,7 +236,7 @@ const SELECTORS = {
 const onChange = (_dirty, state) => console.log('state:', state)
 
 const formService = new FormService(MODEL, SELECTORS, onChange)
-const result = formService.buildModel()
+const result = formService.build()
 
 console.log('result:', result)
 ```
@@ -325,7 +325,7 @@ state: [
 
 In the case of formatting, it's applied to all elements.
 
-### Exporting State with `buildModel()`
+### Exporting State with `build()`
 
 Once the form has been modified and is ready for submission, it's a common need to convert parts of the form from UI-state back to a more agnostic data model for submitting to an API or long-term storage. This method creates a new `model` by making a deep copy of `state`, executing any `unformat` modifiers that are defined on selectors.
 
@@ -350,7 +350,7 @@ const onChange = (_dirty, state) => console.log('state:', state)
 
 const formService = new FormService(MODEL, SELECTORS, onChange)
 
-const result = formService.buildModel()
+const result = formService.build()
 console.log('result:', result)
 ```
 
