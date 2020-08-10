@@ -233,11 +233,6 @@ export const failValidator = {
   validate: () => false,
 }
 
-export const phoneNumberValidator = {
-  error: 'Invalid phone number',
-  validate: v => !v || pkg.isMobilePhone(v),
-}
-
 export const segmentValidator = {
   error: 'Conflicting Time',
   validate: (v, keyPath, state) => {
