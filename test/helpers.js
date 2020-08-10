@@ -1,6 +1,6 @@
 import pkg from 'validator'
 
-import { map, getValueByPath } from '../src/utils'
+import { extents, map, getValueByPath } from '../src/utils'
 
 export const PERIOD = {
   AM: 'am',
@@ -269,4 +269,47 @@ export const intervalValidator = {
 
     return key === 'start' ? (minutes > otherMinutes) : (minutes < otherMinutes)
   },
+}
+
+export function isRequired (error = 'Required') {
+  return {
+    error,
+    validate: v => (Array.isArray(v) ? v.length : v),
+  }
+}
+
+export function isRequiredIf (siblingKey, autoValidate = true, error = 'Required') {
+  return {
+    error,
+    validate: (v, keyPath, state, service) => {
+      const siblingPath = [...keyPath.slice(0, keyPath.length - 1), siblingKey]
+
+      if (autoValidate) {
+        service.validateKey(siblingPath)
+      }
+
+      return getValueByPath(state, siblingPath) ? v : true
+    },
+  }
+}
+
+export function isPhoneNumber (error = 'Invalid phone number') {
+  return {
+    error,
+    validate: v => !v || pkg.isMobilePhone(v),
+  }
+}
+
+export function inRange (ext1, ext2, incMin = true, incMax = true, error = null) {
+  const { min, max } = extents(Number(ext1), Number(ext2))
+
+  return {
+    error: error ? error : `${min} - ${max}`,
+    validate: v => {
+      const passesMin = incMin ? (v >= min) : (v > min)
+      const passesMax = incMax ? (v <= max) : (v < max)
+
+      return v === '' || (passesMin && passesMax)
+    },
+  }
 }

@@ -28,7 +28,7 @@ function pathToKeyPath (path) {
   return str ? str.split('.') : []
 }
 
-export class FormService {
+export default class Service {
   get isDirty () {
     return !equal(this.__state, this.__initialState)
   }

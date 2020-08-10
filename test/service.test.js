@@ -1,12 +1,12 @@
 import sinon from 'sinon'
+import FormService from '../src/service'
 
 import {
   VerificationError,
   PristineError,
   MutationError,
   PathError,
-  FormService,
-} from '../src/service'
+} from '../src/error'
 
 import {
   filterEmpty,
@@ -14,13 +14,6 @@ import {
   map,
   getValueByPath,
 } from '../src/utils'
-
-import {
-  isRequired,
-  isRequiredIf,
-  isPhoneNumber,
-  inRange,
-} from '../src/validators'
 
 import {
   PERIOD,
@@ -39,6 +32,10 @@ import {
   failValidator,
   segmentValidator,
   intervalValidator,
+  isRequired,
+  isRequiredIf,
+  isPhoneNumber,
+  inRange,
 } from './helpers'
 
 describe('FormService', () => {
