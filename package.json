@@ -47,9 +47,9 @@
     "nyc": "^15.1.0",
     "sinon": "^8.1.0",
     "sinon-chai": "^3.4.0",
-    "validator": "^12.1.0"
+    "validator": "^13.1.1"
   },
   "dependencies": {
-    "fast-deep-equal": "^3.1.1"
+    "fast-deep-equal": "^3.1.3"
   }
 }

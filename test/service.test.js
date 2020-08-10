@@ -16,9 +16,9 @@ import {
 } from '../src/utils'
 
 import {
-  required,
-  requiredIf,
-  range,
+  isRequired,
+  isRequiredIf,
+  inRange,
 } from '../src/validators'
 
 import {
@@ -1457,7 +1457,7 @@ describe('FormService', () => {
 
         const SELECTORS = {
           children: {
-            name: [required()]
+            name: [isRequired()]
           },
         }
 
@@ -1501,7 +1501,7 @@ describe('FormService', () => {
 
       const SELECTORS = {
         children: {
-          name: [required()],
+          name: [isRequired()],
         },
       }
 
@@ -1525,7 +1525,7 @@ describe('FormService', () => {
 
       const SELECTORS = {
         children: {
-          name: [required(), VALIDATOR_NAME_MATCH],
+          name: [isRequired(), VALIDATOR_NAME_MATCH],
         },
       }
 
@@ -1567,8 +1567,8 @@ describe('FormService', () => {
           tax: {
             children: {
               rate: [
-                requiredIf('name'),
-                range(0, 100, false, false, '0 - 100'),
+                isRequiredIf('name'),
+                inRange(0, 100, false, false, '0 - 100'),
               ],
             },
           },
@@ -1720,7 +1720,7 @@ describe('FormService', () => {
               $: {
                 children: {
                   number: [phoneNumberValidator],
-                  type: [requiredIf('number')],
+                  type: [isRequiredIf('number')],
                 },
               },
             },
@@ -1768,7 +1768,7 @@ describe('FormService', () => {
         children: {
           rate: {
             ignorePristine: true,
-            validators: [range(0, 100, false, false, '0 - 100')],
+            validators: [inRange(0, 100, false, false, '0 - 100')],
           },
         },
       }
@@ -1791,7 +1791,7 @@ describe('FormService', () => {
             children: {
               $: {
                 ignorePristine: true,
-                validators: [range(0, 100, false, false, '0 - 100')],
+                validators: [inRange(0, 100, false, false, '0 - 100')],
               },
             },
           },
@@ -1828,7 +1828,7 @@ describe('FormService', () => {
                 children: {
                   rate: {
                     ignorePristine: true,
-                    validators: [range(0, 100, false, false, '0 - 100')],
+                    validators: [inRange(0, 100, false, false, '0 - 100')],
                   },
                 },
               },
