@@ -102,51 +102,9 @@ describe('FormService', () => {
       period: PERIOD.AM,
     }
 
-    context('when formatting a field only', () => {
-      const MODEL = { amount: 42 }
-      const SELECTORS = {
-        children: {
-          amount: {
-            format: v => toCurrency(v / 100)
-          },
-        },
-      }
+    let selectors
 
-      beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
-        model = service.build()
-      })
-
-      it('formats the field', () =>
-        expect(service.__state.amount).to.be.eq('$0.42'))
-
-      it('does not unformat the field', () =>
-        expect(model.amount).to.be.eq('$0.42'))
-    })
-
-    context('when unformatting a field only', () => {
-      const MODEL = { amount: '$0.42' }
-      const SELECTORS = {
-        children: {
-          amount: {
-            unformat: v => Number(toNumeric(v, true)) * 100,
-          },
-        },
-      }
-
-      beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
-        model = service.build()
-      })
-
-      it('does not change the field', () =>
-        expect(service.__state.amount).to.be.eq('$0.42'))
-
-      it('unformats the field', () =>
-        expect(model.amount).to.be.eq(42))
-    })
-
-    context('when both converters are both provided', () => {
+    context('when format() is provided on selector', () => {
       const MODEL = { amount: 42 }
       const SELECTORS = {
         children: {
@@ -157,16 +115,31 @@ describe('FormService', () => {
         },
       }
 
+      let formatSpy
+      let unformatSpy
+
       beforeEach(() => {
+        formatSpy = sandbox.spy(SELECTORS.children.amount, 'format')
+        unformatSpy = sandbox.spy(SELECTORS.children.amount, 'unformat')
+
         service = new FormService(MODEL, SELECTORS, onChangeSpy)
-        model = service.build()
       })
 
-      it('formats the field', () =>
-        expect(service.__state.amount).to.be.eq('$0.42'))
+      it('invokes the format() modifier', () =>
+        expect(formatSpy).to.be.calledOnceWith(42, ['amount'], MODEL))
 
-      it('unformats the field', () =>
-        expect(model.amount).to.be.eq(42))
+      context('when unformat() is provided on a selector', () => {
+        const STATE = {
+          amount: '$0.42',
+        }
+
+        beforeEach(() => {
+          model = service.build()
+        })
+
+        it('invokes the unformat() modifier', () =>
+          expect(unformatSpy).to.be.calledOnceWith('$0.42', ['amount'], STATE))
+      })
     })
 
     context('when formatting from primitive to object', () => {

@@ -160,14 +160,14 @@ export default class Service {
     const rootSelector = this.getSelector([], true)
     const action = rootSelector && rootSelector[op]
     const copy = typeof data === 'object' ? deepCopy(data) : data
-    const result = action ? action(copy) : copy
+    const result = action ? action(copy, rootPath, data) : copy
 
     traverse(result, (keyPath, value) => {
       const fullPath = [...rootPath, ...keyPath]
       const selector = this.getSelector(fullPath, true)
 
       if (selector && selector[op]) {
-        const selVal = selector[op](value)
+        const selVal = selector[op](value, fullPath, data)
 
         if (selVal !== null && typeof selVal === 'object') {
           const copy = selVal instanceof Date
