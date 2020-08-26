@@ -76,7 +76,7 @@ describe('FormService', () => {
 
       const fn = () => new FormService(MODEL, SELECTORS, onChangeSpy)
 
-      it('throw an error', () => expect(fn).to.throw(VerificationError))
+      it('throws an error', () => expect(fn).to.throw(VerificationError))
     })
 
     context('when setting ignorePristine on object-type key', () => {
@@ -90,7 +90,7 @@ describe('FormService', () => {
 
       const fn = () => new FormService(MODEL, SELECTORS, onChangeSpy)
 
-      it('throw an error', () => expect(fn).to.throw(VerificationError))
+      it('throws an error', () => expect(fn).to.throw(VerificationError))
     })
   })
 
@@ -668,6 +668,86 @@ describe('FormService', () => {
     })
   })
 
+  describe('unsetPristine()', () => {
+    beforeEach(() => {
+      service = new FormService(ENEMY_MODEL, {}, onChangeSpy)
+    })
+
+    context('when unsetting a top-level key', () => {
+      beforeEach(() => {
+        service.unsetPristine(['name'])
+      })
+  
+      it('unsets the flag', () => expect(getLastChange()[3]).to.be.eql({
+        name: false,
+        job: true,
+        stats: {
+          attack: true,
+          evasion: true,
+          speed: true,
+          attributes: {
+            level: true,
+            experience: true,
+          },
+        },
+        ailments: [true, true, true],
+        items: [
+          { id: true, rate: true },
+          { id: true, rate: true },
+        ],
+        triangles: [
+          [true, true, true],
+          [true, true, true],
+        ],
+      }))
+    })
+
+    context('when unsetting a nested key', () => {
+      beforeEach(() => {
+        service.unsetPristine(['stats', 'attack'])
+      })
+  
+      it('unsets the flag', () => expect(getLastChange()[3]).to.be.eql({
+        name: true,
+        job: true,
+        stats: {
+          attack: false,
+          evasion: true,
+          speed: true,
+          attributes: {
+            level: true,
+            experience: true,
+          },
+        },
+        ailments: [true, true, true],
+        items: [
+          { id: true, rate: true },
+          { id: true, rate: true },
+        ],
+        triangles: [
+          [true, true, true],
+          [true, true, true],
+        ],
+      }))
+    })
+
+    context('when unsetting on an invalid path', () => {
+      const INVALID_PATH = ['stats', 'attack', '0']
+      const fn = () => service.unsetPristine(INVALID_PATH)
+
+      it('throws an error', () =>
+        expect(fn).to.throw(TypeError, `Invalid path: ${INVALID_PATH.join('.')}`))
+    })
+
+    context('when setting on a branch instead of a leaf', () => {
+      const INVALID_PATH = ['stats']
+      const fn = () => service.unsetPristine(INVALID_PATH)
+
+      it('throws an error', () =>
+        expect(fn).to.throw(TypeError, `Invalid path: ${INVALID_PATH.join('.')}`))
+    })
+  })
+
   describe('apply()', () => {
     beforeEach(() => {
       service = new FormService(ENEMY_MODEL, {}, onChangeSpy)
@@ -751,7 +831,7 @@ describe('FormService', () => {
         service = new FormService(MODEL, {}, onChangeSpy)
       })
 
-      it('throw an error', () => expect(fn).to.not.throw())
+      it('throws an error', () => expect(fn).to.not.throw())
     })
 
     context('when modifying an object to null', () => {
@@ -797,7 +877,7 @@ describe('FormService', () => {
       const NAME_INVALID = 'asdf'
       const fn = () => service.apply(NAME_INVALID)
 
-      it('throw an error', () =>
+      it('throws an error', () =>
         expect(fn).to.throw(TypeError, `Invalid path: ${NAME_INVALID}`))
     })
 
@@ -816,7 +896,7 @@ describe('FormService', () => {
         service = new FormService(ENEMY_MODEL, SELECTORS, onChangeSpy)
       })
 
-      it('throw an error', () => expect(fn).to.throw(MutationError))
+      it('throws an error', () => expect(fn).to.throw(MutationError))
     })
 
     context('when mutating an object to have a different shape', () => {
@@ -834,7 +914,7 @@ describe('FormService', () => {
         service = new FormService(ENEMY_MODEL, SELECTORS, onChangeSpy)
       })
 
-      it('throw an error', () => expect(fn).to.throw(MutationError))
+      it('throws an error', () => expect(fn).to.throw(MutationError))
     })
 
     context('when mutating an object to have the same shape', () => {
@@ -860,13 +940,13 @@ describe('FormService', () => {
         service = new FormService(ENEMY_MODEL, SELECTORS, onChangeSpy)
       })
 
-      it('throw an error', () => expect(fn).to.not.throw())
+      it('throws an error', () => expect(fn).to.not.throw())
     })
 
     context.skip('when adding a rogue property to sub-object', () => {
       const fn = () => service.apply('stats.asdf', 42)
 
-      it('throw an error', () => expect(fn).to.throw(MutationError))
+      it('throws an error', () => expect(fn).to.throw(MutationError))
     })
 
     context('when mutating an array', () => {
@@ -907,7 +987,7 @@ describe('FormService', () => {
         service = new FormService(MODEL, SELECTORS, onChangeSpy)
       })
 
-      it('does not throw an error', () => expect(fn).to.not.throw())
+      it('does not throws an error', () => expect(fn).to.not.throw())
     })
 
     context('when modifying a key that does not have pristine status', () => {
@@ -917,7 +997,7 @@ describe('FormService', () => {
         speed: 'c',
       })
 
-      it('throw an error', () => expect(fn).to.throw(PristineError))
+      it('throws an error', () => expect(fn).to.throw(PristineError))
     })
 
     context('when state is accidentally set on a value', () => {
@@ -939,7 +1019,7 @@ describe('FormService', () => {
           service = new FormService(MODEL, SELECTORS, onChangeSpy)
         })
 
-        it('does not throw an error', () => expect(fn).to.not.throw())
+        it('does not throws an error', () => expect(fn).to.not.throw())
       })
 
       context('when path is numeric', () => {
@@ -950,7 +1030,7 @@ describe('FormService', () => {
           service = new FormService(MODEL, {}, onChangeSpy)
         })
 
-        it('does not throw an error', () => expect(fn).to.not.throw())
+        it('does not throws an error', () => expect(fn).to.not.throw())
       })
 
       context('when modifying an item', () => {

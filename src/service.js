@@ -236,6 +236,14 @@ export default class Service {
     }
   }
 
+  unsetPristine (keyPath) {
+    if (typeof getValueByPath(this.__pristine, keyPath) !== 'boolean') {
+      throw new TypeError(`Invalid path: ${keyPath.join('.')}`)
+    }
+
+    setValueByPath(this.__pristine, keyPath, false)
+  }
+
   getSelectorPath (keyPath, ignoreCheck = false) {
     if (!ignoreCheck) {
       const value = getValueByPath(this.__state, keyPath)
