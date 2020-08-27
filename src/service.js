@@ -198,7 +198,7 @@ export default class Service {
       const pristine = getValueByPath(this.__pristine, keyPath)
 
       if (typeof pristine !== 'object') {
-        this.validateKey(keyPath, false)
+        this.validateKey(keyPath, true)
       }
     })
 
@@ -211,7 +211,7 @@ export default class Service {
     return !this.hasErrors
   }
 
-  validateKey (keyPath) {
+  validateKey (keyPath, force = false) {
     const clippedPathIndex = keyPath.findIndex((_, index) => {
       const subPath = keyPath.slice(0, index)
 
@@ -230,7 +230,7 @@ export default class Service {
       const selector = this.getSelector(validatorPath)
       const useRaw = selector.validateRaw || false
 
-      if (!selector.validateManually || this.__manualValidation) {
+      if (!selector.validateManually || force) {
         this.__processValidator(validatorPath, validators, useRaw)
       }
     }
