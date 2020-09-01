@@ -54,7 +54,6 @@ export default class Service {
   }
 
   constructor (model, selectors, onChange) {
-    this.__manualValidation = false
     this.__state = {}
     this.__errors = {}
     this.__pristine = {}
@@ -189,10 +188,7 @@ export default class Service {
   }
 
   validate () {
-    const prevErrors = this.__errors
-
     this.__pristine = map(this.__pristine, () => false)
-    this.__manualValidation = true
 
     traverse(this.__state, keyPath => {
       const pristine = getValueByPath(this.__pristine, keyPath)
@@ -201,12 +197,6 @@ export default class Service {
         this.validateKey(keyPath, true)
       }
     })
-
-    this.__manualValidation = false
-
-    if (prevErrors !== this.__errors) {
-      this.__change()
-    }
 
     return !this.hasErrors
   }
@@ -225,14 +215,19 @@ export default class Service {
     const validatorPath = keyPath.slice(0, validatorPathLength)
     const validators = this.getValidators(validatorPath)
     const pristine = getValueByPath(this.__pristine, keyPath)
+    const prevErrors = this.__errors
 
-    if (validators && !pristine) {
+    if (validators && (!pristine || force)) {
       const selector = this.getSelector(validatorPath)
       const useRaw = selector.validateRaw || false
 
       if (!selector.validateManually || force) {
         this.__processValidator(validatorPath, validators, useRaw)
       }
+    }
+
+    if (prevErrors !== this.__errors) {
+      this.__change()
     }
   }
 
