@@ -1497,6 +1497,38 @@ describe('FormService', () => {
       validate: v => v === NAME_MATCH,
     }
 
+    context('when clipPristine is set on a key with children', () => {
+      let validatorStub;
+      beforeEach(() => {
+        const MODEL = {
+          amount: {
+            hi: 2,
+            three: '3'
+          },
+        }
+
+        const SELECTORS = {
+          children: {
+            amount: {
+              clipPristine: true,
+              validators: [
+                {
+                  error: 'error on clipped object',
+                  validate: () => true,
+                }
+              ]
+            }
+          },
+        }
+
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        validatorStub = sandbox.spy(service, 'validateKey')
+        valid = service.validate()
+      })
+
+      it('only calls validator once', () => expect(validatorStub).to.be.calledOnce)
+    })
+
     context('when invalid data is provided', () => {
       beforeEach(() => {
         const MODEL = {
