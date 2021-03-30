@@ -19,7 +19,6 @@ export const ENEMY_MODEL = {
       experience: 1000,
     },
   },
-  somethingId: null,
   ailments: [3, 4, 7],
   items: [
     { id: 1, rate: 0.1 },

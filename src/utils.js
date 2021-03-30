@@ -10,7 +10,7 @@ export function padArray (arr, filler) {
 }
 
 export function filterEmpty (arr) {
-  return arr.filter(item => (typeof item === 'object'
+  return arr.filter(item => (isObjectOrArray(item)
     ? Object.keys(item).every(key => item[key])
     : item))
 }
@@ -44,7 +44,7 @@ export function traverse (obj, onKey, includeRoot = false) {
       const dateType = v instanceof Date
       const clip = onKey([...path], v) === false
       const updatedVal = getValueByPath(obj, path)
-      const nonNullObj = updatedVal !== null && typeof updatedVal === 'object'
+      const nonNullObj = updatedVal !== null && isObjectOrArray(updatedVal)
 
       if (!clip && !dateType && nonNullObj) {
         path.push('')
@@ -67,7 +67,7 @@ export function map (obj, onKey) {
   traverse(obj, (keyPath, value) => {
     const dateType = value instanceof Date
 
-    if (!dateType && value !== null && typeof value === 'object') {
+    if (!dateType && value !== null && isObjectOrArray(value)) {
       setValueByPath(result, keyPath, Array.isArray(value) ? [] : {})
     } else {
       setValueByPath(result, keyPath, onKey(keyPath, value))
@@ -102,4 +102,8 @@ export function getKeyPaths (obj) {
   traverse(obj, keyPath => result.push(keyPath))
 
   return result
+}
+
+export function isObjectOrArray (value) {
+  return value && (Object.getPrototypeOf(value) === Object.prototype || Array.isArray(value))
 }

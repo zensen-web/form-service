@@ -1,4 +1,5 @@
 import sinon from 'sinon'
+import moment from 'moment-timezone'
 import FormService from '../src/service'
 
 import {
@@ -291,6 +292,53 @@ describe('FormService', () => {
 
       it('unformats the field', () =>
         expect(model).to.be.eql({ amount: 42 }))
+    })
+
+    context('when formatting a custom object type', () => {
+      const MODEL = { moment: moment('2012-03-05T05:00') }
+      const SELECTORS = {
+        children: {
+          moment: {
+            format: v => v.startOf('day'),
+            unformat: v => v.endOf('day'),
+          },
+        },
+      }
+
+      let formatSpy
+      let unformatSpy
+
+      beforeEach(() => {
+        formatSpy = sandbox.spy(SELECTORS.children.moment, 'format')
+        unformatSpy = sandbox.spy(SELECTORS.children.moment, 'unformat')
+
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+      })
+
+      it('invokes the format() modifier', () =>
+        expect(formatSpy).to.be.calledOnce)
+
+      it('uses cloned moment', () =>
+        expect(formatSpy.getCall(0).args[0].isSame(MODEL.moment)).to.be.true)
+
+      it('uses correct field', () =>
+        expect(formatSpy.getCall(0).args[1])
+          .to.eql(['moment']))
+
+      it('uses correct data', () =>
+        expect(formatSpy.getCall(0).args[2])
+          .to.eql(MODEL))
+
+      context('when unformat() is provided on a selector', () => {
+        beforeEach(() => {
+          model = service.build()
+        })
+
+        it('invokes the unformat() modifier', () =>
+          expect(unformatSpy).to.be.calledOnce)
+        it('invokes the unformat() modifier with correct date', () =>
+          expect(unformatSpy.getCall(0).args[0].isSame(MODEL.moment.startOf('day'))).to.be.true)
+      })
     })
   })
 
@@ -2059,7 +2107,7 @@ describe('FormService', () => {
     })
   })
 
-  describe.only('refresh()', () => {
+  describe('refresh()', () => {
     const UPDATED_MODEL = {
       name: 'Cecil',
       job: 'dark_knight',
@@ -2115,7 +2163,7 @@ describe('FormService', () => {
     }
 
     beforeEach(() => {
-      service = new FormService(ENEMY_MODEL, SELECTORS, onChangeSpy)
+      service = new FormService({ ...ENEMY_MODEL, somethingId: null }, SELECTORS, onChangeSpy)
       service.apply('name', 'asdf')
       service.validate()
       service.refresh(UPDATED_MODEL)

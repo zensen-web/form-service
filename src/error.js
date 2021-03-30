@@ -3,9 +3,6 @@ function printValue (v) {
 }
 
 export class ValidationError extends Error {
-  constructor (message) {
-    super(message)
-  }
 }
 
 export class VerificationError extends Error {
