@@ -193,7 +193,7 @@ export default class Service {
     traverse(this.__state, keyPath => {
       const pristine = getValueByPath(this.__pristine, keyPath)
 
-      if (typeof pristine !== 'object') {
+      if (pristine !== undefined && typeof pristine !== 'object') {
         this.validateKey(keyPath, true)
       }
     })
