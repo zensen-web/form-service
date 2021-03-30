@@ -161,7 +161,9 @@ export default class Service {
     const copy = typeof data === 'object' ? deepCopy(data) : data
     const result = action ? action(copy, rootPath, data) : copy
 
-    traverse(result, (keyPath, value) => {
+    const resultCopy = typeof data === 'object' ? deepCopy(result) : result
+
+    traverse(resultCopy, (keyPath, value) => {
       const fullPath = [...rootPath, ...keyPath]
       const selector = this.getSelector(fullPath, true)
 
