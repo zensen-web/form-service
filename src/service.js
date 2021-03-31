@@ -201,7 +201,7 @@ export default class Service {
     traverse(this.__state, keyPath => {
       const pristine = getValueByPath(this.__pristine, keyPath)
 
-      if (pristine !== undefined && !isObjectOrArray(pristine)) {
+      if (pristine !== undefined && pristine !== null && !isObjectOrArray(pristine)) {
         this.validateKey(keyPath, true)
       }
     })
