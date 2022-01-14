@@ -1,9 +1,9 @@
 {
   "name": "@zensen/form-service",
-  "version": "2.0.25",
+  "version": "2.0.26",
   "license": "MIT",
   "description": "A reactive form service framework",
-  "main": "src/index.js",
+  "main": "build/index.js",
   "author": "Travis True <travis.true08@gmail.com> (http://www.travistrue.io)",
   "repository": {
     "type": "git",
@@ -13,8 +13,10 @@
     "node": ">=8.5"
   },
   "scripts": {
+    "build": "babel src -d build",
     "install:clear": "rm -rf node_modules",
     "lint": "eslint --fix",
+    "prepublishOnly": "yarn build",
     "test": "nyc --reporter=html --all mocha --exit --require @babel/register 'test/**/**.test.js'",
     "test:watch": "yarn test --watch"
   },

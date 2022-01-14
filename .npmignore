@@ -3,6 +3,7 @@
 /.storybook
 /coverage
 /examples
+/src
 /stories
 /test
 
