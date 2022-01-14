@@ -53,6 +53,14 @@ export default class Service {
       : Boolean(this.__errors)
   }
 
+  get state () {
+    return this.__state
+  }
+
+  get errors () {
+    return this.__errors
+  }
+
   constructor (model, selectors, onChange) {
     this.__state = {}
     this.__errors = {}
