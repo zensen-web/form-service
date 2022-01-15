@@ -1,4 +1,5 @@
 import sinon from 'sinon'
+import moment from 'moment-timezone'
 import FormService from '../src/service'
 
 import {
@@ -187,12 +188,12 @@ describe('FormService', () => {
       it('unformats the field', () =>
         expect(model.time).to.be.eql(TIME_OBJ))
     })
-  
+
     context('when converters are provided to array items', () => {
       const MODEL = {
         items: [1, 4.25, 14.75],
       }
-  
+
       const STATE = {
         items: [
           { hours: 1, minutes: 0, period: PERIOD.AM },
@@ -200,7 +201,7 @@ describe('FormService', () => {
           { hours: 2, minutes: 45, period: PERIOD.PM },
         ],
       }
-  
+
       const SELECTORS = {
         children: {
           items: {
@@ -215,12 +216,12 @@ describe('FormService', () => {
           },
         },
       }
-  
+
       beforeEach(() => {
         service = new FormService(MODEL, SELECTORS, onChangeSpy)
         model = service.build()
       })
-  
+
       it('formats the state', () =>
         expect(service.__state).to.be.eql(STATE))
 
@@ -292,11 +293,58 @@ describe('FormService', () => {
       it('unformats the field', () =>
         expect(model).to.be.eql({ amount: 42 }))
     })
+
+    context('when formatting a custom object type', () => {
+      const MODEL = { moment: moment('2012-03-05T05:00') }
+      const SELECTORS = {
+        children: {
+          moment: {
+            format: v => v.startOf('day'),
+            unformat: v => v.endOf('day'),
+          },
+        },
+      }
+
+      let formatSpy
+      let unformatSpy
+
+      beforeEach(() => {
+        formatSpy = sandbox.spy(SELECTORS.children.moment, 'format')
+        unformatSpy = sandbox.spy(SELECTORS.children.moment, 'unformat')
+
+        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+      })
+
+      it('invokes the format() modifier', () =>
+        expect(formatSpy).to.be.calledOnce)
+
+      it('uses cloned moment', () =>
+        expect(formatSpy.getCall(0).args[0].isSame(MODEL.moment)).to.be.true)
+
+      it('uses correct field', () =>
+        expect(formatSpy.getCall(0).args[1])
+          .to.eql(['moment']))
+
+      it('uses correct data', () =>
+        expect(formatSpy.getCall(0).args[2])
+          .to.eql(MODEL))
+
+      context('when unformat() is provided on a selector', () => {
+        beforeEach(() => {
+          model = service.build()
+        })
+
+        it('invokes the unformat() modifier', () =>
+          expect(unformatSpy).to.be.calledOnce)
+        it('invokes the unformat() modifier with correct date', () =>
+          expect(unformatSpy.getCall(0).args[0].isSame(MODEL.moment.startOf('day'))).to.be.true)
+      })
+    })
   })
 
   // TODO: add formatters, and verify pristine
   describe('clipPristine', () => {
-    context(`when clipping an object`, () => {
+    context('when clipping an object', () => {
       const MODEL = {
         id: '123',
         name: 'Test',
@@ -326,7 +374,7 @@ describe('FormService', () => {
         expect(service.__pristine).to.be.eql(EXPECTED_RESULT))
     })
 
-    context(`when clipping an array`, () => {
+    context('when clipping an array', () => {
       const MODEL = {
         id: '123',
         name: 'Test',
@@ -356,7 +404,7 @@ describe('FormService', () => {
         expect(service.__pristine).to.be.eql(EXPECTED_RESULT))
     })
 
-    context(`when clipping an array's object-elements`, () => {
+    context('when clipping an array\'s object-elements', () => {
       const MODEL = {
         id: '123',
         name: 'Test',
@@ -677,7 +725,7 @@ describe('FormService', () => {
       beforeEach(() => {
         service.unsetPristine(['name'])
       })
-  
+
       it('unsets the flag', () => expect(getLastChange()[3]).to.be.eql({
         name: false,
         job: true,
@@ -706,7 +754,7 @@ describe('FormService', () => {
       beforeEach(() => {
         service.unsetPristine(['stats', 'attack'])
       })
-  
+
       it('unsets the flag', () => expect(getLastChange()[3]).to.be.eql({
         name: true,
         job: true,
@@ -1038,7 +1086,7 @@ describe('FormService', () => {
           service = new FormService(ITEMS_MODEL, {}, onChangeSpy)
           service.apply('0.name', 'asdf')
         })
-  
+
         it('invokes the callback', () =>
           expect(getLastChange()).to.be.eql([
             true,
@@ -1114,22 +1162,22 @@ describe('FormService', () => {
 
       context('when adding an item to end of an array', () => {
         const EXPECTED = ['', '']
-  
+
         beforeEach(() => {
           service.addItem('items')
         })
-  
+
         it('adds it', () => expect(service.__state.items).to.be.eql(EXPECTED))
 
         context('when adding an item in the middle of an array', () => {
           const EXPECTED = ['1', '', '2']
-    
+
           beforeEach(() => {
             service.apply('items.0', '1')
             service.apply('items.1', '2')
             service.addItem('items', 1)
           })
-    
+
           it('adds it', () => expect(service.__state.items).to.be.eql(EXPECTED))
         })
       })
@@ -1349,7 +1397,7 @@ describe('FormService', () => {
           service = new FormService(ITEMS_MODEL, SELECTORS, onChangeSpy)
           service.addItem('')
         })
-  
+
         it('invokes the callback', () =>
           expect(getLastChange()).to.be.eql([
             true,
@@ -1498,12 +1546,12 @@ describe('FormService', () => {
     }
 
     context('when clipPristine is set on a key with children', () => {
-      let validatorStub;
+      let validatorStub
       beforeEach(() => {
         const MODEL = {
           amount: {
             hi: 2,
-            three: '3'
+            three: '3',
           },
         }
 
@@ -1515,9 +1563,9 @@ describe('FormService', () => {
                 {
                   error: 'error on clipped object',
                   validate: () => true,
-                }
-              ]
-            }
+                },
+              ],
+            },
           },
         }
 
@@ -1539,7 +1587,7 @@ describe('FormService', () => {
 
         const SELECTORS = {
           children: {
-            name: [isRequired()]
+            name: [isRequired()],
           },
         }
 
@@ -1969,7 +2017,7 @@ describe('FormService', () => {
           service.apply('0.name', '')
           valid = service.validate()
         })
-  
+
         it('fails', () => expect(valid).to.be.false)
       })
     })
@@ -1990,7 +2038,7 @@ describe('FormService', () => {
               {
                 error: 'asdf',
                 validate: raw => raw,
-              }
+              },
             ],
           },
         },
@@ -2030,7 +2078,7 @@ describe('FormService', () => {
               {
                 error: 'asdf',
                 validate: v => v,
-              }
+              },
             ],
           },
         },
@@ -2072,6 +2120,7 @@ describe('FormService', () => {
           experience: 0,
         },
       },
+      somethingId: null,
       ailments: [],
       items: [
         { id: 1, rate: 0.1 },
@@ -2091,6 +2140,7 @@ describe('FormService', () => {
           experience: '',
         },
       },
+      somethingId: '',
       ailments: [],
       items: [
         { id: '', rate: '' },
@@ -2103,11 +2153,17 @@ describe('FormService', () => {
     const SELECTORS = {
       children: {
         name: [failValidator],
+        somethingId: {
+          unsafe: true,
+          clipPristine: true,
+          format: v => [].find(item => item.data.id === v) || { data: { id: '' }, label: '' },
+          unformat: v => v.data.id,
+        },
       },
     }
 
     beforeEach(() => {
-      service = new FormService(ENEMY_MODEL, SELECTORS, onChangeSpy)
+      service = new FormService({ ...ENEMY_MODEL, somethingId: null }, SELECTORS, onChangeSpy)
       service.apply('name', 'asdf')
       service.validate()
       service.refresh(UPDATED_MODEL)
@@ -2115,7 +2171,7 @@ describe('FormService', () => {
 
     it('reverts state, errors, pristine, and dirtiness back', () =>
       expect(getLastChange()).to.be.eql([
-        false, UPDATED_MODEL, UPDATED_ERRORS, UPDATED_PRISTINE,
+        false, { ...UPDATED_MODEL, somethingId: { data: { id: '' }, label: '' } }, { ...UPDATED_ERRORS, somethingId: { data: { id: '' }, label: '' } }, UPDATED_PRISTINE,
       ]))
   })
 

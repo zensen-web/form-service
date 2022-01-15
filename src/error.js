@@ -3,9 +3,6 @@ function printValue (v) {
 }
 
 export class ValidationError extends Error {
-  constructor (message) {
-    super(message)
-  }
 }
 
 export class VerificationError extends Error {
@@ -32,7 +29,7 @@ New Value: ${printValue(newValue)}`)
 }
 
 export class PathError extends Error {
-  constructor(keyPath) {
+  constructor (keyPath) {
     super(`No key found in state for path: ${keyPath.join('.')}`)
     this.name = 'PathError'
   }

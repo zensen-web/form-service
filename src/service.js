@@ -17,6 +17,7 @@ import {
   getValueByPath,
   setValueByPath,
   getKeyPaths,
+  isObjectOrArray,
 } from './utils'
 
 const errCb = selector => Array.isArray(selector) || selector.validators
@@ -36,9 +37,9 @@ export default class Service {
   get isPristine () {
     const fn = obj =>
       !Object.values(obj).filter(v =>
-        (typeof v === 'object' ? fn(v) : v)).length
+        (isObjectOrArray(v) ? fn(v) : v)).length
 
-    return typeof this.__pristine === 'object'
+    return isObjectOrArray(this.__pristine)
       ? fn(this.__pristine)
       : this.__pristine
   }
@@ -46,9 +47,9 @@ export default class Service {
   get hasErrors () {
     const fn = obj =>
       Object.values(obj).filter(v =>
-        (typeof v === 'object' ? fn(v) : v)).length > 0
+        (isObjectOrArray(v) ? fn(v) : v)).length > 0
 
-    return typeof this.__errors === 'object'
+    return isObjectOrArray(this.__errors)
       ? fn(this.__errors)
       : Boolean(this.__errors)
   }
@@ -96,7 +97,7 @@ export default class Service {
     }
 
     const pristine = getValueByPath(this.__pristine, keyPath)
-    if (typeof pristine === 'object') {
+    if (isObjectOrArray(pristine)) {
       throw new PristineError(keyPath)
     }
 
@@ -122,10 +123,15 @@ export default class Service {
     items.splice(shiftedIndex, 0, item)
     this.__spreadSchema('__state', [...keyPath, shiftedIndex])
     this.__addItemToSchema('__errors', keyPath, shiftedIndex, item, '', errCb)
+    console.log('adding', this.__pristine, keyPath.join('.'))
     this.__addItemToSchema('__pristine', keyPath, shiftedIndex, item, true, pristineCb)
+    console.log('added', this.__pristine, keyPath.join('.'))
     this.__modifyPristineItem([...keyPath, shiftedIndex])
+    console.log('modifying', this.__pristine, keyPath.join('.'))
     this.__modify(keyPath)
+    console.log('modifying 2', this.__pristine, keyPath.join('.'))
     this.__change()
+    console.log('modifying 3', this.__pristine, keyPath.join('.'))
   }
 
   removeItem (path, index = -1) {
@@ -166,17 +172,19 @@ export default class Service {
   convert (data, op, rootPath = []) {
     const rootSelector = this.getSelector([], true)
     const action = rootSelector && rootSelector[op]
-    const copy = typeof data === 'object' ? deepCopy(data) : data
+    const copy = isObjectOrArray(data) ? deepCopy(data) : data
     const result = action ? action(copy, rootPath, data) : copy
 
-    traverse(result, (keyPath, value) => {
+    const resultCopy = isObjectOrArray(data) ? deepCopy(result) : result
+
+    traverse(resultCopy, (keyPath, value) => {
       const fullPath = [...rootPath, ...keyPath]
       const selector = this.getSelector(fullPath, true)
 
       if (selector && selector[op]) {
         const selVal = selector[op](value, fullPath, data)
 
-        if (selVal !== null && typeof selVal === 'object') {
+        if (selVal !== null && isObjectOrArray(selVal)) {
           const copy = selVal instanceof Date
             ? new Date(selVal.getTime())
             : deepCopy(selVal)
@@ -201,7 +209,7 @@ export default class Service {
     traverse(this.__state, keyPath => {
       const pristine = getValueByPath(this.__pristine, keyPath)
 
-      if (pristine !== undefined && typeof pristine !== 'object') {
+      if (pristine !== undefined && pristine !== null && !isObjectOrArray(pristine)) {
         this.validateKey(keyPath, true)
       }
     })
@@ -310,7 +318,7 @@ export default class Service {
         })
       }
 
-      if (typeof v === 'object') {
+      if (isObjectOrArray(v)) {
         const selectors = this.getSelector(keyPath)
 
         if (selectors && selectors.ignorePristine && !selectors.clipPristine) {
@@ -334,10 +342,10 @@ export default class Service {
       }
 
       if (oldValue !== null && value !== null) {
-        if (typeof oldValue === 'object') {
+        if (isObjectOrArray(oldValue)) {
           const oldPathMap = getKeyPaths(oldValue)
 
-          if (typeof value === 'object') {
+          if (isObjectOrArray(value)) {
             const pathMap = getKeyPaths(value)
 
             if (!equal(oldPathMap, pathMap)) {
@@ -362,7 +370,7 @@ export default class Service {
     traverse(refSchema, (keyPath, value) => {
       const dateType = value instanceof Date
 
-      if (!dateType && value !== null && typeof value === 'object') {
+      if (!dateType && value !== null && isObjectOrArray(value)) {
         const fullPath = [...rootPath, ...keyPath]
         const selector = this.getSelector(fullPath)
 
@@ -381,7 +389,7 @@ export default class Service {
   }
 
   __convertItem (data, rootPath = []) {
-    const item = typeof data === 'object' ? deepCopy(data) : data
+    const item = isObjectOrArray(data) ? deepCopy(data) : data
     const result = this.convert([item], 'format', rootPath)
 
     return result[0]
@@ -405,7 +413,7 @@ export default class Service {
   __addItemToSchema (schemaKey, keyPath, index, item, defaultValue, fn) {
     const value = getValueByPath(this[schemaKey], keyPath)
 
-    if (typeof value === 'object') {
+    if (isObjectOrArray(value)) {
       const selector = this.getSelector(keyPath)
       const clipElement =
         selector &&
@@ -413,7 +421,7 @@ export default class Service {
         selector.children.$ &&
         fn(selector.children.$)
 
-      const subObj = !clipElement && (typeof item === 'object')
+      const subObj = !clipElement && (isObjectOrArray(item))
         ? this.__buildSchema(item, defaultValue, fn, [...keyPath, `${index}`])
         : defaultValue
 
@@ -437,7 +445,7 @@ export default class Service {
 
     if (Array.isArray(items)) {
       const result = moveItem(items, fromIndex, toIndex).map(item => {
-        if (typeof item === 'object') {
+        if (isObjectOrArray(item)) {
           return Array.isArray(item) ? [...item] : { ...item }
         }
 
@@ -473,7 +481,7 @@ export default class Service {
 
   __modify (keyPath) {
     const pristine = getValueByPath(this.__pristine, keyPath)
-    if (pristine && typeof pristine !== 'object') {
+    if (pristine && !isObjectOrArray(pristine)) {
       setValueByPath(this.__pristine, keyPath, false)
     }
 
@@ -531,7 +539,7 @@ export default class Service {
   __modifyPristineItem (keyPath) {
     const pristine = getValueByPath(this.__pristine, keyPath)
 
-    if (typeof pristine === 'object') {
+    if (isObjectOrArray(pristine)) {
       traverse(pristine, subPath => {
         const fullPath = [...keyPath, ...subPath]
         const selector = this.getSelector(fullPath)
