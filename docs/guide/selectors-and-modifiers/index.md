@@ -9,18 +9,7 @@ has_children: true
 
 # Selectors and Modifiers
 
-Form data is manipulated in 2 types of ways modifiers, and mutation actions. We'll cover how form data is manipulated by modifiers in this section. There are several different types of modifiers, which we'll cover in each of the following sub-sections:
-
-- `unsafe`: flag for object-type keys which will ignore integrity checks when mutating entire objects (useful for replacing arrays)
-- `clipPristine`: flag for object-type keys which will clip its corresponding key in the `pristine` schema to a single value
-- `ignorePristine`: removes pristine status from a key
-- `createItem`: function that generates a new array item for that selector
-- `format`: transforms the affect's key's value coming from the input model
-- `unformat`: transforms the affect's key's value coming from the state
-- `validateRaw`: validators for this selector receive unformatted versions of the `value`, and receive `model` instead of `state`
-- `validateManually`: validators are only invoked when `validate()` is called
-- `validators`: an array of validators that can be invoked against the current value of the key
-- `children`: used to define selectors on child keys
+Form data is manipulated by modifiers and mutation actions. There are several different types of modifiers, which will be covered in future sections.
 
 But first, let's discuss selectors.
 
@@ -35,7 +24,7 @@ const SELECTOR_GIL = {
 }
 ```
 
-In the example above, that selector defines two modifiers: `format()` and `unformat()`. These modifiers will be covered in detail in the following sub-sections.
+In the example above, that selector defines two modifiers: `format()` and `unformat()`. These modifiers will be covered in detail in the following sections.
 
 Next, we need to apply this selector to a key in the form's data. This is done by assigning the selector object to a corresponding data key in the selectors map object that's passed into `FormService`.
 
