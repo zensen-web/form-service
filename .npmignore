@@ -2,6 +2,7 @@
 /.nyc_output
 /.storybook
 /coverage
+/docs
 /examples
 /src
 /stories

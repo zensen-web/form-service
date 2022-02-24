@@ -14,6 +14,8 @@
   },
   "scripts": {
     "build": "babel src -d build",
+    "docs": "cd docs && bundle exec jekyll serve",
+    "docs:dev": "cd docs && jekyll serve --livereload",
     "install:clear": "rm -rf node_modules",
     "lint": "eslint --fix",
     "prepublishOnly": "yarn build",
