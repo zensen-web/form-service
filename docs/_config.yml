@@ -1,5 +1,5 @@
 title: "FormService"
 description: a powerful state management and validation framework for forms.
+theme: "just-the-docs"
 remote_theme: pmarsceill/just-the-docs
-# theme: "just-the-docs"
 search_enabled: false
