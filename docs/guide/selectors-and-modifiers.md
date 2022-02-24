@@ -4,7 +4,6 @@ title: Selectors and Modifiers
 permalink: /selectors-and-modifiers/
 parent: Guide
 nav_order: 2
-has_children: true
 ---
 
 # Selectors and Modifiers
