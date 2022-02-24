@@ -52,10 +52,7 @@ const MODEL = {
 
 const SELECTORS = {
   children: {
-    gil: {
-      format: v => `${v} Gil`,
-      unformat: v => Number(v.split(' ')[0]),
-    },
+    gil: SELECTOR_GIL,
   },
 }
 

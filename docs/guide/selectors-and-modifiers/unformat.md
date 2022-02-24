@@ -4,14 +4,12 @@ title: "unformat()"
 permalink: /selectors-and-modifiers/unformat/
 parent: Selectors and Modifiers
 grand_parent: Guide
-nav_order: 1
+nav_order: 2
 ---
 
 # unformat(value, keyPath, state)
 
 It's generally necessary to convert the current UI state of the form back into its agnostic data model counterpart when the user is ready to submit the data to the API. This is achieved by defining `unformat()` modifiers to selectors that also define  the `format()` modifier, allowing `FormService` to know how to undo format operations. The unformat process is triggered by calling the `build()` method the `FormService` instance.
-
-## A Simple Example
 
 ```js
 import { FormService } from '@zensen/form-service'
