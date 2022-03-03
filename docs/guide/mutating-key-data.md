@@ -340,6 +340,14 @@ state: {
 }
 ```
 
+`FormService` also provides a method called `reset()` in scenarios where the entire form needs to be reset to its initial state:
+
+```js
+const onCancel => () => formService.reset() // reset everything
+```
+
+Resetting the entire form's state will also unset the form's `dirty` status as well.
+
 ## addItem(path, index = -1)
 
 `FormService` doesn't like its shape to be changed by default because its state needs to stay in sync with the `pristine` schema. Arrays are a special type of object in which each element is just a key, therefore adding or removing elements in the array is really no different than adding or removing keys to an object. Arrays are a bit special when it comes to state mutations because it's commonplace to modify its size as a result of form actions.
