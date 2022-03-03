@@ -267,6 +267,79 @@ this.__state.week = [ ...this.__state.week ]
 this.__state = { ...this.__state }
 ```
 
+### Dirtiness
+
+`FormService` keeps a copy of the initial state of the form. Whenever changes are made to the form's current state, it's compared against this intial state to determine whether or not it's _dirty_.
+
+For example, given the scenario:
+
+```js
+import { FormService } from '@zensen/form-service'
+import { toCurrency, toNumber } from './formatters'
+
+const MODEL = {
+  id: '2ea17eaf-e855-4887-8312-27f991a5b327',
+  name: 'Beer',
+  price: 4,
+}
+
+const SELECTORS = {
+  children: {
+    price: {
+      format: v => toCurrency(v),
+      unformat: v => toNumber(v),
+    },
+  },
+}
+
+const onChange = (dirty, state) => console.log('dirty:', dirty, 'state:', state)
+
+const formService = new FormService(MODEL, SELECTORS, onChange)
+```
+
+Here is the initial output:
+
+```console
+dirty: false,
+state: {
+  id: '2ea17eaf-e855-4887-8312-27f991a5b327',
+  name: 'Beer',
+  price: '$4.00',
+}
+```
+
+Then, let's apply a change to dirtiness:
+
+```js
+formService.apply('name', 'Craft Beer')
+```
+
+Yields the following output:
+
+```console
+dirty: true,
+state: {
+  id: '2ea17eaf-e855-4887-8312-27f991a5b327',
+  name: 'Craft Beer',
+  price: '$4.00',
+}
+```
+
+We can manually revert dirtiness by apply another change to make the state match its initial state like so:
+
+```js
+formService.apply('name', 'Beer')
+```
+
+```console
+dirty: false,
+state: {
+  id: '2ea17eaf-e855-4887-8312-27f991a5b327',
+  name: 'Beer',
+  price: '$4.00',
+}
+```
+
 ## addItem(path, index = -1)
 
 `FormService` doesn't like its shape to be changed by default because its state needs to stay in sync with the `pristine` schema. Arrays are a special type of object in which each element is just a key, therefore adding or removing elements in the array is really no different than adding or removing keys to an object. Arrays are a bit special when it comes to state mutations because it's commonplace to modify its size as a result of form actions.
