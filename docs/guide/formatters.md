@@ -1,7 +1,7 @@
 ---
 layout: default
 title: "Formatters"
-permalink: /formatters/
+permalink: /guide/formatters/
 parent: Guide
 nav_order: 3
 ---
@@ -12,7 +12,7 @@ It's common to represent our data in a sort of interchange format that might be 
 
 Then, once the user is ready to submit/save the data in the form, `FormService` has another mechanism to unformat that UI-friendly data back into a more generic interchange data model that can be stored in the database, sent to the API, saved to disk, etc.
 
-## format(value, keyPath, model)
+## format (value, keyPath, model)
 
 The input data model should represent the form's state in a more portable format that is agnostic to any particular UI requirements. The response payload to API requests commonly act as the input model. `FormService` makes a deep copy of the input data model that is passed into its constructor, and uses that new copy as the form's UI state. The input object representing the data model will never be modified as a result.
 
@@ -264,7 +264,7 @@ As demonstrated above, `format()` is invoked for both selectors, and in the foll
 
 Outer selectors are always processed first before their inner keys' selectors during formatting, so changes made to keys by outer formatters will be passed as input values to `format()` modifiers defined in inner selectors. This is why `100.00` was passed into `v` instead of `100000` when the inner selector's formatter was invoked. Despite changes in `v` across selectors, the input model that's passed into `format()` never changes because the original input data model is passed in.
 
-## unformat(value, keyPath, state)
+## unformat (value, keyPath, state)
 
 It's generally necessary to convert the current UI state of the form back into its agnostic data model counterpart when the user is ready to submit the data to the API. This is achieved by defining `unformat()` modifiers to selectors that also define  the `format()` modifier, allowing `FormService` to know how to undo format operations. The unformat process is triggered by calling the `build()` method the `FormService` instance.
 

@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Initialization
-permalink: /initialization/
+permalink: /guide/initialization/
 parent: Guide
 nav_order: 1
 ---

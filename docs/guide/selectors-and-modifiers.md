@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Selectors and Modifiers
-permalink: /selectors-and-modifiers/
+permalink: /guide/selectors-and-modifiers/
 parent: Guide
 nav_order: 2
 ---
