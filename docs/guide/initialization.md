@@ -11,7 +11,7 @@ nav_order: 1
 The `FormService` is an ES6 class, so it can be instantiated via constructor.
 
 ```js
-import { FormService } from '@zensen/form-service'
+import FormService from '@zensen/form-service'
 
 const MODEL = {}
 

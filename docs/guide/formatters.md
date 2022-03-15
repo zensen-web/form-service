@@ -23,7 +23,7 @@ Selectors that define the `format()` modifier will be invoked on the original ke
 Let's say the input data model contains a property called `amount` that is a `Number` type, and we intend to represent that property in our form with a textfield component. The textfield component takes a string. We can create a selector for the `quantity` key, and use the `format()` modifier to convert the value to a string:
 
 ```js
-import { FormService } from '@zensen/form-service'
+import FormService from '@zensen/form-service'
 
 const MODEL = {
   id: '2ea17eaf-e855-4887-8312-27f991a5b327',
@@ -59,7 +59,7 @@ state: {
 It's a common convention to provide price information as penny-amounts via the API, but we'll probably want to represent those values as currency-formatted strings to our textfields:
 
 ```js
-import { FormService } from '@zensen/form-service'
+import FormService from '@zensen/form-service'
 import { toCurrency } from './formatters'
 
 const MODEL = {
@@ -96,7 +96,7 @@ state: {
 It's also possible to format objects as well.
 
 ```js
-import { FormService } from '@zensen/form-service'
+import FormService from '@zensen/form-service'
 import { toCurrency } from './formatters'
 
 const MODEL = {
@@ -123,7 +123,7 @@ const formService = new FormService(MODEL, SELECTORS, onChange)
 Here's a more advanced example of formatting key data within an array.
 
 ```js
-import { FormService } from '@zensen/form-service'
+import FormService from '@zensen/form-service'
 import { toCurrency } from './formatters'
 
 const MODEL = [
@@ -269,7 +269,7 @@ Outer selectors are always processed first before their inner keys' selectors du
 It's generally necessary to convert the current UI state of the form back into its agnostic data model counterpart when the user is ready to submit the data to the API. This is achieved by defining `unformat()` modifiers to selectors that also define  the `format()` modifier, allowing `FormService` to know how to undo format operations. The unformat process is triggered by calling the `build()` method the `FormService` instance.
 
 ```js
-import { FormService } from '@zensen/form-service'
+import FormService from '@zensen/form-service'
 
 const MODEL = {
   id: '2ea17eaf-e855-4887-8312-27f991a5b327',

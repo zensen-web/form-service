@@ -30,7 +30,7 @@ Next, we need to apply this selector to a key in the form's data. This is done b
 ## Selecting Top-Level Keys
 
 ```js
-import { FormService } from '@zensen/form-service'
+import FormService from '@zensen/form-service'
 
 const MODEL = {
   id: '378625d6-8bff-4750-bdd8-a3ac4cfb0d6c',
@@ -115,8 +115,9 @@ const SELECTORS = { // A. define the root selector
 
 
 ```js
-import { FormService } from '@zensen/form-service'
+import FormService from '@zensen/form-service'
 import { isEmailAddress } from '@zensen/form-validators'
+
 import { toPhoneNumber, fromPhoneNumber } from './formatters'
 
 const ITEMS = [
@@ -186,7 +187,7 @@ As seen above, our form's state and our selectors structure is starting to get p
 It's also possible for the form's state to be represented by a single primitive type such as `boolean`, `number`, or `string`.
 
 ```js
-import { FormService } from '@zensen/form-service'
+import FormService from '@zensen/form-service'
 
 const MODEL = 100000
 

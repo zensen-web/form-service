@@ -15,7 +15,7 @@ Once `FormService` has been populated with formatted data, it can be manipulated
 ### A Simple Example
 
 ```js
-import { FormService } from '@zensen/form-service'
+import FormService from '@zensen/form-service'
 
 const MODEL = {
   firstName: '',
@@ -43,7 +43,7 @@ state: {
 The `apply()` method can also set data within sub-objects:
 
 ```js
-import { FormService } from '@zensen/form-service'
+import FormService from '@zensen/form-service'
 
 const MODEL = {
   firstName: '',
@@ -81,7 +81,7 @@ state: {
 ### Mutating Data Within Arrays
 
 ```js
-import { FormService } from '@zensen/form-service'
+import FormService from '@zensen/form-service'
 
 const MODEL = {
   firstName: '',
@@ -125,7 +125,7 @@ The previous examples mutated primitive keys with values that are `Boolean`, `Nu
 Here's an example:
 
 ```js
-import { FormService } from '@zensen/form-service'
+import FormService from '@zensen/form-service'
 
 const MODEL = {
   firstName: '',
@@ -155,9 +155,9 @@ This results in an error because of `FormService`'s pristineness mechanisms for 
 
 ### Pristine Status
 
-Each key in the state has its own pristine flag associated to it that `FormService` uses to determine whether or not validation can be invoked on key (more on that [later](#)).
+Each key in the state has its own pristine flag associated to it that `FormService` uses to determine whether or not validation can be invoked on key (more on that [later](/guide/validation/)).
 
-When the state is first built, a `pristine` schema is built internally to match the shape of the state.
+When the state is first initialized, a `pristine` schema is built internally to match the shape of the state.
 
 ```js
 /* state */
@@ -274,7 +274,7 @@ this.__state = { ...this.__state }
 For example, given the scenario:
 
 ```js
-import { FormService } from '@zensen/form-service'
+import FormService from '@zensen/form-service'
 import { toCurrency, toNumber } from './formatters'
 
 const MODEL = {
