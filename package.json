@@ -1,6 +1,6 @@
 {
   "name": "@zensen/form-service",
-  "version": "2.0.28",
+  "version": "2.0.29",
   "license": "MIT",
   "description": "A reactive form service framework",
   "main": "build/index.js",
