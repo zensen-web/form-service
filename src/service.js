@@ -1,5 +1,3 @@
-import equal from 'fast-deep-equal'
-
 import {
   ValidationError,
   VerificationError,
@@ -13,6 +11,7 @@ import {
   swap,
   traverse,
   map,
+  deepEqual,
   deepCopy,
   getValueByPath,
   setValueByPath,
@@ -30,7 +29,7 @@ function pathToKeyPath (path) {
 
 export default class Service {
   get isDirty () {
-    return !equal(this.__state, this.__initialState)
+    return !deepEqual(this.__state, this.__initialState)
   }
 
   get isPristine () {
@@ -340,7 +339,7 @@ export default class Service {
           if (typeof value === 'object') {
             const pathMap = getKeyPaths(value)
 
-            if (!equal(oldPathMap, pathMap)) {
+            if (!deepEqual(oldPathMap, pathMap)) {
               throw new MutationError(keyPath, oldValue, value)
             }
           } else {

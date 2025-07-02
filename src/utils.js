@@ -100,7 +100,7 @@ export function deepEqual(a, b) {
       }
 
       for (i = length; i-- !== 0;) {
-        if (!equal(a[i], b[i])) {
+        if (!deepEqual(a[i], b[i])) {
           return false
         }
       }
@@ -121,7 +121,7 @@ export function deepEqual(a, b) {
       }
 
       for (i of a.entries()) {
-        if (!equal(i[1], b.get(i[0]))) {
+        if (!deepEqual(i[1], b.get(i[0]))) {
           return false
         }
       }
@@ -187,7 +187,7 @@ export function deepEqual(a, b) {
     for (i = length; i-- !== 0;) {
       let key = keys[i]
 
-      if (!equal(a[key], b[key])) {
+      if (!deepEqual(a[key], b[key])) {
         return false
       }
     }

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Service Example</title>
+</head>
+<body>
+    <h1>Form Service Example</h1>
+    <p>Check the console to see the FormService loaded via jsDelivr</p>
+
+    <!-- Load Form Service via jsDelivr -->
+    <script src="https://cdn.jsdelivr.net/npm/@zensen/form-service@2.0.29/dist/form-service.umd.min.js"></script>
+
+    <script>
+        // FormService is now available globally
+        console.log('FormService loaded:', FormService);
+
+        // Example usage
+        const formService = new FormService({}, {}, (isDirty, state, errors, pristine) => {
+          console.log('isDirty', isDirty);
+          console.log('state', state);
+          console.log('errors', errors);
+          console.log('pristine', pristine);
+        });
+
+        console.log('FormService instance created:', formService);
+    </script>
+</body>
+</html>

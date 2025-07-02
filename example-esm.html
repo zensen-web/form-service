@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Service ESM Example</title>
+</head>
+<body>
+    <h1>Form Service ESM Example</h1>
+    <p>Check the console to see the FormService loaded via ES6 import</p>
+
+    <script type="module">
+        // ES6 import from jsDelivr CDN
+        import FormService from 'https://cdn.jsdelivr.net/npm/@zensen/form-service@2.0.29/dist/form-service.esm.min.js'
+
+        console.log('FormService loaded via ES6 import:', FormService);
+
+        // Example usage
+        const formService = new FormService();
+        console.log('FormService instance created:', formService);
+    </script>
+</body>
+</html>
