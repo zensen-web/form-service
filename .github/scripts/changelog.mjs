@@ -3,18 +3,20 @@
  *  section.
  *
  *  Usage:
- *    bun .github/scripts/changelog.js check
+ *    node .github/scripts/changelog.mjs check
  *      Exits non-zero when the Unreleased section has no entries. Guards
  *      against cutting a release with nothing to say.
  *
- *    bun .github/scripts/changelog.js extract
+ *    node .github/scripts/changelog.mjs extract
  *      Prints the Unreleased body. Used for the GitHub Release notes.
  *
- *    bun .github/scripts/changelog.js promote <version> <date>
+ *    node .github/scripts/changelog.mjs promote <version> <date>
  *      Renames `## Unreleased` to a `## [<version>](<npm>) - <date>` heading
  *      linking to that release on npm, and inserts a fresh empty Unreleased
  *      above it.
  */
+
+import { readFile, writeFile } from 'node:fs/promises'
 
 const NPM = 'https://www.npmjs.com/package/@zensen/form-service/v'
 const PATH = 'CHANGELOG.md'
@@ -65,7 +67,7 @@ async function promote (text, version, date) {
   const { head, body, tail } = readSections(text)
 
   if (!version || !date) {
-    console.error('Usage: changelog.js promote <version> <date>')
+    console.error('Usage: changelog.mjs promote <version> <date>')
     process.exit(1)
   }
 
@@ -81,15 +83,15 @@ async function promote (text, version, date) {
     '',
   ].join('\n')
 
-  await Bun.write(PATH, next)
+  await writeFile(PATH, next)
 
   console.info(`${PATH}: promoted Unreleased to ${version} (${date})`)
   process.exit(0)
 }
 
 async function main () {
-  const [command, version, date] = Bun.argv.slice(2)
-  const text = await Bun.file(PATH).text()
+  const [command, version, date] = process.argv.slice(2)
+  const text = await readFile(PATH, 'utf8')
 
   switch (command) {
     case 'check':
@@ -105,7 +107,7 @@ async function main () {
       break
 
     default:
-      console.error('Usage: changelog.js <check|extract|promote>')
+      console.error('Usage: changelog.mjs <check|extract|promote>')
       process.exit(1)
       break
   }

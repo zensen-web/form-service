@@ -1,6 +1,6 @@
 // Verifies that a computed version is publishable for every given package.
 //
-// Usage: bun .github/scripts/check-registry.js <version> <package...>
+// Usage: node .github/scripts/check-registry.mjs <version> <package...>
 //
 // For each package this asserts two things:
 //   1. the version is not already published, so the name@version is available
@@ -11,6 +11,53 @@
 // its problems in one run rather than one per attempt.
 
 const REGISTRY = 'https://registry.npmjs.org'
+
+// Orders two semver strings per https://semver.org/#spec-item-11, returning
+// 1, 0, or -1. Build metadata is ignored, as the spec requires.
+function compareVersions (a, b) {
+  const parse = version => {
+    const [core, pre] = version.split('+')[0].split(/-(.*)/s)
+
+    return {
+      core: core.split('.').map(Number),
+      pre: pre ? pre.split('.') : [],
+    }
+  }
+
+  const left = parse(a)
+  const right = parse(b)
+
+  for (let i = 0; i < 3; i++) {
+    if (left.core[i] !== right.core[i]) {
+      return left.core[i] > right.core[i] ? 1 : -1
+    }
+  }
+
+  // A version without a prerelease tag outranks one with it.
+  if (!left.pre.length || !right.pre.length) {
+    return Math.sign(right.pre.length - left.pre.length)
+  }
+
+  for (let i = 0; i < Math.max(left.pre.length, right.pre.length); i++) {
+    const x = left.pre[i]
+    const y = right.pre[i]
+
+    if (x === undefined) return -1
+    if (y === undefined) return 1
+    if (x === y) continue
+
+    const xNum = /^\d+$/.test(x)
+    const yNum = /^\d+$/.test(y)
+
+    if (xNum && yNum) return Number(x) > Number(y) ? 1 : -1
+    if (xNum) return -1
+    if (yNum) return 1
+
+    return x > y ? 1 : -1
+  }
+
+  return 0
+}
 
 async function fetchPackument (name) {
   const response = await fetch(`${REGISTRY}/${name}`)
@@ -46,7 +93,7 @@ async function checkPackage (name, version) {
     )
   }
 
-  if (latest && Bun.semver.order(version, latest) !== 1) {
+  if (latest && compareVersions(version, latest) !== 1) {
     errors.push(
       `${name}: ${version} is not greater than the published `
       + `latest (${latest}). It would not become the latest version.`,
@@ -60,10 +107,10 @@ async function checkPackage (name, version) {
   return errors
 }
 
-const [version, ...names] = Bun.argv.slice(2)
+const [version, ...names] = process.argv.slice(2)
 
 if (!version || !names.length) {
-  console.error('Usage: check-registry.js <version> <package...>')
+  console.error('Usage: check-registry.mjs <version> <package...>')
   process.exit(1)
 }
 
