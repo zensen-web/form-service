@@ -1,6 +1,6 @@
 // Verifies that a computed version is publishable for every given package.
 //
-// Usage: node .github/scripts/check-registry.mjs <version> <package...>
+// Usage: bun .github/scripts/check-registry.mjs <version> <package...>
 //
 // For each package this asserts two things:
 //   1. the version is not already published, so the name@version is available

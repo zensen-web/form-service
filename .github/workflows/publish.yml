@@ -60,23 +60,28 @@ jobs:
         with:
           node-version: lts/*
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ vars.BUN_VERSION }}
+
       - name: Verify changelog has entries
-        run: node .github/scripts/changelog.mjs check
+        run: bun .github/scripts/changelog.mjs check
 
       - name: Cache Dependencies
         uses: actions/cache@v4
         with:
           path: node_modules
-          key: node-modules-${{ hashFiles('package-lock.json') }}
+          key: node-modules-${{ hashFiles('bun.lock') }}
 
       - name: Install dependencies
-        run: npm ci
+        run: bun install --frozen-lockfile
 
       - name: Test
-        run: npm test
+        run: bun run test
 
       - name: Lint
-        run: npx eslint src test
+        run: bunx eslint src test
 
       # Both outputs are gitignored and only exist in the published tarball:
       # `build` is the Babel-compiled CommonJS entry (`main`), and `dist` holds
@@ -84,14 +89,14 @@ jobs:
       # block the release rather than publish a tarball where either is stale
       # or missing.
       - name: Build package
-        run: npm run build:all
+        run: bun run build:all
 
       # Writes to the runner's working tree only. Nothing is committed, pushed, or
       # published until the registry pre-flight below passes.
       - name: Compute next version
         id: version
         run: |
-          raw=$(npm version ${{ inputs.bump }} --no-git-tag-version)
+          raw=$(bun pm version ${{ inputs.bump }})
           version=${raw#v}
 
           echo "version=$version" >> "$GITHUB_OUTPUT"
@@ -99,18 +104,18 @@ jobs:
 
       - name: Registry pre-flight
         run: |
-          node .github/scripts/check-registry.mjs \
+          bun .github/scripts/check-registry.mjs \
             "${{ steps.version.outputs.version }}" \
             @zensen/form-service
 
       # Must run before the changelog is promoted, since promoting empties the
       # Unreleased section that these notes come from.
       - name: Extract release notes
-        run: node .github/scripts/changelog.mjs extract > /tmp/release-notes.md
+        run: bun .github/scripts/changelog.mjs extract > /tmp/release-notes.md
 
       - name: Update changelog
         run: |
-          node .github/scripts/changelog.mjs promote \
+          bun .github/scripts/changelog.mjs promote \
             "${{ steps.version.outputs.version }}" \
             "$(date -u +%Y-%m-%d)"
 
@@ -118,12 +123,12 @@ jobs:
         run: |
           git config user.name 'Automated Publisher'
           git config user.email 'automated-publisher[bot]@users.noreply.github.com'
-          git add package.json package-lock.json CHANGELOG.md
+          git add package.json CHANGELOG.md
           git commit -m "Release ${{ steps.version.outputs.version }}"
 
       - name: Pack package
         if: ${{ inputs.dry_run }}
-        run: npx --yes npm@11 publish --dry-run --access public
+        run: bunx npm@11 publish --dry-run --access public
 
       # Deliberately ahead of the publish steps. Pushing is reversible and npm
       # publishing is not, so a rejected push must not be able to strand npm
@@ -137,7 +142,7 @@ jobs:
 
       - name: Publish package
         if: ${{ !inputs.dry_run }}
-        run: npx --yes npm@11 publish --access public
+        run: bunx npm@11 publish --access public
 
       - name: Create GitHub Release
         if: ${{ !inputs.dry_run }}

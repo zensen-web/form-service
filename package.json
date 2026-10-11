@@ -18,14 +18,14 @@
   "scripts": {
     "build": "babel src -d build",
     "build:umd": "rollup -c",
-    "build:all": "npm run build && npm run build:umd",
+    "build:all": "bun run build && bun run build:umd",
     "docs": "cd docs && bundle exec jekyll serve",
     "docs:dev": "cd docs && jekyll serve --livereload",
     "install:clear": "rm -rf node_modules",
     "lint": "eslint --fix",
-    "prepublishOnly": "npm run build:all",
+    "prepublishOnly": "bun run build:all",
     "test": "nyc --reporter=html --all mocha --exit --require @babel/register 'test/**/**.test.js'",
-    "test:watch": "npm run test --watch"
+    "test:watch": "bun run test --watch"
   },
   "keywords": [
     "form",

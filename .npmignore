@@ -11,4 +11,4 @@
 .eslintrc.yaml
 .eslintignore
 karma.conf.js
-yarn.lock
+bun.lock
