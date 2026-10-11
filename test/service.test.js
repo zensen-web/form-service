@@ -1,4 +1,4 @@
-import sinon from 'sinon'
+import { describe, it, expect, beforeEach, afterEach, mock, spyOn } from 'bun:test'
 import FormService from '../src/service'
 
 import {
@@ -39,20 +39,18 @@ import {
 } from './helpers'
 
 describe('FormService', () => {
-  let sandbox
   let service
   let model
   let onChangeSpy
 
-  const getLastChange = () => onChangeSpy.lastCall.args
+  const getLastChange = () => onChangeSpy.mock.calls.at(-1)
 
   beforeEach(() => {
-    sandbox = sinon.createSandbox()
-    onChangeSpy = sandbox.spy()
+    onChangeSpy = mock()
   })
 
   afterEach(() => {
-    sandbox.restore()
+    mock.restore()
   })
 
   describe('verify', () => {
@@ -62,7 +60,7 @@ describe('FormService', () => {
       },
     }
 
-    context('when nested validators are found', () => {
+    describe('when nested validators are found', () => {
       const SELECTORS = {
         children: {
           stats: {
@@ -76,10 +74,10 @@ describe('FormService', () => {
 
       const fn = () => new FormService(MODEL, SELECTORS, onChangeSpy)
 
-      it('throws an error', () => expect(fn).to.throw(VerificationError))
+      it('throws an error', () => expect(fn).toThrow(VerificationError))
     })
 
-    context('when setting ignorePristine on object-type key', () => {
+    describe('when setting ignorePristine on object-type key', () => {
       const SELECTORS = {
         children: {
           stats: {
@@ -90,7 +88,7 @@ describe('FormService', () => {
 
       const fn = () => new FormService(MODEL, SELECTORS, onChangeSpy)
 
-      it('throws an error', () => expect(fn).to.throw(VerificationError))
+      it('throws an error', () => expect(fn).toThrow(VerificationError))
     })
   })
 
@@ -102,7 +100,7 @@ describe('FormService', () => {
       period: PERIOD.AM,
     }
 
-    context('when format() is provided on selector', () => {
+    describe('when format() is provided on selector', () => {
       const MODEL = { amount: 42 }
       const SELECTORS = {
         children: {
@@ -117,16 +115,16 @@ describe('FormService', () => {
       let unformatSpy
 
       beforeEach(() => {
-        formatSpy = sandbox.spy(SELECTORS.children.amount, 'format')
-        unformatSpy = sandbox.spy(SELECTORS.children.amount, 'unformat')
+        formatSpy = spyOn(SELECTORS.children.amount, 'format')
+        unformatSpy = spyOn(SELECTORS.children.amount, 'unformat')
 
         service = new FormService(MODEL, SELECTORS, onChangeSpy)
       })
 
       it('invokes the format() modifier', () =>
-        expect(formatSpy).to.be.calledOnceWith(42, ['amount'], MODEL))
+        expect(formatSpy.mock.calls).toEqual([[42, ['amount'], MODEL]]))
 
-      context('when unformat() is provided on a selector', () => {
+      describe('when unformat() is provided on a selector', () => {
         const STATE = {
           amount: '$0.42',
         }
@@ -136,11 +134,11 @@ describe('FormService', () => {
         })
 
         it('invokes the unformat() modifier', () =>
-          expect(unformatSpy).to.be.calledOnceWith('$0.42', ['amount'], STATE))
+          expect(unformatSpy.mock.calls).toEqual([['$0.42', ['amount'], STATE]]))
       })
     })
 
-    context('when formatting from primitive to object', () => {
+    describe('when formatting from primitive to object', () => {
       const MODEL = { time: TIME_NUM }
       const SELECTORS = {
         children: {
@@ -157,13 +155,13 @@ describe('FormService', () => {
       })
 
       it('formats the field', () =>
-        expect(service.__state.time).to.be.eql(TIME_OBJ))
+        expect(service.__state.time).toEqual(TIME_OBJ))
 
       it('unformats the field', () =>
-        expect(model.time).to.be.eq(TIME_NUM))
+        expect(model.time).toBe(TIME_NUM))
     })
 
-    context('when formatting from object to primitive', () => {
+    describe('when formatting from object to primitive', () => {
       const MODEL = { time: TIME_OBJ }
       const SELECTORS = {
         children: {
@@ -180,13 +178,13 @@ describe('FormService', () => {
       })
 
       it('formats the field', () =>
-        expect(service.__state.time).to.be.eq(TIME_NUM))
+        expect(service.__state.time).toBe(TIME_NUM))
 
       it('unformats the field', () =>
-        expect(model.time).to.be.eql(TIME_OBJ))
+        expect(model.time).toEqual(TIME_OBJ))
     })
 
-    context('when converters are provided to array items', () => {
+    describe('when converters are provided to array items', () => {
       const ITEM_ADDED_HOURS = 8
       const MODEL = {
         items: [1, 4.25, 14.75],
@@ -221,13 +219,13 @@ describe('FormService', () => {
       })
 
       it('formats the state', () =>
-        expect(service.__state).to.be.eql(STATE))
+        expect(service.__state).toEqual(STATE))
 
       it('unformats the state', () =>
-        expect(model).to.be.eql(MODEL))
+        expect(model).toEqual(MODEL))
     })
 
-    context('when providing nested formatters', () => {
+    describe('when providing nested formatters', () => {
       const MODEL = {
         phones: [{
           number: '7025551234',
@@ -267,13 +265,13 @@ describe('FormService', () => {
       })
 
       it('formats the state', () =>
-        expect(service.__state).to.be.eql(STATE))
+        expect(service.__state).toEqual(STATE))
 
       it('unformats the state', () =>
-        expect(model).to.be.eql(MODEL))
+        expect(model).toEqual(MODEL))
     })
 
-    context('when formatting the root (object)', () => {
+    describe('when formatting the root (object)', () => {
       const MODEL = { amount: 42 }
       const SELECTORS = {
         format: v => ({ amount: toCurrency(v.amount / 100) }),
@@ -286,16 +284,16 @@ describe('FormService', () => {
       })
 
       it('formats the field', () =>
-        expect(service.__state).to.be.eql({ amount: '$0.42' }))
+        expect(service.__state).toEqual({ amount: '$0.42' }))
 
       it('unformats the field', () =>
-        expect(model).to.be.eql({ amount: 42 }))
+        expect(model).toEqual({ amount: 42 }))
     })
   })
 
   // TODO: add formatters, and verify pristine
   describe('clipPristine', () => {
-    context('when clipping an object', () => {
+    describe('when clipping an object', () => {
       const MODEL = {
         id: '123',
         name: 'Test',
@@ -322,10 +320,10 @@ describe('FormService', () => {
       })
 
       it('returns the proper schema', () =>
-        expect(service.__pristine).to.be.eql(EXPECTED_RESULT))
+        expect(service.__pristine).toEqual(EXPECTED_RESULT))
     })
 
-    context('when clipping an array', () => {
+    describe('when clipping an array', () => {
       const MODEL = {
         id: '123',
         name: 'Test',
@@ -352,10 +350,10 @@ describe('FormService', () => {
       })
 
       it('returns the proper schema', () =>
-        expect(service.__pristine).to.be.eql(EXPECTED_RESULT))
+        expect(service.__pristine).toEqual(EXPECTED_RESULT))
     })
 
-    context('when clipping an array\'s object-elements', () => {
+    describe('when clipping an array\'s object-elements', () => {
       const MODEL = {
         id: '123',
         name: 'Test',
@@ -389,9 +387,9 @@ describe('FormService', () => {
       })
 
       it('returns the proper schema', () =>
-        expect(service.__pristine).to.be.eql(EXPECTED_RESULT))
+        expect(service.__pristine).toEqual(EXPECTED_RESULT))
 
-      context('when adding an item', () => {
+      describe('when adding an item', () => {
         const RESULT_ADDED = {
           ...EXPECTED_RESULT,
           types: [true, true],
@@ -402,7 +400,7 @@ describe('FormService', () => {
         })
 
         it('clips the schema on the new item', () =>
-          expect(service.__pristine).to.be.eql(RESULT_ADDED))
+          expect(service.__pristine).toEqual(RESULT_ADDED))
       })
     })
   })
@@ -413,101 +411,101 @@ describe('FormService', () => {
     })
 
     it('throws an error when an invalid path is provided: "asdf"', () =>
-      expect(() => service.getSelectorPath(['asdf'])).to.throw(PathError))
+      expect(() => service.getSelectorPath(['asdf'])).toThrow(PathError))
 
     it('resovle the path for root', () =>
-      expect(service.getSelectorPath([])).to.be.eql([]))
+      expect(service.getSelectorPath([])).toEqual([]))
 
     it('resolve the path for "name"', () =>
-      expect(service.getSelectorPath(['name'])).to.be.eql(['children', 'name']))
+      expect(service.getSelectorPath(['name'])).toEqual(['children', 'name']))
 
     it('resolve the path for "job"', () =>
-      expect(service.getSelectorPath(['job'])).to.be.eql(['children', 'job']))
+      expect(service.getSelectorPath(['job'])).toEqual(['children', 'job']))
 
     it('resolve the path for "stats"', () =>
-      expect(service.getSelectorPath(['stats'])).to.be.eql(['children', 'stats']))
+      expect(service.getSelectorPath(['stats'])).toEqual(['children', 'stats']))
 
     it('resolve the path for "stats.attack"', () =>
-      expect(service.getSelectorPath(['stats', 'attack'])).to.be.eql([
+      expect(service.getSelectorPath(['stats', 'attack'])).toEqual([
         'children', 'stats', 'children', 'attack',
       ]))
 
     it('resolve the path for "stats.evasion"', () =>
-      expect(service.getSelectorPath(['stats', 'evasion'])).to.be.eql([
+      expect(service.getSelectorPath(['stats', 'evasion'])).toEqual([
         'children', 'stats', 'children', 'evasion',
       ]))
 
     it('resolve the path for "stats.speed"', () =>
-      expect(service.getSelectorPath(['stats', 'speed'])).to.be.eql([
+      expect(service.getSelectorPath(['stats', 'speed'])).toEqual([
         'children', 'stats', 'children', 'speed',
       ]))
 
     it('resolve the path for "stats.attributes"', () =>
-      expect(service.getSelectorPath(['stats', 'attributes'])).to.be.eql([
+      expect(service.getSelectorPath(['stats', 'attributes'])).toEqual([
         'children', 'stats', 'children', 'attributes',
       ]))
 
     it('resolve the path for "stats.attributes.level"', () =>
-      expect(service.getSelectorPath(['stats', 'attributes', 'level'])).to.be.eql([
+      expect(service.getSelectorPath(['stats', 'attributes', 'level'])).toEqual([
         'children', 'stats', 'children', 'attributes', 'children', 'level',
       ]))
 
     it('resolve the path for "stats.attributes.experience"', () =>
-      expect(service.getSelectorPath(['stats', 'attributes', 'experience'])).to.be.eql([
+      expect(service.getSelectorPath(['stats', 'attributes', 'experience'])).toEqual([
         'children', 'stats', 'children', 'attributes', 'children', 'experience',
       ]))
 
     it('resolve the path for "stats.ailments"', () =>
-      expect(service.getSelectorPath(['ailments'])).to.be.eql(['children', 'ailments']))
+      expect(service.getSelectorPath(['ailments'])).toEqual(['children', 'ailments']))
 
     it('resolve the path for "ailments.0"', () =>
-      expect(service.getSelectorPath(['ailments', '0'])).to.be.eql([
+      expect(service.getSelectorPath(['ailments', '0'])).toEqual([
         'children', 'ailments', 'children', '$',
       ]))
 
     it('resolve the path for "items"', () =>
-      expect(service.getSelectorPath(['items'])).to.be.eql(['children', 'items']))
+      expect(service.getSelectorPath(['items'])).toEqual(['children', 'items']))
 
     it('resolve the path for "items.0"', () =>
-      expect(service.getSelectorPath(['items', '0'])).to.be.eql([
+      expect(service.getSelectorPath(['items', '0'])).toEqual([
         'children', 'items', 'children', '$',
       ]))
 
     it('resolve the path for "items.0.id"', () =>
-      expect(service.getSelectorPath(['items', '0', 'id'])).to.be.eql([
+      expect(service.getSelectorPath(['items', '0', 'id'])).toEqual([
         'children', 'items', 'children', '$', 'children', 'id',
       ]))
 
     it('resolve the path for "items.0.rate"', () =>
-      expect(service.getSelectorPath(['items', '0', 'rate'])).to.be.eql([
+      expect(service.getSelectorPath(['items', '0', 'rate'])).toEqual([
         'children', 'items', 'children', '$', 'children', 'rate',
       ]))
 
     it('resolve the path for "triangles"', () =>
-      expect(service.getSelectorPath(['triangles'])).to.be.eql(['children', 'triangles']))
+      expect(service.getSelectorPath(['triangles'])).toEqual(['children', 'triangles']))
 
     it('resolve the path for "triangles.0"', () =>
-      expect(service.getSelectorPath(['triangles', '0'])).to.be.eql([
+      expect(service.getSelectorPath(['triangles', '0'])).toEqual([
         'children', 'triangles', 'children', '$',
       ]))
 
     it('resolve the path for "triangles.0.0"', () =>
-      expect(service.getSelectorPath(['triangles', '0', '0'])).to.be.eql([
+      expect(service.getSelectorPath(['triangles', '0', '0'])).toEqual([
         'children', 'triangles', 'children', '$', 'children', '$',
       ]))
 
     it('resolve the path for "triangles.0.1"', () =>
-      expect(service.getSelectorPath(['triangles', '0', '1'])).to.be.eql([
+      expect(service.getSelectorPath(['triangles', '0', '1'])).toEqual([
         'children', 'triangles', 'children', '$', 'children', '$',
       ]))
 
     it('resolve the path for "triangles.0.2"', () =>
-      expect(service.getSelectorPath(['triangles', '0', '2'])).to.be.eql([
+      expect(service.getSelectorPath(['triangles', '0', '2'])).toEqual([
         'children', 'triangles', 'children', '$', 'children', '$',
       ]))
 
     it('throws an error when an invalid path is provided: "triangles.0.3"', () =>
-      expect(() => service.getSelectorPath(['triangles.0.3'])).to.throw(PathError))
+      expect(() => service.getSelectorPath(['triangles.0.3'])).toThrow(PathError))
 
     describe('array model', () => {
       beforeEach(() => {
@@ -515,18 +513,18 @@ describe('FormService', () => {
       })
 
       it('resolve the path for root', () =>
-        expect(service.getSelectorPath([])).to.be.eql([]))
+        expect(service.getSelectorPath([])).toEqual([]))
 
       it('resolve the path for "0"', () =>
-        expect(service.getSelectorPath(['0'])).to.be.eql(['children', '$']))
+        expect(service.getSelectorPath(['0'])).toEqual(['children', '$']))
 
       it('resolve the path for "0.id"', () =>
-        expect(service.getSelectorPath(['0', 'id'])).to.be.eql([
+        expect(service.getSelectorPath(['0', 'id'])).toEqual([
           'children', '$', 'children', 'id',
         ]))
 
       it('resolve the path for "0.name"', () =>
-        expect(service.getSelectorPath(['0', 'name'])).to.be.eql([
+        expect(service.getSelectorPath(['0', 'name'])).toEqual([
           'children', '$', 'children', 'name',
         ]))
     })
@@ -538,111 +536,111 @@ describe('FormService', () => {
     })
 
     it('throws an error when an invalid path is provided: "asdf"', () =>
-      expect(() => service.getSelector(['asdf'])).to.throw(PathError))
+      expect(() => service.getSelector(['asdf'])).toThrow(PathError))
 
     it('finds the selector for root', () =>
-      expect(service.getSelector([])).to.be.eq(ENEMY_SELECTORS))
+      expect(service.getSelector([])).toBe(ENEMY_SELECTORS))
 
     it('finds the selector for "name"', () =>
-      expect(service.getSelector(['name'])).to.be.eq(
+      expect(service.getSelector(['name'])).toBe(
         ENEMY_SELECTORS.children.name,
       ))
 
     it('does not find a selector for "job"', () =>
-      expect(service.getSelector(['job'])).to.be.eq(undefined))
+      expect(service.getSelector(['job'])).toBe(undefined))
 
     it('finds a selector for "stats"', () =>
-      expect(service.getSelector(['stats'])).to.be.eq(
+      expect(service.getSelector(['stats'])).toBe(
         ENEMY_SELECTORS.children.stats,
       ))
 
     it('finds a selector for "stats.attack"', () =>
-      expect(service.getSelector(['stats', 'attack'])).to.be.eq(
+      expect(service.getSelector(['stats', 'attack'])).toBe(
         ENEMY_SELECTORS.children.stats.children.attack,
       ))
 
     it('finds a selector for "stats.evasion"', () =>
-      expect(service.getSelector(['stats', 'evasion'])).to.be.eq(
+      expect(service.getSelector(['stats', 'evasion'])).toBe(
         ENEMY_SELECTORS.children.stats.children.evasion,
       ))
 
     it('finds a selector for "stats.speed"', () =>
-      expect(service.getSelector(['stats', 'speed'])).to.be.eq(
+      expect(service.getSelector(['stats', 'speed'])).toBe(
         ENEMY_SELECTORS.children.stats.children.speed,
       ))
 
     it('finds a selector for "stats.attributes"', () =>
-      expect(service.getSelector(['stats', 'attributes'])).to.be.eq(
+      expect(service.getSelector(['stats', 'attributes'])).toBe(
         ENEMY_SELECTORS.children.stats.children.attributes,
       ))
 
     it('finds a selector for "stats.attributes.level"', () =>
-      expect(service.getSelector(['stats', 'attributes', 'level'])).to.be.eq(
+      expect(service.getSelector(['stats', 'attributes', 'level'])).toBe(
         ENEMY_SELECTORS.children.stats.children.attributes.children.level,
       ))
 
     it('finds a selector for "stats.attributes.experience"', () =>
-      expect(service.getSelector(['stats', 'attributes', 'experience'])).to.be.eq(
+      expect(service.getSelector(['stats', 'attributes', 'experience'])).toBe(
         ENEMY_SELECTORS.children.stats.children.attributes.children.experience,
       ))
 
     it('finds a selector for "stats.ailments"', () =>
-      expect(service.getSelector(['ailments'])).to.be.eq(
+      expect(service.getSelector(['ailments'])).toBe(
         ENEMY_SELECTORS.children.ailments,
       ))
 
     it('finds a selector for "ailments.0"', () =>
-      expect(service.getSelector(['ailments', '0'])).to.be.eq(
+      expect(service.getSelector(['ailments', '0'])).toBe(
         ENEMY_SELECTORS.children.ailments.children.$,
       ))
 
     it('finds a selector for "items"', () =>
-      expect(service.getSelector(['items'])).to.be.eq(
+      expect(service.getSelector(['items'])).toBe(
         ENEMY_SELECTORS.children.items,
       ))
 
     it('finds a selector for "items.0"', () =>
-      expect(service.getSelector(['items', '0'])).to.be.eq(
+      expect(service.getSelector(['items', '0'])).toBe(
         ENEMY_SELECTORS.children.items.children.$,
       ))
 
     it('finds a selector for "items.0.id"', () =>
-      expect(service.getSelector(['items', '0', 'id'])).to.be.eq(
+      expect(service.getSelector(['items', '0', 'id'])).toBe(
         ENEMY_SELECTORS.children.items.children.$.children.id,
       ))
 
     it('finds a selector for "items.0.rate"', () =>
-      expect(service.getSelector(['items', '0', 'rate'])).to.be.eq(
+      expect(service.getSelector(['items', '0', 'rate'])).toBe(
         ENEMY_SELECTORS.children.items.children.$.children.rate,
       ))
 
     it('finds a selector for "triangles"', () =>
-      expect(service.getSelector(['triangles'])).to.be.eq(
+      expect(service.getSelector(['triangles'])).toBe(
         ENEMY_SELECTORS.children.triangles,
       ))
 
     it('finds a selector for "triangles.0"', () =>
-      expect(service.getSelector(['triangles', '0'])).to.be.eq(
+      expect(service.getSelector(['triangles', '0'])).toBe(
         ENEMY_SELECTORS.children.triangles.children.$,
       ))
 
     it('finds a selector for "triangles.0.0"', () =>
-      expect(service.getSelector(['triangles', '0', '0'])).to.be.eq(
+      expect(service.getSelector(['triangles', '0', '0'])).toBe(
         ENEMY_SELECTORS.children.triangles.children.$.children.$,
       ))
 
     it('finds a selector for "triangles.0.1"', () =>
-      expect(service.getSelector(['triangles', '0', '1'])).to.be.eq(
+      expect(service.getSelector(['triangles', '0', '1'])).toBe(
         ENEMY_SELECTORS.children.triangles.children.$.children.$,
       ))
 
     it('finds a selector for "triangles.0.2"', () =>
-      expect(service.getSelector(['triangles', '0', '2'])).to.be.eq(
+      expect(service.getSelector(['triangles', '0', '2'])).toBe(
         ENEMY_SELECTORS.children.triangles.children.$.children.$,
       ))
 
     it('throws an error when an invalid path is provided: "triangles.0.3"', () =>
-      expect(() => service.getSelector(['triangles', '0', '3'])).to.throw(PathError))
+      expect(() => service.getSelector(['triangles', '0', '3'])).toThrow(PathError))
 
     describe('array model', () => {
       beforeEach(() => {
@@ -650,18 +648,18 @@ describe('FormService', () => {
       })
 
       it('finds a selector for root', () =>
-        expect(service.getSelector([])).to.be.eql(ITEMS_SELECTORS))
+        expect(service.getSelector([])).toEqual(ITEMS_SELECTORS))
 
       it('finds a selector for "0"', () =>
-        expect(service.getSelector(['0'])).to.be.eql(ITEMS_SELECTORS.children.$))
+        expect(service.getSelector(['0'])).toEqual(ITEMS_SELECTORS.children.$))
 
       it('finds a selector for "0.id"', () =>
-        expect(service.getSelector(['0', 'id'])).to.be.eql(
+        expect(service.getSelector(['0', 'id'])).toEqual(
           ITEMS_SELECTORS.children.$.children.id,
         ))
 
       it('finds a selector for "0.name"', () =>
-        expect(service.getSelector(['0', 'name'])).to.be.eql(
+        expect(service.getSelector(['0', 'name'])).toEqual(
           ITEMS_SELECTORS.children.$.children.name,
         ))
     })
@@ -672,12 +670,12 @@ describe('FormService', () => {
       service = new FormService(ENEMY_MODEL, {}, onChangeSpy)
     })
 
-    context('when unsetting a top-level key', () => {
+    describe('when unsetting a top-level key', () => {
       beforeEach(() => {
         service.unsetPristine(['name'])
       })
 
-      it('unsets the flag', () => expect(getLastChange()[3]).to.be.eql({
+      it('unsets the flag', () => expect(getLastChange()[3]).toEqual({
         name: false,
         job: true,
         stats: {
@@ -701,12 +699,12 @@ describe('FormService', () => {
       }))
     })
 
-    context('when unsetting a nested key', () => {
+    describe('when unsetting a nested key', () => {
       beforeEach(() => {
         service.unsetPristine(['stats', 'attack'])
       })
 
-      it('unsets the flag', () => expect(getLastChange()[3]).to.be.eql({
+      it('unsets the flag', () => expect(getLastChange()[3]).toEqual({
         name: true,
         job: true,
         stats: {
@@ -730,20 +728,20 @@ describe('FormService', () => {
       }))
     })
 
-    context('when unsetting on an invalid path', () => {
+    describe('when unsetting on an invalid path', () => {
       const INVALID_PATH = ['stats', 'attack', '0']
       const fn = () => service.unsetPristine(INVALID_PATH)
 
       it('throws an error', () =>
-        expect(fn).to.throw(TypeError, `Invalid path: ${INVALID_PATH.join('.')}`))
+        expect(fn).toThrow(`Invalid path: ${INVALID_PATH.join('.')}`))
     })
 
-    context('when setting on a branch instead of a leaf', () => {
+    describe('when setting on a branch instead of a leaf', () => {
       const INVALID_PATH = ['stats']
       const fn = () => service.unsetPristine(INVALID_PATH)
 
       it('throws an error', () =>
-        expect(fn).to.throw(TypeError, `Invalid path: ${INVALID_PATH.join('.')}`))
+        expect(fn).toThrow(`Invalid path: ${INVALID_PATH.join('.')}`))
     })
   })
 
@@ -753,11 +751,11 @@ describe('FormService', () => {
     })
 
     it('invokes onChange', () =>
-      expect(getLastChange()).to.be.eql([
+      expect(getLastChange()).toEqual([
         false, ENEMY_MODEL, ENEMY_ERRORS, ENEMY_PRISTINE,
       ]))
 
-    context('when modifying a top-level property', () => {
+    describe('when modifying a top-level property', () => {
       const EXPECTED_STATE = {
         ...ENEMY_MODEL,
         name: 'Goblin',
@@ -773,14 +771,14 @@ describe('FormService', () => {
       })
 
       it('is not longer pristine', () =>
-        expect(service.isPristine).to.be.false)
+        expect(service.isPristine).toBe(false))
 
-      it('invokes onChange', () => expect(getLastChange()).to.be.eql([
+      it('invokes onChange', () => expect(getLastChange()).toEqual([
         true, EXPECTED_STATE, ENEMY_ERRORS, PRISTINE,
       ]))
     })
 
-    context('when modifying a sub-object property', () => {
+    describe('when modifying a sub-object property', () => {
       const PRISTINE = {
         ...ENEMY_PRISTINE,
         stats: {
@@ -801,12 +799,12 @@ describe('FormService', () => {
         service.apply('stats.attack', 255)
       })
 
-      it('invokes onChange', () => expect(getLastChange()).to.be.eql([
+      it('invokes onChange', () => expect(getLastChange()).toEqual([
         true, EXPECTED_STATE, ENEMY_ERRORS, PRISTINE,
       ]))
     })
 
-    context('when modifying an item in an array', () => {
+    describe('when modifying an item in an array', () => {
       const AILMENT_ID = '42'
       const EXPECTED = ENEMY_MODEL.ailments.map((mod, index) =>
         (index === 1 ? AILMENT_ID : mod))
@@ -816,10 +814,10 @@ describe('FormService', () => {
       })
 
       it('modifies the correct element', () =>
-        expect(service.__state.ailments).to.be.eql(EXPECTED))
+        expect(service.__state.ailments).toEqual(EXPECTED))
     })
 
-    context('when modifying a value to null', () => {
+    describe('when modifying a value to null', () => {
       const MODEL = {
         date: null,
       }
@@ -830,10 +828,10 @@ describe('FormService', () => {
         service = new FormService(MODEL, {}, onChangeSpy)
       })
 
-      it('throws an error', () => expect(fn).to.not.throw())
+      it('throws an error', () => expect(fn).not.toThrow())
     })
 
-    context('when modifying an object to null', () => {
+    describe('when modifying an object to null', () => {
       const SELECTORS = {
         children: {
           stats: {
@@ -857,30 +855,30 @@ describe('FormService', () => {
         service.apply('stats', null)
       })
 
-      it('invokes onChange', () => expect(getLastChange()).to.be.eql([
+      it('invokes onChange', () => expect(getLastChange()).toEqual([
         true, EXPECTED_STATE, ENEMY_ERRORS, PRISTINE,
       ]))
 
-      context('when modifying a null value to object', () => {
+      describe('when modifying a null value to object', () => {
         beforeEach(() => {
           service.apply('stats', ENEMY_MODEL.stats)
         })
 
-        it('invokes onChange', () => expect(getLastChange()).to.be.eql([
+        it('invokes onChange', () => expect(getLastChange()).toEqual([
           false, ENEMY_MODEL, ENEMY_ERRORS, PRISTINE,
         ]))
       })
     })
 
-    context('when modifying a key that does not exist', () => {
+    describe('when modifying a key that does not exist', () => {
       const NAME_INVALID = 'asdf'
       const fn = () => service.apply(NAME_INVALID)
 
       it('throws an error', () =>
-        expect(fn).to.throw(TypeError, `Invalid path: ${NAME_INVALID}`))
+        expect(fn).toThrow(`Invalid path: ${NAME_INVALID}`))
     })
 
-    context('when mutating an object to a primitive', () => {
+    describe('when mutating an object to a primitive', () => {
       const SELECTORS = {
         children: {
           stats: {
@@ -895,10 +893,10 @@ describe('FormService', () => {
         service = new FormService(ENEMY_MODEL, SELECTORS, onChangeSpy)
       })
 
-      it('throws an error', () => expect(fn).to.throw(MutationError))
+      it('throws an error', () => expect(fn).toThrow(MutationError))
     })
 
-    context('when mutating an object to have a different shape', () => {
+    describe('when mutating an object to have a different shape', () => {
       const SELECTORS = {
         children: {
           stats: {
@@ -913,10 +911,10 @@ describe('FormService', () => {
         service = new FormService(ENEMY_MODEL, SELECTORS, onChangeSpy)
       })
 
-      it('throws an error', () => expect(fn).to.throw(MutationError))
+      it('throws an error', () => expect(fn).toThrow(MutationError))
     })
 
-    context('when mutating an object to have the same shape', () => {
+    describe('when mutating an object to have the same shape', () => {
       const SELECTORS = {
         children: {
           stats: {
@@ -939,16 +937,16 @@ describe('FormService', () => {
         service = new FormService(ENEMY_MODEL, SELECTORS, onChangeSpy)
       })
 
-      it('throws an error', () => expect(fn).to.not.throw())
+      it('throws an error', () => expect(fn).not.toThrow())
     })
 
-    context.skip('when adding a rogue property to sub-object', () => {
+    describe.skip('when adding a rogue property to sub-object', () => {
       const fn = () => service.apply('stats.asdf', 42)
 
-      it('throws an error', () => expect(fn).to.throw(MutationError))
+      it('throws an error', () => expect(fn).toThrow(MutationError))
     })
 
-    context('when mutating an array', () => {
+    describe('when mutating an array', () => {
       const MODEL = { items: [{ id: '', name: '' }] }
 
       const SELECTORS = {
@@ -965,10 +963,10 @@ describe('FormService', () => {
         service = new FormService(MODEL, SELECTORS, onChangeSpy)
       })
 
-      it('throws an error', () => expect(fn).to.throw(MutationError))
+      it('throws an error', () => expect(fn).toThrow(MutationError))
     })
 
-    context('when mutating an array while allowing unsafe mutations', () => {
+    describe('when mutating an array while allowing unsafe mutations', () => {
       const MODEL = { items: [{ id: '', name: '' }] }
 
       const SELECTORS = {
@@ -986,27 +984,27 @@ describe('FormService', () => {
         service = new FormService(MODEL, SELECTORS, onChangeSpy)
       })
 
-      it('does not throws an error', () => expect(fn).to.not.throw())
+      it('does not throws an error', () => expect(fn).not.toThrow())
     })
 
-    context('when modifying a key that does not have pristine status', () => {
+    describe('when modifying a key that does not have pristine status', () => {
       const fn = () => service.apply('stats', {
         attack: 'a',
         evasion: 'b',
         speed: 'c',
       })
 
-      it('throws an error', () => expect(fn).to.throw(PristineError))
+      it('throws an error', () => expect(fn).toThrow(PristineError))
     })
 
-    context('when state is accidentally set on a value', () => {
+    describe('when state is accidentally set on a value', () => {
       const fn = () => service.apply('asdf', service.__state)
 
-      it('throw the error', () => expect(fn).to.throw(MutationError))
+      it('throw the error', () => expect(fn).toThrow(MutationError))
     })
 
     describe('array model', () => {
-      context('when path is empty', () => {
+      describe('when path is empty', () => {
         const MODEL = ['']
         const SELECTORS = {
           clipPristine: true,
@@ -1018,10 +1016,10 @@ describe('FormService', () => {
           service = new FormService(MODEL, SELECTORS, onChangeSpy)
         })
 
-        it('does not throws an error', () => expect(fn).to.not.throw())
+        it('does not throws an error', () => expect(fn).not.toThrow())
       })
 
-      context('when path is numeric', () => {
+      describe('when path is numeric', () => {
         const MODEL = ['']
         const fn = () => service.apply(0, 'asdf')
 
@@ -1029,17 +1027,17 @@ describe('FormService', () => {
           service = new FormService(MODEL, {}, onChangeSpy)
         })
 
-        it('does not throws an error', () => expect(fn).to.not.throw())
+        it('does not throws an error', () => expect(fn).not.toThrow())
       })
 
-      context('when modifying an item', () => {
+      describe('when modifying an item', () => {
         beforeEach(() => {
           service = new FormService(ITEMS_MODEL, {}, onChangeSpy)
           service.apply('0.name', 'asdf')
         })
 
         it('invokes the callback', () =>
-          expect(getLastChange()).to.be.eql([
+          expect(getLastChange()).toEqual([
             true,
             [{ id: '', name: 'asdf' }],
             [{ id: '', name: '' }],
@@ -1052,7 +1050,7 @@ describe('FormService', () => {
   describe('addItem()', () => {
     const MODEL = { items: [] }
 
-    context('when an object is added', () => {
+    describe('when an object is added', () => {
       const MODEL = {
         items: [1, 2, 3, 5, 8],
       }
@@ -1080,7 +1078,7 @@ describe('FormService', () => {
       let result
 
       beforeEach(() => {
-        spy = sandbox.spy(SELECTORS.children.items, 'createItem')
+        spy = spyOn(SELECTORS.children.items, 'createItem')
 
         service = new FormService(MODEL, SELECTORS, onChangeSpy)
         service.addItem('items')
@@ -1088,13 +1086,13 @@ describe('FormService', () => {
       })
 
       it('invokes createItem() with the correct arguments', () =>
-        expect(spy).to.be.calledWith(['items'], 5, MODEL, service))
+        expect(spy).toHaveBeenCalledWith(['items'], 5, MODEL, service))
 
       it('adds the next Fibonacci number in the sequence', () =>
-        expect(result).to.be.eql([1, 2, 3, 5, 8, 13]))
+        expect(result).toEqual([1, 2, 3, 5, 8, 13]))
     })
 
-    context('when adding a primitive item', () => {
+    describe('when adding a primitive item', () => {
       const SELECTORS = {
         children: {
           items: {
@@ -1109,18 +1107,18 @@ describe('FormService', () => {
       })
 
       it('provides the correct errors', () =>
-        expect(service.__errors).to.be.eql({ items: [''] }))
+        expect(service.__errors).toEqual({ items: [''] }))
 
-      context('when adding an item to end of an array', () => {
+      describe('when adding an item to end of an array', () => {
         const EXPECTED = ['', '']
 
         beforeEach(() => {
           service.addItem('items')
         })
 
-        it('adds it', () => expect(service.__state.items).to.be.eql(EXPECTED))
+        it('adds it', () => expect(service.__state.items).toEqual(EXPECTED))
 
-        context('when adding an item in the middle of an array', () => {
+        describe('when adding an item in the middle of an array', () => {
           const EXPECTED = ['1', '', '2']
 
           beforeEach(() => {
@@ -1129,12 +1127,12 @@ describe('FormService', () => {
             service.addItem('items', 1)
           })
 
-          it('adds it', () => expect(service.__state.items).to.be.eql(EXPECTED))
+          it('adds it', () => expect(service.__state.items).toEqual(EXPECTED))
         })
       })
     })
 
-    context('when adding an object', () => {
+    describe('when adding an object', () => {
       const SELECTORS = {
         children: {
           items: {
@@ -1149,7 +1147,7 @@ describe('FormService', () => {
       })
 
       it('adds the item', () =>
-        expect(getLastChange()).to.be.eql([
+        expect(getLastChange()).toEqual([
           true,
           { items: [{ id: '' }] },
           { items: [{ id: '' }] },
@@ -1157,7 +1155,7 @@ describe('FormService', () => {
         ]))
     })
 
-    context('when adding an object with validators on the array selector', () => {
+    describe('when adding an object with validators on the array selector', () => {
       const SELECTORS = {
         children: {
           items: {
@@ -1173,7 +1171,7 @@ describe('FormService', () => {
       })
 
       it('adds the item', () =>
-        expect(getLastChange()).to.be.eql([
+        expect(getLastChange()).toEqual([
           true,
           { items: [{ id: '' }] },
           { items: '' },
@@ -1181,7 +1179,7 @@ describe('FormService', () => {
         ]))
     })
 
-    context('when adding an object with validators on the array element selector', () => {
+    describe('when adding an object with validators on the array element selector', () => {
       const SELECTORS = {
         children: {
           items: {
@@ -1201,7 +1199,7 @@ describe('FormService', () => {
       })
 
       it('adds the item', () =>
-        expect(getLastChange()).to.be.eql([
+        expect(getLastChange()).toEqual([
           true,
           { items: [{ id: '' }] },
           { items: [''] },
@@ -1209,7 +1207,7 @@ describe('FormService', () => {
         ]))
     })
 
-    context('when adding an object with formatter on element', () => {
+    describe('when adding an object with formatter on element', () => {
       const SELECTORS = {
         children: {
           items: {
@@ -1233,7 +1231,7 @@ describe('FormService', () => {
       })
 
       it('adds the item', () =>
-        expect(service.__state).to.be.eql({
+        expect(service.__state).toEqual({
           items: [{
             id: '',
             name: '',
@@ -1242,7 +1240,7 @@ describe('FormService', () => {
         }))
     })
 
-    context('when adding an object with formatter on property of element', () => {
+    describe('when adding an object with formatter on property of element', () => {
       const SELECTORS = {
         children: {
           items: {
@@ -1270,7 +1268,7 @@ describe('FormService', () => {
       })
 
       it('adds the item', () =>
-        expect(service.__state).to.be.eql({
+        expect(service.__state).toEqual({
           items: [{
             id: '',
             name: '',
@@ -1279,7 +1277,7 @@ describe('FormService', () => {
         }))
     })
 
-    context('when adding an object item', () => {
+    describe('when adding an object item', () => {
       const MODEL = {
         items: [
           {
@@ -1314,7 +1312,7 @@ describe('FormService', () => {
       })
 
       it('provides the correct errors', () =>
-        expect(service.__errors).to.eql({
+        expect(service.__errors).toEqual({
           items: [
             { start: '', end: '' },
             { start: '', end: '' },
@@ -1323,7 +1321,7 @@ describe('FormService', () => {
     })
 
     describe('array model', () => {
-      context('when path is empty', () => {
+      describe('when path is empty', () => {
         const MODEL = ['']
         const SELECTORS = {
           createItem: () => '',
@@ -1335,10 +1333,10 @@ describe('FormService', () => {
         })
 
         it('adds the item', () =>
-          expect(service.__state).to.be.eql(['', '']))
+          expect(service.__state).toEqual(['', '']))
       })
 
-      context('when adding an item with validators', () => {
+      describe('when adding an item with validators', () => {
         const SELECTORS = {
           createItem: () => ({ id: '', name: '' }),
           validators: [],
@@ -1350,7 +1348,7 @@ describe('FormService', () => {
         })
 
         it('invokes the callback', () =>
-          expect(getLastChange()).to.be.eql([
+          expect(getLastChange()).toEqual([
             true,
             [
               { id: '', name: '' },
@@ -1371,26 +1369,26 @@ describe('FormService', () => {
       service = new FormService(ENEMY_MODEL, {}, onChangeSpy)
     })
 
-    context('when removing an item from the end of an array', () => {
+    describe('when removing an item from the end of an array', () => {
       beforeEach(() => {
         service.removeItem('ailments')
       })
 
       it('removes it', () =>
-        expect(service.__state.ailments).to.be.eql([3, 4]))
+        expect(service.__state.ailments).toEqual([3, 4]))
     })
 
-    context('when removing an item from the front of an array', () => {
+    describe('when removing an item from the front of an array', () => {
       beforeEach(() => {
         service.removeItem('ailments', 0)
       })
 
       it('removes it', () =>
-        expect(service.__state.ailments).to.be.eql([4, 7]))
+        expect(service.__state.ailments).toEqual([4, 7]))
     })
 
     describe('array model', () => {
-      context('when path is empty', () => {
+      describe('when path is empty', () => {
         const MODEL = ['']
 
         beforeEach(() => {
@@ -1399,7 +1397,7 @@ describe('FormService', () => {
         })
 
         it('removes the item', () =>
-          expect(service.__state).to.be.eql([]))
+          expect(service.__state).toEqual([]))
       })
     })
   })
@@ -1423,16 +1421,16 @@ describe('FormService', () => {
     })
 
     it('reorders the item in the state', () =>
-      expect(service.__state.ailments).to.be.eql(EXPECTED_STATE))
+      expect(service.__state.ailments).toEqual(EXPECTED_STATE))
 
     it('reorders the item in the error schema', () =>
-      expect(service.__errors.ailments).to.be.eql(EXPECTED_ERRORS))
+      expect(service.__errors.ailments).toEqual(EXPECTED_ERRORS))
 
     it('reorders the item in the pristine schema', () =>
-      expect(service.__pristine.ailments).to.be.eql(EXPECTED_PRISTINE))
+      expect(service.__pristine.ailments).toEqual(EXPECTED_PRISTINE))
 
     describe('array model', () => {
-      context('when path is empty', () => {
+      describe('when path is empty', () => {
         const MODEL = ['a', 'b', 'c']
 
         beforeEach(() => {
@@ -1441,7 +1439,7 @@ describe('FormService', () => {
         })
 
         it('moves the item', () =>
-          expect(service.__state).to.be.eql(['a', 'c', 'b']))
+          expect(service.__state).toEqual(['a', 'c', 'b']))
       })
     })
   })
@@ -1464,16 +1462,16 @@ describe('FormService', () => {
     })
 
     it('swaps the selected items in the state', () =>
-      expect(service.__state.ailments).to.be.eql(EXPECTED_STATE))
+      expect(service.__state.ailments).toEqual(EXPECTED_STATE))
 
     it('swaps the selected items in the error schema', () =>
-      expect(service.__errors.ailments).to.be.eql(EXPECTED_ERRORS))
+      expect(service.__errors.ailments).toEqual(EXPECTED_ERRORS))
 
     it('swaps the selected items in the pristine schema', () =>
-      expect(service.__pristine.ailments).to.be.eql(EXPECTED_PRISTINE))
+      expect(service.__pristine.ailments).toEqual(EXPECTED_PRISTINE))
 
     describe('array model', () => {
-      context('when path is empty', () => {
+      describe('when path is empty', () => {
         const MODEL = ['a', 'b', 'c']
 
         beforeEach(() => {
@@ -1482,7 +1480,7 @@ describe('FormService', () => {
         })
 
         it('swaps the items', () =>
-          expect(service.__state).to.be.eql(['c', 'b', 'a']))
+          expect(service.__state).toEqual(['c', 'b', 'a']))
       })
     })
   })
@@ -1496,7 +1494,7 @@ describe('FormService', () => {
       validate: v => v === NAME_MATCH,
     }
 
-    context('when clipPristine is set on a key with children', () => {
+    describe('when clipPristine is set on a key with children', () => {
       let validatorStub
       beforeEach(() => {
         const MODEL = {
@@ -1521,14 +1519,14 @@ describe('FormService', () => {
         }
 
         service = new FormService(MODEL, SELECTORS, onChangeSpy)
-        validatorStub = sandbox.spy(service, 'validateKey')
+        validatorStub = spyOn(service, 'validateKey')
         valid = service.validate()
       })
 
-      it('only calls validator once', () => expect(validatorStub).to.be.calledOnce)
+      it('only calls validator once', () => expect(validatorStub).toHaveBeenCalledTimes(1))
     })
 
-    context('when invalid data is provided', () => {
+    describe('when invalid data is provided', () => {
       beforeEach(() => {
         const MODEL = {
           name: '',
@@ -1546,18 +1544,18 @@ describe('FormService', () => {
         valid = service.validate()
       })
 
-      it('fails', () => expect(valid).to.be.false)
+      it('fails', () => expect(valid).toBe(false))
 
-      it('is flagged with errors', () => expect(service.hasErrors).to.be.true)
+      it('is flagged with errors', () => expect(service.hasErrors).toBe(true))
 
       it('removes pristine status from all fields', () =>
-        expect(service.__pristine).to.be.eql({
+        expect(service.__pristine).toEqual({
           name: false,
           description: false,
           amount: false,
         }))
 
-      it('invokes callback', () => expect(getLastChange()).to.be.eql([
+      it('invokes callback', () => expect(getLastChange()).toEqual([
         false,
         {
           name: '',
@@ -1577,7 +1575,7 @@ describe('FormService', () => {
       ]))
     })
 
-    context('when valid data is provided', () => {
+    describe('when valid data is provided', () => {
       const MODEL = { name: 'asdf' }
 
       const SELECTORS = {
@@ -1591,9 +1589,9 @@ describe('FormService', () => {
         valid = service.validate()
       })
 
-      it('passes', () => expect(valid).to.be.true)
+      it('passes', () => expect(valid).toBe(true))
 
-      it('invokes callback', () => expect(getLastChange()).to.be.eql([
+      it('invokes callback', () => expect(getLastChange()).toEqual([
         false,
         { name: 'asdf' },
         { name: '' },
@@ -1601,7 +1599,7 @@ describe('FormService', () => {
       ]))
     })
 
-    context('when invalid data is provided (multiple validators)', () => {
+    describe('when invalid data is provided (multiple validators)', () => {
       const MODEL = { name: 'Wronguy' }
 
       const SELECTORS = {
@@ -1615,23 +1613,23 @@ describe('FormService', () => {
         valid = service.validate()
       })
 
-      it('fails', () => expect(valid).to.be.false)
+      it('fails', () => expect(valid).toBe(false))
 
-      it('invokes callback', () => expect(getLastChange()).to.be.eql([
+      it('invokes callback', () => expect(getLastChange()).toEqual([
         false,
         { name: 'Wronguy' },
         { name: 'Invalid' },
         { name: false },
       ]))
 
-      context('when failing on the first validator', () => {
+      describe('when failing on the first validator', () => {
         beforeEach(() => {
           service.apply('name', '')
           valid = service.validate()
         })
 
         it('invokes callback with an error for the first failure', () =>
-          expect(getLastChange()).to.be.eql([
+          expect(getLastChange()).toEqual([
             true,
             { name: '' },
             { name: 'Required' },
@@ -1641,7 +1639,7 @@ describe('FormService', () => {
       })
     })
 
-    context('when validating across multiple levels of selectors', () => {
+    describe('when validating across multiple levels of selectors', () => {
       const MODEL = { tax: { name: '', rate: '' } }
       const SELECTORS = {
         children: {
@@ -1661,54 +1659,54 @@ describe('FormService', () => {
         valid = service.validate()
       })
 
-      it('passes', () => expect(valid).to.be.true)
+      it('passes', () => expect(valid).toBe(true))
 
-      it('invokes callback', () => expect(getLastChange()).to.be.eql([
+      it('invokes callback', () => expect(getLastChange()).toEqual([
         false,
         MODEL,
         { tax: { name: '', rate: '' } },
         { tax: { name: false, rate: false } },
       ]))
 
-      context('when setting a name', () => {
+      describe('when setting a name', () => {
         beforeEach(() => {
           service.apply('tax.name', 'asdf')
           valid = service.validate()
         })
 
-        it('fails', () => expect(valid).to.be.false)
+        it('fails', () => expect(valid).toBe(false))
 
-        it('invokes callback', () => expect(getLastChange()).to.be.eql([
+        it('invokes callback', () => expect(getLastChange()).toEqual([
           true,
           { tax: { name: 'asdf', rate: '' } },
           { tax: { name: '', rate: 'Required' } },
           { tax: { name: false, rate: false } },
         ]))
 
-        context('when providing an INVALID rate', () => {
+        describe('when providing an INVALID rate', () => {
           beforeEach(() => {
             service.apply('tax.rate', '-10')
             valid = service.validate()
           })
 
-          it('fails', () => expect(valid).to.be.false)
+          it('fails', () => expect(valid).toBe(false))
 
-          it('invokes callback', () => expect(getLastChange()).to.be.eql([
+          it('invokes callback', () => expect(getLastChange()).toEqual([
             true,
             { tax: { name: 'asdf', rate: '-10' } },
             { tax: { name: '', rate: '0 - 100' } },
             { tax: { name: false, rate: false } },
           ]))
 
-          context('when providing a VALID rate', () => {
+          describe('when providing a VALID rate', () => {
             beforeEach(() => {
               service.apply('tax.rate', '10')
               valid = service.validate()
             })
 
-            it('passes', () => expect(valid).to.be.true)
+            it('passes', () => expect(valid).toBe(true))
 
-            it('invokes callback', () => expect(getLastChange()).to.be.eql([
+            it('invokes callback', () => expect(getLastChange()).toEqual([
               true,
               { tax: { name: 'asdf', rate: '10' } },
               { tax: { name: '', rate: '' } },
@@ -1717,15 +1715,15 @@ describe('FormService', () => {
           })
         })
 
-        context('when clearing the name', () => {
+        describe('when clearing the name', () => {
           beforeEach(() => {
             service.apply('tax.name', '')
             valid = service.validate()
           })
 
-          it('passes again', () => expect(valid).to.be.true)
+          it('passes again', () => expect(valid).toBe(true))
 
-          it('invokes callback', () => expect(getLastChange()).to.be.eql([
+          it('invokes callback', () => expect(getLastChange()).toEqual([
             false,
             { tax: { name: '', rate: '' } },
             { tax: { name: '', rate: '' } },
@@ -1735,7 +1733,7 @@ describe('FormService', () => {
       })
     })
 
-    context('when errors are clipped', () => {
+    describe('when errors are clipped', () => {
       const MODEL = {
         items: [
           {
@@ -1777,18 +1775,18 @@ describe('FormService', () => {
         valid = service.validate()
       })
 
-      it('is invalid', () => expect(valid).to.be.false)
+      it('is invalid', () => expect(valid).toBe(false))
 
-      context('when validating a second time', () => {
+      describe('when validating a second time', () => {
         beforeEach(() => {
           valid = service.validate()
         })
 
-        it('is still invalid', () => expect(valid).to.be.false)
+        it('is still invalid', () => expect(valid).toBe(false))
       })
     })
 
-    context('when validating an array', () => {
+    describe('when validating an array', () => {
       const SCHEMA_PHONES_EMPTY = new Array(2).fill({ number: '', type: '' })
       const MODEL = { phones: SCHEMA_PHONES_EMPTY }
       const ERRORS = map(MODEL, () => '')
@@ -1814,16 +1812,16 @@ describe('FormService', () => {
         valid = service.validate()
       })
 
-      it('is valid', () => expect(valid).to.be.true)
+      it('is valid', () => expect(valid).toBe(true))
 
-      it('invokes callback', () => expect(getLastChange()).to.be.eql([
+      it('invokes callback', () => expect(getLastChange()).toEqual([
         false,
         MODEL,
         ERRORS,
         PRISTINE,
       ]))
 
-      context('when errors are present', () => {
+      describe('when errors are present', () => {
         beforeEach(() => {
           service.apply('phones.0.type', 'Home')
           service.apply('phones.1.number', '7025551234')
@@ -1831,10 +1829,10 @@ describe('FormService', () => {
           valid = service.validate()
         })
 
-        it('is NOT valid', () => expect(valid).to.be.false)
+        it('is NOT valid', () => expect(valid).toBe(false))
 
         it('has errors', () =>
-          expect(service.__errors).to.be.eql({
+          expect(service.__errors).toEqual({
             phones: [
               { type: '', number: '' },
               { type: 'Required', number: '' },
@@ -1843,7 +1841,7 @@ describe('FormService', () => {
       })
     })
 
-    context('when ignoring pristine status of a key', () => {
+    describe('when ignoring pristine status of a key', () => {
       const MODEL = { rate: '' }
       const SELECTORS = {
         children: {
@@ -1860,10 +1858,10 @@ describe('FormService', () => {
       })
 
       it('immediately errors', () =>
-        expect(service.__errors).to.be.eql({ rate: '0 - 100' }))
+        expect(service.__errors).toEqual({ rate: '0 - 100' }))
     })
 
-    context('when ignoring pristine status of a key (array)', () => {
+    describe('when ignoring pristine status of a key (array)', () => {
       const MODEL = { rates: [''] }
       const SELECTORS = {
         children: {
@@ -1885,20 +1883,20 @@ describe('FormService', () => {
       })
 
       it('immediately errors', () =>
-        expect(service.__errors).to.be.eql({ rates: ['0 - 100'] }))
+        expect(service.__errors).toEqual({ rates: ['0 - 100'] }))
 
-      context('when adding an item to the array', () => {
+      describe('when adding an item to the array', () => {
         beforeEach(() => {
           service.addItem('rates')
           service.apply('rates.1', 101)
         })
 
         it('immediately errors', () =>
-          expect(service.__errors).to.be.eql({ rates: ['0 - 100', '0 - 100'] }))
+          expect(service.__errors).toEqual({ rates: ['0 - 100', '0 - 100'] }))
       })
     })
 
-    context('when ignoring pristine status of a key (array-child)', () => {
+    describe('when ignoring pristine status of a key (array-child)', () => {
       const MODEL = { taxes: [{ name: '', rate: '' }] }
       const SELECTORS = {
         children: {
@@ -1924,18 +1922,18 @@ describe('FormService', () => {
       })
 
       it('immediately errors', () =>
-        expect(service.__errors).to.be.eql({
+        expect(service.__errors).toEqual({
           taxes: [{ name: '', rate: '0 - 100' }],
         }))
 
-      context('when adding an item to the array', () => {
+      describe('when adding an item to the array', () => {
         beforeEach(() => {
           service.addItem('taxes')
           service.apply('taxes.1.rate', 101)
         })
 
         it('immediately errors', () =>
-          expect(service.__errors).to.be.eql({
+          expect(service.__errors).toEqual({
             taxes: [
               { name: '', rate: '0 - 100' },
               { name: '', rate: '0 - 100' },
@@ -1944,7 +1942,7 @@ describe('FormService', () => {
       })
     })
 
-    context('when model is an array', () => {
+    describe('when model is an array', () => {
       const SELECTORS = {
         createItem: () => ({ id: '', name: '' }),
         validators: [{
@@ -1961,19 +1959,19 @@ describe('FormService', () => {
         valid = service.validate()
       })
 
-      it('passes validation', () => expect(valid).to.be.true)
+      it('passes validation', () => expect(valid).toBe(true))
 
-      context('when validation fails', () => {
+      describe('when validation fails', () => {
         beforeEach(() => {
           service.apply('0.name', '')
           valid = service.validate()
         })
 
-        it('fails', () => expect(valid).to.be.false)
+        it('fails', () => expect(valid).toBe(false))
       })
     })
 
-    context('when selector validates against unformatted value', () => {
+    describe('when selector validates against unformatted value', () => {
       const AMOUNT_RAW = 3.5
       const MODEL = {
         amount: AMOUNT_RAW,
@@ -1999,21 +1997,19 @@ describe('FormService', () => {
 
       beforeEach(() => {
         validator = SELECTORS.children.amount.validators[0]
-        validator.validate = sandbox.stub().returns(true)
+        validator.validate = mock(() => true)
 
         service = new FormService(MODEL, SELECTORS, onChangeSpy)
         service.validate()
       })
 
       it('unformats the value', () =>
-        expect(validator.validate).to.be.calledOnceWith(
-          AMOUNT_RAW,
-          ['amount'],
-          MODEL,
-        ))
+        expect(validator.validate.mock.calls).toEqual([
+          [AMOUNT_RAW, ['amount'], MODEL, service],
+        ]))
     })
 
-    context('when manually validating a key', () => {
+    describe('when manually validating a key', () => {
       const AMOUNT_RAW = 3.5
       const MODEL = {
         amount: AMOUNT_RAW,
@@ -2039,21 +2035,21 @@ describe('FormService', () => {
 
       beforeEach(() => {
         validator = SELECTORS.children.amount.validators[0]
-        validator.validate = sandbox.stub().returns(true)
+        validator.validate = mock(() => true)
 
         service = new FormService(MODEL, SELECTORS, onChangeSpy)
       })
 
       it('does not invoke the validator', () =>
-        expect(validator.validate).to.not.be.called)
+        expect(validator.validate).not.toHaveBeenCalled())
 
-      context('when manually validating', () => {
+      describe('when manually validating', () => {
         beforeEach(() => {
           service.validate()
         })
 
         it('invokes the validator', () =>
-          expect(validator.validate).to.be.calledOnce)
+          expect(validator.validate).toHaveBeenCalledTimes(1))
       })
     })
   })
@@ -2113,7 +2109,7 @@ describe('FormService', () => {
     })
 
     it('reverts state, errors, pristine, and dirtiness back', () =>
-      expect(getLastChange()).to.be.eql([
+      expect(getLastChange()).toEqual([
         false, UPDATED_MODEL, UPDATED_ERRORS, UPDATED_PRISTINE,
       ]))
   })
@@ -2133,7 +2129,7 @@ describe('FormService', () => {
     })
 
     it('reverts state, errors, pristine and dirtiness back', () =>
-      expect(getLastChange()).to.be.eql([
+      expect(getLastChange()).toEqual([
         false, ENEMY_MODEL, ENEMY_ERRORS, ENEMY_PRISTINE,
       ]))
   })

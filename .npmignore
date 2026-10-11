@@ -12,3 +12,4 @@
 .eslintignore
 karma.conf.js
 bun.lock
+bunfig.toml

@@ -1,4 +1,4 @@
-import sinon from 'sinon'
+import { mock, describe, beforeEach, it, expect } from 'bun:test'
 
 import {
   extents,
@@ -70,67 +70,57 @@ const KEY_PATHS = [
 ]
 
 describe('misc', () => {
-  let sandbox
-
-  beforeEach(() => {
-    sandbox = sinon.createSandbox()
-  })
-
-  afterEach(() => {
-    sandbox.restore()
-  })
-
   describe('extents()', () => {
     it('returns correct values when params are in ascending order', () =>
-      expect(extents(0, 100)).to.be.eql({ min: 0, max: 100 }))
+      expect(extents(0, 100)).toEqual({ min: 0, max: 100 }))
 
     it('returns correct values when params are in descending order', () =>
-      expect(extents(100, 0)).to.be.eql({ min: 0, max: 100 }))
+      expect(extents(100, 0)).toEqual({ min: 0, max: 100 }))
   })
 
   describe('padArray()', () => {
-    context('when the array already has items', () => {
+    describe('when the array already has items', () => {
       const ITEMS = [1]
 
       it('does not modify the array', () =>
-        expect(padArray(ITEMS, 0)).to.be.eql([1]))
+        expect(padArray(ITEMS, 0)).toEqual([1]))
     })
 
-    context('when the array is empty', () => {
+    describe('when the array is empty', () => {
       const ITEMS = []
 
       it('does not modify the array', () =>
-        expect(padArray(ITEMS, 0)).to.be.eql([0]))
+        expect(padArray(ITEMS, 0)).toEqual([0]))
     })
   })
 
   describe('filterEmpty()', () => {
-    context('when the array has a discrete, truthy value', () => {
+    describe('when the array has a discrete, truthy value', () => {
       const ITEMS = [1]
 
       it('returns an unmodified copy of the array', () =>
-        expect(filterEmpty(ITEMS)).to.be.eql(ITEMS))
+        expect(filterEmpty(ITEMS)).toEqual(ITEMS))
     })
 
-    context('when the array has a discrete, falsy value', () => {
+    describe('when the array has a discrete, falsy value', () => {
       const ITEMS = ['']
 
       it('returns a modified copy of the array', () =>
-        expect(filterEmpty(ITEMS)).to.be.eql([]))
+        expect(filterEmpty(ITEMS)).toEqual([]))
     })
 
-    context('when the array has an object with no discrete, falsy values', () => {
+    describe('when the array has an object with no discrete, falsy values', () => {
       const ITEMS = [{ a: 10, b: 42 }]
 
       it('returns an unmodified copy of the array', () =>
-        expect(filterEmpty(ITEMS)).to.be.eql(ITEMS))
+        expect(filterEmpty(ITEMS)).toEqual(ITEMS))
     })
 
-    context('when the array has an object with a discrete, falsy value', () => {
+    describe('when the array has an object with a discrete, falsy value', () => {
       const ITEMS = [{ a: 0, b: 42 }]
 
       it('returns a modified copy of the array', () =>
-        expect(filterEmpty(ITEMS)).to.be.eql([]))
+        expect(filterEmpty(ITEMS)).toEqual([]))
     })
   })
 
@@ -138,81 +128,81 @@ describe('misc', () => {
     const ITEMS = ['a', 'b', 'c', 'd', 'e']
 
     it('can move an item up by 1 element', () =>
-      expect(moveItem(ITEMS, 3, 2)).to.be.eql(['a', 'b', 'd', 'c', 'e']))
+      expect(moveItem(ITEMS, 3, 2)).toEqual(['a', 'b', 'd', 'c', 'e']))
 
     it('can move an item to the front', () =>
-      expect(moveItem(ITEMS, 3, 0)).to.be.eql(['d', 'a', 'b', 'c', 'e']))
+      expect(moveItem(ITEMS, 3, 0)).toEqual(['d', 'a', 'b', 'c', 'e']))
 
     it('can move an item to the back', () =>
-      expect(moveItem(ITEMS, 1, 4)).to.be.eql(['a', 'c', 'd', 'e', 'b']))
+      expect(moveItem(ITEMS, 1, 4)).toEqual(['a', 'c', 'd', 'e', 'b']))
 
     it('can move the front item to the back', () =>
-      expect(moveItem(ITEMS, 0, 4)).to.be.eql(['b', 'c', 'd', 'e', 'a']))
+      expect(moveItem(ITEMS, 0, 4)).toEqual(['b', 'c', 'd', 'e', 'a']))
 
     it('can move the back item to the front', () =>
-      expect(moveItem(ITEMS, 4, 0)).to.be.eql(['e', 'a', 'b', 'c', 'd']))
+      expect(moveItem(ITEMS, 4, 0)).toEqual(['e', 'a', 'b', 'c', 'd']))
   })
 
   describe('swap()', () => {
     const ITEMS = ['a', 'b', 'c', 'd', 'e']
 
     it('can swap first and last items', () =>
-      expect(swap(ITEMS, 0, 4)).to.be.eql(['e', 'b', 'c', 'd', 'a']))
+      expect(swap(ITEMS, 0, 4)).toEqual(['e', 'b', 'c', 'd', 'a']))
 
     it('can swap first and last items with reversed indices', () =>
-      expect(swap(ITEMS, 4, 0)).to.be.eql(['e', 'b', 'c', 'd', 'a']))
+      expect(swap(ITEMS, 4, 0)).toEqual(['e', 'b', 'c', 'd', 'a']))
 
     it('can swap two items in the middle of the array', () =>
-      expect(swap(ITEMS, 3, 1)).to.be.eql(['a', 'd', 'c', 'b', 'e']))
+      expect(swap(ITEMS, 3, 1)).toEqual(['a', 'd', 'c', 'b', 'e']))
 
     it('can swap the 3rd and 5th items', () =>
-      expect(swap(ITEMS, 2, 4)).to.be.eql(['a', 'b', 'e', 'd', 'c']))
+      expect(swap(ITEMS, 2, 4)).toEqual(['a', 'b', 'e', 'd', 'c']))
 
     it('can swap the 1st and 3rd items', () =>
-      expect(swap(ITEMS, 0, 2)).to.be.eql(['c', 'b', 'a', 'd', 'e']))
+      expect(swap(ITEMS, 0, 2)).toEqual(['c', 'b', 'a', 'd', 'e']))
   })
 
   describe('traverse()', () => {
     let onKeyStub
 
-    context('when traversing', () => {
+    describe('when traversing', () => {
       beforeEach(() => {
-        onKeyStub = sandbox.stub()
+        onKeyStub = mock()
         traverse(SCHEMA, onKeyStub)
       })
 
       KEY_PATHS.map((path, index) =>
         it(`returns path: ${path}`, () =>
-          expect(onKeyStub.getCall(index).args).to.be.eql([
+          expect(onKeyStub.mock.calls[index]).toEqual([
             path,
             getValueByPath(SCHEMA, path),
           ])))
     })
 
-    context('when traversing with root enabled', () => {
+    describe('when traversing with root enabled', () => {
       const PATHS = [[], ...KEY_PATHS]
 
       beforeEach(() => {
-        onKeyStub = sandbox.stub()
+        onKeyStub = mock()
         traverse(SCHEMA, onKeyStub, true)
       })
 
       PATHS.map((path, index) =>
         it(`returns path: ${path}`, () =>
-          expect(onKeyStub.getCall(index).args).to.be.eql([
+          expect(onKeyStub.mock.calls[index]).toEqual([
             path,
             getValueByPath(SCHEMA, path),
           ])))
     })
 
-    context('when mutating the object while traversing', () => {
+    describe('when mutating the object while traversing', () => {
       const schema = { ...SCHEMA }
       const expectedResult = [...KEY_PATHS]
       expectedResult.splice(6, 1)
       expectedResult.splice(7, 1)
 
       beforeEach(() => {
-        onKeyStub = sandbox.stub().callsFake((keyPath, value) => {
+        onKeyStub = mock((keyPath, value) => {
           if (Array.isArray(value)) {
             setValueByPath(schema, keyPath, [])
           }
@@ -223,13 +213,13 @@ describe('misc', () => {
 
       expectedResult.map((path, index) =>
         it(`returns path: ${path}`, () =>
-          expect(onKeyStub.getCall(index).args).to.be.eql([
+          expect(onKeyStub.mock.calls[index]).toEqual([
             path,
             getValueByPath(schema, path),
           ])))
     })
 
-    context('when a null object is found', () => {
+    describe('when a null object is found', () => {
       let obj
 
       const fn = keyPath => {
@@ -245,7 +235,7 @@ describe('misc', () => {
       })
 
       it('does not throw an exception', () =>
-        expect(traverse(obj, fn)).to.not.throw)
+        expect(() => traverse(obj, fn)).not.toThrow())
     })
   })
 
@@ -263,15 +253,15 @@ describe('misc', () => {
     }
 
     it('can create a string version of all values', () =>
-      expect(map(OBJ_NUMERIC, (_, v) => `${v}`)).to.be.eql(OBJ_STRING))
+      expect(map(OBJ_NUMERIC, (_, v) => `${v}`)).toEqual(OBJ_STRING))
 
     it('can create a numeric version of all values', () =>
-      expect(map(OBJ_STRING, (_, v) => Number(v))).to.be.eql(OBJ_NUMERIC))
+      expect(map(OBJ_STRING, (_, v) => Number(v))).toEqual(OBJ_NUMERIC))
   })
 
   describe('deepCopy()', () => {
     it('creates an exact copy', () =>
-      expect(deepCopy(SCHEMA)).to.be.eql(SCHEMA))
+      expect(deepCopy(SCHEMA)).toEqual(SCHEMA))
   })
 
   describe('setValueByPath()', () => {
@@ -288,64 +278,64 @@ describe('misc', () => {
       }
     }
 
-    context('when setting a top-level property', () => {
+    describe('when setting a top-level property', () => {
       beforeEach(() => {
         schema = gen()
         setValueByPath(schema, ['a'], 42)
       })
 
       it('sets the correct value', () =>
-        expect(schema.a).to.be.eq(42))
+        expect(schema.a).toBe(42))
     })
 
-    context('when setting the last top-level property', () => {
+    describe('when setting the last top-level property', () => {
       beforeEach(() => {
         schema = gen()
         setValueByPath(schema, ['e'], 42)
       })
 
       it('sets the correct value', () =>
-        expect(schema.e).to.be.eq(42))
+        expect(schema.e).toBe(42))
     })
 
-    context('when assigning a new property', () => {
+    describe('when assigning a new property', () => {
       beforeEach(() => {
         schema = gen()
         setValueByPath(schema, ['f'], 42)
       })
 
       it('sets the correct value', () =>
-        expect(schema.f).to.be.eq(42))
+        expect(schema.f).toBe(42))
     })
 
-    context('when overriding an object-type property', () => {
+    describe('when overriding an object-type property', () => {
       beforeEach(() => {
         schema = gen()
         setValueByPath(schema, ['c'], 42)
       })
 
       it('sets the correct value', () =>
-        expect(schema.c).to.be.eq(42))
+        expect(schema.c).toBe(42))
     })
 
-    context('when setting a property on a sub-object', () => {
+    describe('when setting a property on a sub-object', () => {
       beforeEach(() => {
         schema = gen()
         setValueByPath(schema, ['c', 'd'], [42])
       })
 
       it('sets the correct value', () =>
-        expect(schema.c.d).to.be.eql([42]))
+        expect(schema.c.d).toEqual([42]))
     })
 
-    context('when setting a property within an array', () => {
+    describe('when setting a property within an array', () => {
       beforeEach(() => {
         schema = gen()
         setValueByPath(schema, ['c', 'd', '0'], 42)
       })
 
       it('sets the correct value', () =>
-        expect(schema.c.d[0]).to.be.eq(42))
+        expect(schema.c.d[0]).toBe(42))
     })
   })
 
@@ -360,32 +350,32 @@ describe('misc', () => {
     }
 
     it('gets root value (returns self)', () =>
-      expect(getValueByPath(SCHEMA, [])).to.be.eq(SCHEMA))
+      expect(getValueByPath(SCHEMA, [])).toBe(SCHEMA))
 
     it('gets the top-level value', () =>
-      expect(getValueByPath(SCHEMA, ['a'])).to.be.eq(12))
+      expect(getValueByPath(SCHEMA, ['a'])).toBe(12))
 
     it('gets the last top-level value', () =>
-      expect(getValueByPath(SCHEMA, ['e'])).to.be.eq('456'))
+      expect(getValueByPath(SCHEMA, ['e'])).toBe('456'))
 
     it('gets the last top-level value', () =>
-      expect(getValueByPath(SCHEMA, ['c'])).to.be.eql({ d: ['asdf'] }))
+      expect(getValueByPath(SCHEMA, ['c'])).toEqual({ d: ['asdf'] }))
 
     it('gets the nested value', () =>
-      expect(getValueByPath(SCHEMA, ['c', 'd'])).to.be.eql(['asdf']))
+      expect(getValueByPath(SCHEMA, ['c', 'd'])).toEqual(['asdf']))
 
     it('gets the value from an array', () =>
-      expect(getValueByPath(SCHEMA, ['c', 'd', '0'])).to.be.eql('asdf'))
+      expect(getValueByPath(SCHEMA, ['c', 'd', '0'])).toEqual('asdf'))
 
     it('returns undefined path does not exist', () =>
-      expect(getValueByPath(SCHEMA, ['x'])).to.be.eql(undefined))
+      expect(getValueByPath(SCHEMA, ['x'])).toEqual(undefined))
 
     it('returns undefined path does not exist (beyond)', () =>
-      expect(getValueByPath(SCHEMA, ['x', 'y'])).to.be.eql(undefined))
+      expect(getValueByPath(SCHEMA, ['x', 'y'])).toEqual(undefined))
   })
 
   describe('getKeyPaths()', () => {
     it('returns an array of paths', () =>
-      expect(getKeyPaths(SCHEMA)).to.be.eql(KEY_PATHS))
+      expect(getKeyPaths(SCHEMA)).toEqual(KEY_PATHS))
   })
 })
