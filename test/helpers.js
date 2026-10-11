@@ -142,7 +142,7 @@ export const ENEMY_SELECTORS = {
         },
       },
     },
-  }
+  },
 }
 
 export const ITEMS_MODEL = [
@@ -304,7 +304,7 @@ export function inRange (ext1, ext2, incMin = true, incMax = true, error = null)
   const { min, max } = extents(Number(ext1), Number(ext2))
 
   return {
-    error: error ? error : `${min} - ${max}`,
+    error: error || `${min} - ${max}`,
     validate: v => {
       const passesMin = incMin ? (v >= min) : (v > min)
       const passesMax = incMax ? (v <= max) : (v < max)

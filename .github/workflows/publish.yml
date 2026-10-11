@@ -1,0 +1,161 @@
+name: Publish to NPM
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version bump type
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - prerelease
+        default: patch
+        required: true
+      dry_run:
+        description: Validate and pack without publishing
+        type: boolean
+        default: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+
+    environment: publish
+
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      # workflow_dispatch lets the caller pick any ref, and a later step pushes
+      # to main. Refuse to run from anywhere else so a feature branch cannot be
+      # released and fast-forwarded onto main by accident.
+      - name: Verify running from main
+        run: |
+          if [ "${{ github.ref }}" != "refs/heads/main" ]; then
+            echo "Releases must run from main, got ${{ github.ref }}"
+            exit 1
+          fi
+
+      # The "Required Checks" ruleset on main blocks direct pushes, and grants
+      # bypass to this GitHub App rather than to GITHUB_TOKEN. Pushing the
+      # release commit therefore has to be authenticated as the App.
+      - name: Authenticate with GitHub App
+        id: app-token
+        uses: peter-murray/workflow-application-token-action@v3
+        with:
+          application_id: ${{ secrets.GH_APP_ID }}
+          application_private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Verify changelog has entries
+        run: node .github/scripts/changelog.mjs check
+
+      - name: Cache Dependencies
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      - name: Lint
+        run: npx eslint src test
+
+      # Both outputs are gitignored and only exist in the published tarball:
+      # `build` is the Babel-compiled CommonJS entry (`main`), and `dist` holds
+      # the ESM and UMD bundles served to CDN consumers. A failed build must
+      # block the release rather than publish a tarball where either is stale
+      # or missing.
+      - name: Build package
+        run: npm run build:all
+
+      # Writes to the runner's working tree only. Nothing is committed, pushed, or
+      # published until the registry pre-flight below passes.
+      - name: Compute next version
+        id: version
+        run: |
+          raw=$(npm version ${{ inputs.bump }} --no-git-tag-version)
+          version=${raw#v}
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Computed version: $version"
+
+      - name: Registry pre-flight
+        run: |
+          node .github/scripts/check-registry.mjs \
+            "${{ steps.version.outputs.version }}" \
+            @zensen/form-service
+
+      # Must run before the changelog is promoted, since promoting empties the
+      # Unreleased section that these notes come from.
+      - name: Extract release notes
+        run: node .github/scripts/changelog.mjs extract > /tmp/release-notes.md
+
+      - name: Update changelog
+        run: |
+          node .github/scripts/changelog.mjs promote \
+            "${{ steps.version.outputs.version }}" \
+            "$(date -u +%Y-%m-%d)"
+
+      - name: Commit version bump
+        run: |
+          git config user.name 'Automated Publisher'
+          git config user.email 'automated-publisher[bot]@users.noreply.github.com'
+          git add package.json package-lock.json CHANGELOG.md
+          git commit -m "Release ${{ steps.version.outputs.version }}"
+
+      - name: Pack package
+        if: ${{ inputs.dry_run }}
+        run: npx --yes npm@11 publish --dry-run --access public
+
+      # Deliberately ahead of the publish steps. Pushing is reversible and npm
+      # publishing is not, so a rejected push must not be able to strand npm
+      # ahead of the repository.
+      - name: Push commit and tag
+        if: ${{ !inputs.dry_run }}
+        run: |
+          git tag "${{ steps.version.outputs.version }}"
+          git push origin HEAD:main
+          git push origin "${{ steps.version.outputs.version }}"
+
+      - name: Publish package
+        if: ${{ !inputs.dry_run }}
+        run: npx --yes npm@11 publish --access public
+
+      - name: Create GitHub Release
+        if: ${{ !inputs.dry_run }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.version.outputs.version }}" \
+            --title "${{ steps.version.outputs.version }}" \
+            --notes-file /tmp/release-notes.md \
+            --latest
+
+      - name: Dry run summary
+        if: ${{ inputs.dry_run }}
+        run: |
+          echo "Dry run complete."
+          echo "Nothing was published, pushed, tagged, or released."
+          echo "Version that would have shipped: ${{ steps.version.outputs.version }}"
+          echo ""
+          echo "Release notes that would have been used:"
+          echo ""
+          cat /tmp/release-notes.md

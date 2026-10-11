@@ -1,5 +1,4 @@
-/.circleci
-/.nyc_output
+/.github
 /.storybook
 /coverage
 /docs

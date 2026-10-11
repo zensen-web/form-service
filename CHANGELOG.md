@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## Unreleased
+
+- Migrated package manager and test runner to Bun
+- Replaced CircleCI with GitHub Actions
+
 ## v1.1
 
 - Added `moveItem()` for easily moving an item to another spot in an array
