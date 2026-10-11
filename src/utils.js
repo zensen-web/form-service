@@ -1,5 +1,3 @@
-const envHasBigInt64Array = typeof BigInt64Array !== 'undefined'
-
 export function extents (ext1, ext2) {
   return {
     min: ext1 < ext2 ? ext1 : ext2,
@@ -80,22 +78,22 @@ export function map (obj, onKey) {
 }
 
 /* Comes from the fast-deep-equal package. Copied and pasted to try to solve ESM rules... */
-export function deepEqual(a, b) {
+export function deepEqual (a, b) {
   if (a === b) {
     return true
   }
 
-  if (a && b && typeof a == 'object' && typeof b == 'object') {
+  if (a && b && typeof a === 'object' && typeof b === 'object') {
     if (a.constructor !== b.constructor) {
       return false
     }
 
-    let length, i, keys
+    let length, i
 
     if (Array.isArray(a)) {
       length = a.length
 
-      if (length != b.length) {
+      if (length !== b.length) {
         return false
       }
 
@@ -107,7 +105,6 @@ export function deepEqual(a, b) {
 
       return true
     }
-
 
     if ((a instanceof Map) && (b instanceof Map)) {
       if (a.size !== b.size) {
@@ -146,7 +143,7 @@ export function deepEqual(a, b) {
     if (ArrayBuffer.isView(a) && ArrayBuffer.isView(b)) {
       length = a.length
 
-      if (length != b.length) {
+      if (length !== b.length) {
         return false
       }
 
@@ -171,7 +168,7 @@ export function deepEqual(a, b) {
       return a.toString() === b.toString()
     }
 
-    keys = Object.keys(a)
+    const keys = Object.keys(a)
     length = keys.length
 
     if (length !== Object.keys(b).length) {
@@ -185,7 +182,7 @@ export function deepEqual(a, b) {
     }
 
     for (i = length; i-- !== 0;) {
-      let key = keys[i]
+      const key = keys[i]
 
       if (!deepEqual(a[key], b[key])) {
         return false
@@ -195,7 +192,7 @@ export function deepEqual(a, b) {
     return true
   }
 
-  return a !== a && b !== b
+  return Number.isNaN(a) && Number.isNaN(b)
 }
 
 export function deepCopy (obj) {

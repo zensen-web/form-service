@@ -1,1 +1,5 @@
 extends: '@zen-web-components'
+overrides:
+  - files: ['test/**/*.js']
+    globals:
+      expect: readonly
