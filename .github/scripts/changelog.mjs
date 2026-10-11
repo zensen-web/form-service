@@ -3,14 +3,14 @@
  *  section.
  *
  *  Usage:
- *    node .github/scripts/changelog.mjs check
+ *    bun .github/scripts/changelog.mjs check
  *      Exits non-zero when the Unreleased section has no entries. Guards
  *      against cutting a release with nothing to say.
  *
- *    node .github/scripts/changelog.mjs extract
+ *    bun .github/scripts/changelog.mjs extract
  *      Prints the Unreleased body. Used for the GitHub Release notes.
  *
- *    node .github/scripts/changelog.mjs promote <version> <date>
+ *    bun .github/scripts/changelog.mjs promote <version> <date>
  *      Renames `## Unreleased` to a `## [<version>](<npm>) - <date>` heading
  *      linking to that release on npm, and inserts a fresh empty Unreleased
  *      above it.

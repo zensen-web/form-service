@@ -1,0 +1,51 @@
+<!--
+  Injected into <head> by the just-the-docs theme.
+
+  Tabs are CSS-only: each tab is a hidden radio input followed by its label,
+  and the checked input reveals the panel at the same position, so they work
+  without JavaScript.
+-->
+<style>
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .tabs > input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .tabs > label {
+    padding: 0.25rem 1rem;
+    border-bottom: 2px solid transparent;
+    color: #5c5962;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .tabs > input:checked + label {
+    border-bottom-color: #7253ed;
+    color: #7253ed;
+  }
+
+  .tabs > input:focus-visible + label {
+    outline: 2px solid #7253ed;
+    outline-offset: 2px;
+  }
+
+  .tabs > .tab-panel {
+    display: none;
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+
+  .tabs > input:nth-of-type(1):checked ~ .tab-panel:nth-of-type(1),
+  .tabs > input:nth-of-type(2):checked ~ .tab-panel:nth-of-type(2),
+  .tabs > input:nth-of-type(3):checked ~ .tab-panel:nth-of-type(3),
+  .tabs > input:nth-of-type(4):checked ~ .tab-panel:nth-of-type(4) {
+    display: block;
+  }
+</style>

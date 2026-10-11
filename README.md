@@ -4,15 +4,9 @@ A reactive form service framework for building dynamic forms.
 
 ## Installation
 
-### NPM
-```bash
-npm install @zensen/form-service
-```
-
-### Yarn
-```bash
-yarn add @zensen/form-service
-```
+| npm | bun |
+| --- | --- |
+| `npm install @zensen/form-service` | `bun add @zensen/form-service` |
 
 ### CDN (jsDelivr)
 
@@ -52,4 +46,4 @@ const formService = new FormService()
 
 ## Documentation
 
-Full documentation can be found [here](https://zensen-web.github.io/form-service/guide/mutating-key-data/).
+Full documentation can be found [here](https://zensen-web.github.io/form-service/guide/).
