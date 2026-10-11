@@ -1,0 +1,4 @@
+[test]
+coverageDir = "coverage"
+coveragePathIgnorePatterns = ["test/**"]
+coverageReporter = ["text", "lcov"]
