@@ -1,4 +1,4 @@
 [test]
-coverageReporter = ["text", "lcov"]
 coverageDir = "coverage"
 coveragePathIgnorePatterns = ["test/**"]
+coverageReporter = ["text", "lcov"]
