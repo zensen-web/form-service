@@ -1,4 +1,4 @@
-import { mock, describe, beforeEach, it, expect } from 'bun:test'
+import { mock, describe, test, expect } from 'bun:test'
 
 import {
   extents,
@@ -71,156 +71,218 @@ const KEY_PATHS = [
 
 describe('misc', () => {
   describe('extents()', () => {
-    it('returns correct values when params are in ascending order', () =>
-      expect(extents(0, 100)).toEqual({ min: 0, max: 100 }))
+    test('when params are in ascending order', () => {
+      const result = extents(0, 100)
 
-    it('returns correct values when params are in descending order', () =>
-      expect(extents(100, 0)).toEqual({ min: 0, max: 100 }))
+      expect(result).toStrictEqual({
+        min: 0,
+        max: 100,
+      })
+    })
+
+    test('when params are in descending order', () => {
+      const result = extents(100, 0)
+
+      expect(result).toStrictEqual({
+        min: 0,
+        max: 100,
+      })
+    })
   })
 
   describe('padArray()', () => {
-    describe('when the array already has items', () => {
-      const ITEMS = [1]
+    test('when called with the array', () => {
+      const result = padArray([0], 0)
 
-      it('does not modify the array', () =>
-        expect(padArray(ITEMS, 0)).toEqual([1]))
+      expect(result).toStrictEqual([0])
     })
 
-    describe('when the array is empty', () => {
-      const ITEMS = []
+    test('when called with the array', () => {
+      const result = padArray([1], 0)
 
-      it('does not modify the array', () =>
-        expect(padArray(ITEMS, 0)).toEqual([0]))
+      expect(result).toStrictEqual([1])
     })
   })
 
   describe('filterEmpty()', () => {
-    describe('when the array has a discrete, truthy value', () => {
-      const ITEMS = [1]
+    test('when called with the array', () => {
+      const result = filterEmpty([1])
 
-      it('returns an unmodified copy of the array', () =>
-        expect(filterEmpty(ITEMS)).toEqual(ITEMS))
+      expect(result).toStrictEqual([1])
     })
 
-    describe('when the array has a discrete, falsy value', () => {
-      const ITEMS = ['']
+    test('when called with the array', () => {
+      const result = filterEmpty([''])
 
-      it('returns a modified copy of the array', () =>
-        expect(filterEmpty(ITEMS)).toEqual([]))
+      expect(result).toStrictEqual([])
     })
 
-    describe('when the array has an object with no discrete, falsy values', () => {
-      const ITEMS = [{ a: 10, b: 42 }]
+    test('when the array has an object with no discrete, falsy values', () => {
+      const ITEMS = [
+        {
+          a: 10,
+          b: 42,
+        },
+      ]
 
-      it('returns an unmodified copy of the array', () =>
-        expect(filterEmpty(ITEMS)).toEqual(ITEMS))
+      const result = filterEmpty(ITEMS)
+
+      expect(result).toStrictEqual(ITEMS)
     })
 
-    describe('when the array has an object with a discrete, falsy value', () => {
-      const ITEMS = [{ a: 0, b: 42 }]
+    test('when the array has an object with a discrete, falsy value', () => {
+      const ITEMS = [
+        {
+          a: 0,
+          b: 42,
+        },
+      ]
 
-      it('returns a modified copy of the array', () =>
-        expect(filterEmpty(ITEMS)).toEqual([]))
+      const result = filterEmpty(ITEMS)
+
+      expect(result).toStrictEqual([])
     })
   })
 
   describe('moveItem()', () => {
     const ITEMS = ['a', 'b', 'c', 'd', 'e']
 
-    it('can move an item up by 1 element', () =>
-      expect(moveItem(ITEMS, 3, 2)).toEqual(['a', 'b', 'd', 'c', 'e']))
+    test('when moving an item up by 1 element', () => {
+      const result = moveItem(ITEMS, 3, 2)
 
-    it('can move an item to the front', () =>
-      expect(moveItem(ITEMS, 3, 0)).toEqual(['d', 'a', 'b', 'c', 'e']))
+      expect(result).toStrictEqual(['a', 'b', 'd', 'c', 'e'])
+    })
 
-    it('can move an item to the back', () =>
-      expect(moveItem(ITEMS, 1, 4)).toEqual(['a', 'c', 'd', 'e', 'b']))
+    test('when moving an item to the front', () => {
+      const result = moveItem(ITEMS, 3, 0)
 
-    it('can move the front item to the back', () =>
-      expect(moveItem(ITEMS, 0, 4)).toEqual(['b', 'c', 'd', 'e', 'a']))
+      expect(result).toStrictEqual(['d', 'a', 'b', 'c', 'e'])
+    })
 
-    it('can move the back item to the front', () =>
-      expect(moveItem(ITEMS, 4, 0)).toEqual(['e', 'a', 'b', 'c', 'd']))
+    test('when moving an item to the back', () => {
+      const result = moveItem(ITEMS, 1, 4)
+
+      expect(result).toStrictEqual(['a', 'c', 'd', 'e', 'b'])
+    })
+
+    test('when moving the front item to the back', () => {
+      const result = moveItem(ITEMS, 0, 4)
+
+      expect(result).toStrictEqual(['b', 'c', 'd', 'e', 'a'])
+    })
+
+    test('when moving the back item to the front', () => {
+      const result = moveItem(ITEMS, 4, 0)
+
+      expect(result).toStrictEqual(['e', 'a', 'b', 'c', 'd'])
+    })
   })
 
   describe('swap()', () => {
     const ITEMS = ['a', 'b', 'c', 'd', 'e']
 
-    it('can swap first and last items', () =>
-      expect(swap(ITEMS, 0, 4)).toEqual(['e', 'b', 'c', 'd', 'a']))
+    test('when swapping first and last items', () => {
+      const result = swap(ITEMS, 0, 4)
 
-    it('can swap first and last items with reversed indices', () =>
-      expect(swap(ITEMS, 4, 0)).toEqual(['e', 'b', 'c', 'd', 'a']))
+      expect(result).toStrictEqual(['e', 'b', 'c', 'd', 'a'])
+    })
 
-    it('can swap two items in the middle of the array', () =>
-      expect(swap(ITEMS, 3, 1)).toEqual(['a', 'd', 'c', 'b', 'e']))
+    test('when swapping first and last items with reversed indices', () => {
+      const result = swap(ITEMS, 4, 0)
 
-    it('can swap the 3rd and 5th items', () =>
-      expect(swap(ITEMS, 2, 4)).toEqual(['a', 'b', 'e', 'd', 'c']))
+      expect(result).toStrictEqual(['e', 'b', 'c', 'd', 'a'])
+    })
 
-    it('can swap the 1st and 3rd items', () =>
-      expect(swap(ITEMS, 0, 2)).toEqual(['c', 'b', 'a', 'd', 'e']))
+    test('when swapping two items in the middle of the array', () => {
+      const result = swap(ITEMS, 3, 1)
+
+      expect(result).toStrictEqual(['a', 'd', 'c', 'b', 'e'])
+    })
+
+    test('when swapping the 3rd and 5th items', () => {
+      const result = swap(ITEMS, 2, 4)
+
+      expect(result).toStrictEqual(['a', 'b', 'e', 'd', 'c'])
+    })
+
+    test('when swapping the 1st and 3rd items', () => {
+      const result = swap(ITEMS, 0, 2)
+
+      expect(result).toStrictEqual(['c', 'b', 'a', 'd', 'e'])
+    })
   })
 
   describe('traverse()', () => {
-    let onKeyStub
+    test('when traversing', () => {
+      const onKeyStub = mock()
 
-    describe('when traversing', () => {
-      beforeEach(() => {
-        onKeyStub = mock()
-        traverse(SCHEMA, onKeyStub)
+      traverse(SCHEMA, onKeyStub)
+
+      expect(onKeyStub).toHaveBeenCalledTimes(KEY_PATHS.length)
+
+      KEY_PATHS.forEach((path, index) => {
+        expect(onKeyStub).toHaveBeenNthCalledWith(
+          index + 1,
+          path,
+          getValueByPath(SCHEMA, path),
+        )
       })
-
-      KEY_PATHS.map((path, index) =>
-        it(`returns path: ${path}`, () =>
-          expect(onKeyStub.mock.calls[index]).toEqual([
-            path,
-            getValueByPath(SCHEMA, path),
-          ])))
     })
 
-    describe('when traversing with root enabled', () => {
+    test('when traversing with root enabled', () => {
       const PATHS = [[], ...KEY_PATHS]
+      const onKeyStub = mock()
 
-      beforeEach(() => {
-        onKeyStub = mock()
-        traverse(SCHEMA, onKeyStub, true)
+      traverse(SCHEMA, onKeyStub, true)
+
+      expect(onKeyStub).toHaveBeenCalledTimes(PATHS.length)
+
+      PATHS.forEach((path, index) => {
+        expect(onKeyStub).toHaveBeenNthCalledWith(
+          index + 1,
+          path,
+          getValueByPath(SCHEMA, path),
+        )
       })
-
-      PATHS.map((path, index) =>
-        it(`returns path: ${path}`, () =>
-          expect(onKeyStub.mock.calls[index]).toEqual([
-            path,
-            getValueByPath(SCHEMA, path),
-          ])))
     })
 
-    describe('when mutating the object while traversing', () => {
+    test('when mutating the object while traversing', () => {
       const schema = { ...SCHEMA }
       const expectedResult = [...KEY_PATHS]
+
       expectedResult.splice(6, 1)
       expectedResult.splice(7, 1)
 
-      beforeEach(() => {
-        onKeyStub = mock((keyPath, value) => {
-          if (Array.isArray(value)) {
-            setValueByPath(schema, keyPath, [])
-          }
-        })
+      const mutator = (keyPath, value) => {
+        if (Array.isArray(value)) {
+          setValueByPath(schema, keyPath, [])
+        }
+      }
 
-        traverse(schema, onKeyStub)
+      traverse(schema, mutator)
+
+      const onKeyStub = mock(mutator)
+
+      traverse(schema, onKeyStub)
+
+      expect(onKeyStub).toHaveBeenCalledTimes(expectedResult.length)
+
+      expectedResult.forEach((path, index) => {
+        expect(onKeyStub).toHaveBeenNthCalledWith(
+          index + 1,
+          path,
+          getValueByPath(schema, path),
+        )
       })
-
-      expectedResult.map((path, index) =>
-        it(`returns path: ${path}`, () =>
-          expect(onKeyStub.mock.calls[index]).toEqual([
-            path,
-            getValueByPath(schema, path),
-          ])))
     })
 
-    describe('when a null object is found', () => {
-      let obj
+    test('when a null object is found during traversal', () => {
+      const obj = {
+        userId: {
+          id: null,
+          label: 'None',
+        },
+      }
 
       const fn = keyPath => {
         if (keyPath[0] === 'userId') {
@@ -228,14 +290,9 @@ describe('misc', () => {
         }
       }
 
-      beforeEach(() => {
-        obj = {
-          userId: { id: null, label: 'None' },
-        }
-      })
+      const act = () => traverse(obj, fn)
 
-      it('does not throw an exception', () =>
-        expect(() => traverse(obj, fn)).not.toThrow())
+      expect(act).not.toThrow()
     })
   })
 
@@ -252,21 +309,28 @@ describe('misc', () => {
       e: ['5', '8', '13'],
     }
 
-    it('can create a string version of all values', () =>
-      expect(map(OBJ_NUMERIC, (_, v) => `${v}`)).toEqual(OBJ_STRING))
+    test('when mapping numeric values to strings', () => {
+      const result = map(OBJ_NUMERIC, (_, v) => `${v}`)
 
-    it('can create a numeric version of all values', () =>
-      expect(map(OBJ_STRING, (_, v) => Number(v))).toEqual(OBJ_NUMERIC))
+      expect(result).toStrictEqual(OBJ_STRING)
+    })
+
+    test('when mapping string values to numbers', () => {
+      const result = map(OBJ_STRING, (_, v) => Number(v))
+
+      expect(result).toStrictEqual(OBJ_NUMERIC)
+    })
   })
 
   describe('deepCopy()', () => {
-    it('creates an exact copy', () =>
-      expect(deepCopy(SCHEMA)).toEqual(SCHEMA))
+    test('when copying an object', () => {
+      const result = deepCopy(SCHEMA)
+
+      expect(result).toStrictEqual(SCHEMA)
+    })
   })
 
   describe('setValueByPath()', () => {
-    let schema
-
     function gen () {
       return {
         a: 12,
@@ -278,64 +342,52 @@ describe('misc', () => {
       }
     }
 
-    describe('when setting a top-level property', () => {
-      beforeEach(() => {
-        schema = gen()
-        setValueByPath(schema, ['a'], 42)
-      })
+    test('when setting a top-level property', () => {
+      const schema = gen()
 
-      it('sets the correct value', () =>
-        expect(schema.a).toBe(42))
+      setValueByPath(schema, ['a'], 42)
+
+      expect(schema.a).toBe(42)
     })
 
-    describe('when setting the last top-level property', () => {
-      beforeEach(() => {
-        schema = gen()
-        setValueByPath(schema, ['e'], 42)
-      })
+    test('when setting the last top-level property', () => {
+      const schema = gen()
 
-      it('sets the correct value', () =>
-        expect(schema.e).toBe(42))
+      setValueByPath(schema, ['e'], 42)
+
+      expect(schema.e).toBe(42)
     })
 
-    describe('when assigning a new property', () => {
-      beforeEach(() => {
-        schema = gen()
-        setValueByPath(schema, ['f'], 42)
-      })
+    test('when assigning a new property', () => {
+      const schema = gen()
 
-      it('sets the correct value', () =>
-        expect(schema.f).toBe(42))
+      setValueByPath(schema, ['f'], 42)
+
+      expect(schema.f).toBe(42)
     })
 
-    describe('when overriding an object-type property', () => {
-      beforeEach(() => {
-        schema = gen()
-        setValueByPath(schema, ['c'], 42)
-      })
+    test('when overriding an object-type property', () => {
+      const schema = gen()
 
-      it('sets the correct value', () =>
-        expect(schema.c).toBe(42))
+      setValueByPath(schema, ['c'], 42)
+
+      expect(schema.c).toBe(42)
     })
 
-    describe('when setting a property on a sub-object', () => {
-      beforeEach(() => {
-        schema = gen()
-        setValueByPath(schema, ['c', 'd'], [42])
-      })
+    test('when setting a property on a sub-object', () => {
+      const schema = gen()
 
-      it('sets the correct value', () =>
-        expect(schema.c.d).toEqual([42]))
+      setValueByPath(schema, ['c', 'd'], [42])
+
+      expect(schema.c.d).toEqual([42])
     })
 
-    describe('when setting a property within an array', () => {
-      beforeEach(() => {
-        schema = gen()
-        setValueByPath(schema, ['c', 'd', '0'], 42)
-      })
+    test('when setting a property within an array', () => {
+      const schema = gen()
 
-      it('sets the correct value', () =>
-        expect(schema.c.d[0]).toBe(42))
+      setValueByPath(schema, ['c', 'd', '0'], 42)
+
+      expect(schema.c.d[0]).toBe(42)
     })
   })
 
@@ -349,33 +401,60 @@ describe('misc', () => {
       e: '456',
     }
 
-    it('gets root value (returns self)', () =>
-      expect(getValueByPath(SCHEMA, [])).toBe(SCHEMA))
+    test('when the path does not exist', () => {
+      const result = getValueByPath(SCHEMA, ['x'])
 
-    it('gets the top-level value', () =>
-      expect(getValueByPath(SCHEMA, ['a'])).toBe(12))
+      expect(result).toBeUndefined()
+    })
 
-    it('gets the last top-level value', () =>
-      expect(getValueByPath(SCHEMA, ['e'])).toBe('456'))
+    test('when the path does not exist beyond root', () => {
+      const result = getValueByPath(SCHEMA, ['x', 'y'])
 
-    it('gets the last top-level value', () =>
-      expect(getValueByPath(SCHEMA, ['c'])).toEqual({ d: ['asdf'] }))
+      expect(result).toBeUndefined()
+    })
 
-    it('gets the nested value', () =>
-      expect(getValueByPath(SCHEMA, ['c', 'd'])).toEqual(['asdf']))
+    test('when the path is empty', () => {
+      const result = getValueByPath(SCHEMA, [])
 
-    it('gets the value from an array', () =>
-      expect(getValueByPath(SCHEMA, ['c', 'd', '0'])).toEqual('asdf'))
+      expect(result).toBe(SCHEMA)
+    })
 
-    it('returns undefined path does not exist', () =>
-      expect(getValueByPath(SCHEMA, ['x'])).toEqual(undefined))
+    test('when getting a top-level value', () => {
+      const result = getValueByPath(SCHEMA, ['a'])
 
-    it('returns undefined path does not exist (beyond)', () =>
-      expect(getValueByPath(SCHEMA, ['x', 'y'])).toEqual(undefined))
+      expect(result).toBe(12)
+    })
+
+    test('when getting the last top-level value', () => {
+      const result = getValueByPath(SCHEMA, ['e'])
+
+      expect(result).toBe('456')
+    })
+
+    test('when getting an object-type value', () => {
+      const result = getValueByPath(SCHEMA, ['c'])
+
+      expect(result).toStrictEqual({ d: ['asdf'] })
+    })
+
+    test('when getting a nested value', () => {
+      const result = getValueByPath(SCHEMA, ['c', 'd'])
+
+      expect(result).toStrictEqual(['asdf'])
+    })
+
+    test('when getting a value from an array', () => {
+      const result = getValueByPath(SCHEMA, ['c', 'd', '0'])
+
+      expect(result).toBe('asdf')
+    })
   })
 
   describe('getKeyPaths()', () => {
-    it('returns an array of paths', () =>
-      expect(getKeyPaths(SCHEMA)).toEqual(KEY_PATHS))
+    test('when called with an object', () => {
+      const result = getKeyPaths(SCHEMA)
+
+      expect(result).toStrictEqual(KEY_PATHS)
+    })
   })
 })
