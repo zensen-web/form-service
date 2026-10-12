@@ -1,5 +1,15 @@
-import { describe, it, expect, beforeEach, afterEach, mock, spyOn } from 'bun:test'
+import pkg from 'validator'
 import FormService from '../src/service'
+
+import {
+  mock,
+  spyOn,
+  beforeEach,
+  afterEach,
+  describe,
+  it,
+  expect,
+} from 'bun:test'
 
 import {
   VerificationError,
@@ -9,44 +19,330 @@ import {
 } from '../src/error'
 
 import {
-  filterEmpty,
+  extents,
   padArray,
+  filterEmpty,
   map,
   getValueByPath,
 } from '../src/utils'
 
-import {
-  PERIOD,
-  ENEMY_MODEL,
-  ENEMY_ERRORS,
-  ENEMY_PRISTINE,
-  ENEMY_SELECTORS,
-  ITEMS_MODEL,
-  ITEMS_SELECTORS,
-  toNumeric,
-  toCurrency,
-  toPhoneNumber,
-  hoursToObj,
-  objToHours,
-  passValidator,
-  failValidator,
-  segmentValidator,
-  intervalValidator,
-  isRequired,
-  isRequiredIf,
-  isPhoneNumber,
-  inRange,
-} from './helpers'
+const PERIOD = {
+  AM: 'am',
+  PM: 'pm',
+}
+
+const ENEMY_MODEL = {
+  name: 'Gremlin',
+  job: 'monster',
+  stats: {
+    attack: 4,
+    evasion: 3,
+    speed: 2,
+    attributes: {
+      level: 9,
+      experience: 1000,
+    },
+  },
+  ailments: [3, 4, 7],
+  items: [
+    { id: 1, rate: 0.1 },
+    { id: 3, rate: 0.4 },
+  ],
+  triangles: [
+    [0, 1, 2],
+    [0, 2, 3],
+  ],
+}
+
+const ENEMY_ERRORS = {
+  name: '',
+  job: '',
+  stats: {
+    attack: '',
+    evasion: '',
+    speed: '',
+    attributes: {
+      level: '',
+      experience: '',
+    },
+  },
+  ailments: ['', '', ''],
+  items: [
+    { id: '', rate: '' },
+    { id: '', rate: '' },
+  ],
+  triangles: [
+    ['', '', ''],
+    ['', '', ''],
+  ],
+}
+
+const ENEMY_PRISTINE = map(ENEMY_ERRORS, () => true)
+
+const ENEMY_SELECTORS = {
+  format: v => v,
+  unformat: v => v,
+  children: {
+    name: {
+      format: v => v,
+      unformat: v => v,
+    },
+    // 'job' is intentionally left out...
+    stats: {
+      format: v => v,
+      unformat: v => v,
+      children: {
+        attack: {
+          format: v => v,
+          unformat: v => v,
+        },
+        evasion: {
+          format: v => v,
+          unformat: v => v,
+        },
+        speed: {
+          format: v => v,
+          unformat: v => v,
+        },
+        attributes: {
+          format: v => v,
+          unformat: v => v,
+          children: {
+            level: {
+              format: v => v,
+              unformat: v => v,
+            },
+            experience: {
+              format: v => v,
+              unformat: v => v,
+            },
+          },
+        },
+      },
+    },
+    ailments: {
+      format: v => v,
+      unformat: v => v,
+      children: {
+        $: {
+          format: v => v,
+          unformat: v => v,
+        },
+      },
+    },
+    items: {
+      format: v => v,
+      unformat: v => v,
+      children: {
+        $: {
+          format: v => v,
+          unformat: v => v,
+          children: {
+            id: {
+              format: v => v,
+              unformat: v => v,
+            },
+            rate: {
+              format: v => v,
+              unformat: v => v,
+            },
+          },
+        },
+      },
+    },
+    triangles: {
+      format: v => v,
+      unformat: v => v,
+      children: {
+        $: {
+          format: v => v,
+          unformat: v => v,
+          children: {
+            $: {
+              format: v => v,
+              unformat: v => v,
+            },
+          },
+        },
+      },
+    },
+  },
+}
+
+const ITEMS_MODEL = [
+  { id: '', name: '' },
+]
+
+const ITEMS_SELECTORS = {
+  genItem: () => ({ id: '', name: '' }),
+  format: v => v,
+  unformat: v => v,
+  children: {
+    $: {
+      format: v => v,
+      unformat: v => v,
+      children: {
+        id: {
+          format: v => v,
+          unformat: v => v,
+        },
+        name: {
+          format: v => v,
+          unformat: v => v,
+        },
+      },
+    },
+  },
+}
+
+function toNumeric (str, allowDecimal = false) {
+  return str.replace(allowDecimal ? /\$|,/g : /\D/g, '')
+}
+
+function toCurrency (v) {
+  return `$${(Number(v))
+    .toFixed(2)
+    .replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,')}`
+}
+
+function toPhoneNumber (str) {
+  const segments = [str.slice(0, 3), str.slice(3, 6), str.slice(6, 10)]
+
+  if (str.length < 4) {
+    return segments[0]
+  }
+
+  if (str.length < 7) {
+    return `(${segments[0]}) ${segments[1]}`
+  }
+
+  return `(${segments[0]}) ${segments[1]}-${segments[2]}`
+}
+
+function hoursToObj (v) {
+  return {
+    hours: Math.floor(v > 12 ? v - 12 : v),
+    minutes: (v - Math.floor(v)) * 60,
+    period: v >= 12 ? PERIOD.PM : PERIOD.AM,
+  }
+}
+
+function objToHours (v) {
+  const model = map(v, (keyPath, value) =>
+    (keyPath[0] !== 'period' ? Number(value) : value))
+
+  const offset = model.period === PERIOD.PM ? 12 : 0
+
+  return model.hours + (model.minutes / 60) + offset
+}
+
+function timeToScalar (time) {
+  const periodToMinutes =
+    time.period === PERIOD.PM && time.hours !== 12 ? 720 : 0
+
+  return periodToMinutes + (time.hours * 60) + (time.minutes)
+}
+
+const passValidator = {
+  error: '',
+  validator: () => true,
+}
+
+const failValidator = {
+  error: 'asdf',
+  validate: () => false,
+}
+
+const segmentValidator = {
+  error: 'Conflicting Time',
+  validate: (v, keyPath, state) => {
+    const key = keyPath[keyPath.length - 1]
+    const otherKey = key === 'start' ? 'end' : 'start'
+    const durationPath = keyPath.slice(0, keyPath.length - 1)
+    const otherPath = [...durationPath, otherKey]
+    const minutes = timeToScalar(v)
+    const otherMinutes = timeToScalar(getValueByPath(state, otherPath))
+
+    return key === 'start' ? (minutes < otherMinutes) : (minutes > otherMinutes)
+  },
+}
+
+const intervalValidator = {
+  error: 'Intersecting Interval',
+  validate: (v, keyPath, state) => {
+    const key = keyPath[keyPath.length - 1]
+    const otherKey = key === 'start' ? 'end' : 'start'
+    const segmentPath = keyPath.slice(0, keyPath.length - 1)
+    const segmentIndex = Number(segmentPath[segmentPath.length - 1])
+    const offset = key === 'start' ? -1 : 1
+    const otherIndex = segmentIndex + offset
+    const itemsPath = keyPath.slice(0, keyPath.length - 2)
+    const items = getValueByPath(state, itemsPath)
+
+    if (otherIndex < 0 || otherIndex > items.length - 1) {
+      return true
+    }
+
+    const otherPath = [...itemsPath, `${otherIndex}`, otherKey]
+    const minutes = timeToScalar(v)
+    const otherMinutes = timeToScalar(getValueByPath(state, otherPath))
+
+    return key === 'start' ? (minutes > otherMinutes) : (minutes < otherMinutes)
+  },
+}
+
+function isRequired (error = 'Required') {
+  return {
+    error,
+    validate: v => (Array.isArray(v) ? v.length : v),
+  }
+}
+
+function isRequiredIf (siblingKey, autoValidate = true, error = 'Required') {
+  return {
+    error,
+    validate: (v, keyPath, state, service) => {
+      const siblingPath = [...keyPath.slice(0, keyPath.length - 1), siblingKey]
+
+      if (autoValidate) {
+        service.validateKey(siblingPath)
+      }
+
+      return getValueByPath(state, siblingPath) ? v : true
+    },
+  }
+}
+
+function isPhoneNumber (error = 'Invalid phone number') {
+  return {
+    error,
+    validate: v => !v || pkg.isMobilePhone(v),
+  }
+}
+
+function inRange (ext1, ext2, incMin = true, incMax = true, error = null) {
+  const { min, max } = extents(Number(ext1), Number(ext2))
+
+  return {
+    error: error || `${min} - ${max}`,
+    validate: v => {
+      const passesMin = incMin ? (v >= min) : (v > min)
+      const passesMax = incMax ? (v <= max) : (v < max)
+
+      return v === '' || (passesMin && passesMax)
+    },
+  }
+}
 
 describe('FormService', () => {
   let service
   let model
-  let onChangeSpy
+  let onChangeMock
 
-  const getLastChange = () => onChangeSpy.mock.calls.at(-1)
+  const getLastChange = () => onChangeMock.mock.calls.at(-1)
 
   beforeEach(() => {
-    onChangeSpy = mock()
+    onChangeMock = mock()
   })
 
   afterEach(() => {
@@ -72,7 +368,7 @@ describe('FormService', () => {
         },
       }
 
-      const fn = () => new FormService(MODEL, SELECTORS, onChangeSpy)
+      const fn = () => new FormService(MODEL, SELECTORS, onChangeMock)
 
       it('throws an error', () => expect(fn).toThrow(VerificationError))
     })
@@ -86,7 +382,7 @@ describe('FormService', () => {
         },
       }
 
-      const fn = () => new FormService(MODEL, SELECTORS, onChangeSpy)
+      const fn = () => new FormService(MODEL, SELECTORS, onChangeMock)
 
       it('throws an error', () => expect(fn).toThrow(VerificationError))
     })
@@ -118,7 +414,7 @@ describe('FormService', () => {
         formatSpy = spyOn(SELECTORS.children.amount, 'format')
         unformatSpy = spyOn(SELECTORS.children.amount, 'unformat')
 
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
       })
 
       it('invokes the format() modifier', () =>
@@ -150,7 +446,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
         model = service.build()
       })
 
@@ -173,7 +469,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
         model = service.build()
       })
 
@@ -214,7 +510,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
         model = service.build()
       })
 
@@ -260,7 +556,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
         model = service.build()
       })
 
@@ -279,7 +575,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
         model = service.build()
       })
 
@@ -316,7 +612,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
       })
 
       it('returns the proper schema', () =>
@@ -346,7 +642,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
       })
 
       it('returns the proper schema', () =>
@@ -383,7 +679,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
       })
 
       it('returns the proper schema', () =>
@@ -407,7 +703,7 @@ describe('FormService', () => {
 
   describe('getSelectorPath()', () => {
     beforeEach(() => {
-      service = new FormService(ENEMY_MODEL, ENEMY_SELECTORS, onChangeSpy)
+      service = new FormService(ENEMY_MODEL, ENEMY_SELECTORS, onChangeMock)
     })
 
     it('throws an error when an invalid path is provided: "asdf"', () =>
@@ -509,7 +805,7 @@ describe('FormService', () => {
 
     describe('array model', () => {
       beforeEach(() => {
-        service = new FormService(ITEMS_MODEL, ITEMS_SELECTORS, onChangeSpy)
+        service = new FormService(ITEMS_MODEL, ITEMS_SELECTORS, onChangeMock)
       })
 
       it('resolve the path for root', () =>
@@ -532,7 +828,7 @@ describe('FormService', () => {
 
   describe('getSelector()', () => {
     beforeEach(() => {
-      service = new FormService(ENEMY_MODEL, ENEMY_SELECTORS, onChangeSpy)
+      service = new FormService(ENEMY_MODEL, ENEMY_SELECTORS, onChangeMock)
     })
 
     it('throws an error when an invalid path is provided: "asdf"', () =>
@@ -644,7 +940,7 @@ describe('FormService', () => {
 
     describe('array model', () => {
       beforeEach(() => {
-        service = new FormService(ITEMS_MODEL, ITEMS_SELECTORS, onChangeSpy)
+        service = new FormService(ITEMS_MODEL, ITEMS_SELECTORS, onChangeMock)
       })
 
       it('finds a selector for root', () =>
@@ -667,7 +963,7 @@ describe('FormService', () => {
 
   describe('unsetPristine()', () => {
     beforeEach(() => {
-      service = new FormService(ENEMY_MODEL, {}, onChangeSpy)
+      service = new FormService(ENEMY_MODEL, {}, onChangeMock)
     })
 
     describe('when unsetting a top-level key', () => {
@@ -747,7 +1043,7 @@ describe('FormService', () => {
 
   describe('apply()', () => {
     beforeEach(() => {
-      service = new FormService(ENEMY_MODEL, {}, onChangeSpy)
+      service = new FormService(ENEMY_MODEL, {}, onChangeMock)
     })
 
     it('invokes onChange', () =>
@@ -825,7 +1121,7 @@ describe('FormService', () => {
       const fn = () => service.apply('date', null)
 
       beforeEach(() => {
-        service = new FormService(MODEL, {}, onChangeSpy)
+        service = new FormService(MODEL, {}, onChangeMock)
       })
 
       it('throws an error', () => expect(fn).not.toThrow())
@@ -851,7 +1147,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(ENEMY_MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(ENEMY_MODEL, SELECTORS, onChangeMock)
         service.apply('stats', null)
       })
 
@@ -890,7 +1186,7 @@ describe('FormService', () => {
       const fn = () => service.apply('stats', '')
 
       beforeEach(() => {
-        service = new FormService(ENEMY_MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(ENEMY_MODEL, SELECTORS, onChangeMock)
       })
 
       it('throws an error', () => expect(fn).toThrow(MutationError))
@@ -908,7 +1204,7 @@ describe('FormService', () => {
       const fn = () => service.apply('stats', { id: '' })
 
       beforeEach(() => {
-        service = new FormService(ENEMY_MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(ENEMY_MODEL, SELECTORS, onChangeMock)
       })
 
       it('throws an error', () => expect(fn).toThrow(MutationError))
@@ -934,7 +1230,7 @@ describe('FormService', () => {
       })
 
       beforeEach(() => {
-        service = new FormService(ENEMY_MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(ENEMY_MODEL, SELECTORS, onChangeMock)
       })
 
       it('throws an error', () => expect(fn).not.toThrow())
@@ -960,7 +1256,7 @@ describe('FormService', () => {
       const fn = () => service.apply('items', [])
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
       })
 
       it('throws an error', () => expect(fn).toThrow(MutationError))
@@ -981,7 +1277,7 @@ describe('FormService', () => {
       const fn = () => service.apply('items', [])
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
       })
 
       it('does not throws an error', () => expect(fn).not.toThrow())
@@ -1013,7 +1309,7 @@ describe('FormService', () => {
         const fn = () => service.apply('', ['asdf'])
 
         beforeEach(() => {
-          service = new FormService(MODEL, SELECTORS, onChangeSpy)
+          service = new FormService(MODEL, SELECTORS, onChangeMock)
         })
 
         it('does not throws an error', () => expect(fn).not.toThrow())
@@ -1024,7 +1320,7 @@ describe('FormService', () => {
         const fn = () => service.apply(0, 'asdf')
 
         beforeEach(() => {
-          service = new FormService(MODEL, {}, onChangeSpy)
+          service = new FormService(MODEL, {}, onChangeMock)
         })
 
         it('does not throws an error', () => expect(fn).not.toThrow())
@@ -1032,7 +1328,7 @@ describe('FormService', () => {
 
       describe('when modifying an item', () => {
         beforeEach(() => {
-          service = new FormService(ITEMS_MODEL, {}, onChangeSpy)
+          service = new FormService(ITEMS_MODEL, {}, onChangeMock)
           service.apply('0.name', 'asdf')
         })
 
@@ -1080,7 +1376,7 @@ describe('FormService', () => {
       beforeEach(() => {
         spy = spyOn(SELECTORS.children.items, 'createItem')
 
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
         service.addItem('items')
         result = service.build().items
       })
@@ -1102,7 +1398,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
         service.addItem('items')
       })
 
@@ -1142,7 +1438,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
         service.addItem('items')
       })
 
@@ -1166,7 +1462,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
         service.addItem('items')
       })
 
@@ -1194,7 +1490,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
         service.addItem('items')
       })
 
@@ -1226,7 +1522,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
         service.addItem('items')
       })
 
@@ -1263,7 +1559,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
         service.addItem('items')
       })
 
@@ -1307,7 +1603,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
         service.addItem('items')
       })
 
@@ -1328,7 +1624,7 @@ describe('FormService', () => {
         }
 
         beforeEach(() => {
-          service = new FormService(MODEL, SELECTORS, onChangeSpy)
+          service = new FormService(MODEL, SELECTORS, onChangeMock)
           service.addItem('')
         })
 
@@ -1343,7 +1639,7 @@ describe('FormService', () => {
         }
 
         beforeEach(() => {
-          service = new FormService(ITEMS_MODEL, SELECTORS, onChangeSpy)
+          service = new FormService(ITEMS_MODEL, SELECTORS, onChangeMock)
           service.addItem('')
         })
 
@@ -1366,7 +1662,7 @@ describe('FormService', () => {
 
   describe('removeItem()', () => {
     beforeEach(() => {
-      service = new FormService(ENEMY_MODEL, {}, onChangeSpy)
+      service = new FormService(ENEMY_MODEL, {}, onChangeMock)
     })
 
     describe('when removing an item from the end of an array', () => {
@@ -1392,7 +1688,7 @@ describe('FormService', () => {
         const MODEL = ['']
 
         beforeEach(() => {
-          service = new FormService(MODEL, {}, onChangeSpy)
+          service = new FormService(MODEL, {}, onChangeMock)
           service.removeItem('')
         })
 
@@ -1413,7 +1709,7 @@ describe('FormService', () => {
     }
 
     beforeEach(() => {
-      service = new FormService(ENEMY_MODEL, SELECTORS, onChangeSpy)
+      service = new FormService(ENEMY_MODEL, SELECTORS, onChangeMock)
 
       service.apply('ailments.2', 7)
       service.apply('ailments.2', 7)
@@ -1434,7 +1730,7 @@ describe('FormService', () => {
         const MODEL = ['a', 'b', 'c']
 
         beforeEach(() => {
-          service = new FormService(MODEL, {}, onChangeSpy)
+          service = new FormService(MODEL, {}, onChangeMock)
           service.moveItem('', 2, 1)
         })
 
@@ -1455,7 +1751,7 @@ describe('FormService', () => {
     }
 
     beforeEach(() => {
-      service = new FormService(ENEMY_MODEL, SELECTORS, onChangeSpy)
+      service = new FormService(ENEMY_MODEL, SELECTORS, onChangeMock)
       service.apply('ailments.2', 7)
       service.apply('ailments.2', 7)
       service.swapItems('ailments', 2, 0)
@@ -1475,7 +1771,7 @@ describe('FormService', () => {
         const MODEL = ['a', 'b', 'c']
 
         beforeEach(() => {
-          service = new FormService(MODEL, {}, onChangeSpy)
+          service = new FormService(MODEL, {}, onChangeMock)
           service.swapItems('', 2, 0)
         })
 
@@ -1518,7 +1814,7 @@ describe('FormService', () => {
           },
         }
 
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
         validatorStub = spyOn(service, 'validateKey')
         valid = service.validate()
       })
@@ -1540,7 +1836,7 @@ describe('FormService', () => {
           },
         }
 
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
         valid = service.validate()
       })
 
@@ -1585,7 +1881,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
         valid = service.validate()
       })
 
@@ -1609,7 +1905,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
         valid = service.validate()
       })
 
@@ -1655,7 +1951,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
         valid = service.validate()
       })
 
@@ -1771,7 +2067,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
         valid = service.validate()
       })
 
@@ -1808,7 +2104,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
         valid = service.validate()
       })
 
@@ -1853,7 +2149,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
         service.apply('rate', 101)
       })
 
@@ -1878,7 +2174,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
         service.apply('rates.0', 101)
       })
 
@@ -1917,7 +2213,7 @@ describe('FormService', () => {
       }
 
       beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
         service.apply('taxes.0.rate', 101)
       })
 
@@ -1954,7 +2250,7 @@ describe('FormService', () => {
       let valid
 
       beforeEach(() => {
-        service = new FormService(ITEMS_MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(ITEMS_MODEL, SELECTORS, onChangeMock)
         service.apply('0.name', 'asdf')
         valid = service.validate()
       })
@@ -1999,7 +2295,7 @@ describe('FormService', () => {
         validator = SELECTORS.children.amount.validators[0]
         validator.validate = mock(() => true)
 
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
         service.validate()
       })
 
@@ -2037,7 +2333,7 @@ describe('FormService', () => {
         validator = SELECTORS.children.amount.validators[0]
         validator.validate = mock(() => true)
 
-        service = new FormService(MODEL, SELECTORS, onChangeSpy)
+        service = new FormService(MODEL, SELECTORS, onChangeMock)
       })
 
       it('does not invoke the validator', () =>
@@ -2102,7 +2398,7 @@ describe('FormService', () => {
     }
 
     beforeEach(() => {
-      service = new FormService(ENEMY_MODEL, SELECTORS, onChangeSpy)
+      service = new FormService(ENEMY_MODEL, SELECTORS, onChangeMock)
       service.apply('name', 'asdf')
       service.validate()
       service.refresh(UPDATED_MODEL)
@@ -2122,7 +2418,7 @@ describe('FormService', () => {
     }
 
     beforeEach(() => {
-      service = new FormService(ENEMY_MODEL, SELECTORS, onChangeSpy)
+      service = new FormService(ENEMY_MODEL, SELECTORS, onChangeMock)
       service.apply('name', 'asdf')
       service.validate()
       service.reset()
