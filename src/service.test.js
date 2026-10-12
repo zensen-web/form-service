@@ -1,5 +1,5 @@
 import pkg from 'validator'
-import FormService from '../src/service'
+import FormService from './service'
 
 import {
   mock,
@@ -16,7 +16,7 @@ import {
   PristineError,
   MutationError,
   PathError,
-} from '../src/error'
+} from './error'
 
 import {
   extents,
@@ -24,7 +24,7 @@ import {
   filterEmpty,
   map,
   getValueByPath,
-} from '../src/utils'
+} from './utils'
 
 const PERIOD = {
   AM: 'am',
