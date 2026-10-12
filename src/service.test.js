@@ -8,6 +8,7 @@ import {
   afterEach,
   describe,
   it,
+  test,
   expect,
 } from 'bun:test'
 
@@ -243,6 +244,49 @@ function timeToScalar (time) {
   return periodToMinutes + (time.hours * 60) + (time.minutes)
 }
 
+function isRequired (error = 'Required') {
+  return {
+    error,
+    validate: v => (Array.isArray(v) ? v.length : v),
+  }
+}
+
+function isRequiredIf (siblingKey, autoValidate = true, error = 'Required') {
+  return {
+    error,
+    validate: (v, keyPath, state, service) => {
+      const siblingPath = [...keyPath.slice(0, keyPath.length - 1), siblingKey]
+
+      if (autoValidate) {
+        service.validateKey(siblingPath)
+      }
+
+      return getValueByPath(state, siblingPath) ? v : true
+    },
+  }
+}
+
+function isPhoneNumber (error = 'Invalid phone number') {
+  return {
+    error,
+    validate: v => !v || pkg.isMobilePhone(v),
+  }
+}
+
+function inRange (ext1, ext2, incMin = true, incMax = true, error = null) {
+  const { min, max } = extents(Number(ext1), Number(ext2))
+
+  return {
+    error: error || `${min} - ${max}`,
+    validate: v => {
+      const passesMin = incMin ? (v >= min) : (v > min)
+      const passesMax = incMax ? (v <= max) : (v < max)
+
+      return v === '' || (passesMin && passesMax)
+    },
+  }
+}
+
 const passValidator = {
   error: '',
   validator: () => true,
@@ -291,49 +335,6 @@ const intervalValidator = {
   },
 }
 
-function isRequired (error = 'Required') {
-  return {
-    error,
-    validate: v => (Array.isArray(v) ? v.length : v),
-  }
-}
-
-function isRequiredIf (siblingKey, autoValidate = true, error = 'Required') {
-  return {
-    error,
-    validate: (v, keyPath, state, service) => {
-      const siblingPath = [...keyPath.slice(0, keyPath.length - 1), siblingKey]
-
-      if (autoValidate) {
-        service.validateKey(siblingPath)
-      }
-
-      return getValueByPath(state, siblingPath) ? v : true
-    },
-  }
-}
-
-function isPhoneNumber (error = 'Invalid phone number') {
-  return {
-    error,
-    validate: v => !v || pkg.isMobilePhone(v),
-  }
-}
-
-function inRange (ext1, ext2, incMin = true, incMax = true, error = null) {
-  const { min, max } = extents(Number(ext1), Number(ext2))
-
-  return {
-    error: error || `${min} - ${max}`,
-    validate: v => {
-      const passesMin = incMin ? (v >= min) : (v > min)
-      const passesMax = incMax ? (v <= max) : (v < max)
-
-      return v === '' || (passesMin && passesMax)
-    },
-  }
-}
-
 describe('FormService', () => {
   let service
   let model
@@ -356,7 +357,7 @@ describe('FormService', () => {
       },
     }
 
-    describe('when nested validators are found', () => {
+    test('when nested validators are found', () => {
       const SELECTORS = {
         children: {
           stats: {
@@ -370,10 +371,14 @@ describe('FormService', () => {
 
       const fn = () => new FormService(MODEL, SELECTORS, onChangeMock)
 
-      it('throws an error', () => expect(fn).toThrow(VerificationError))
+      expect(fn).toThrow(
+        new VerificationError(
+          'Selector (stats.a) has ancestor selector with validators: stats',
+        ),
+      )
     })
 
-    describe('when setting ignorePristine on object-type key', () => {
+    test('when setting ignorePristine on object-type key', () => {
       const SELECTORS = {
         children: {
           stats: {
@@ -384,12 +389,17 @@ describe('FormService', () => {
 
       const fn = () => new FormService(MODEL, SELECTORS, onChangeMock)
 
-      it('throws an error', () => expect(fn).toThrow(VerificationError))
+      expect(fn).toThrow(
+        new VerificationError(
+          'ignorePristine set object-type key for path: stats. Perhaps you meant to use clipPristine?',
+        ),
+      )
     })
   })
 
   describe('formatters', () => {
     const TIME_NUM = 4.25
+
     const TIME_OBJ = {
       hours: 4,
       minutes: 15,
@@ -1785,6 +1795,7 @@ describe('FormService', () => {
     let valid
 
     const NAME_MATCH = 'asdf'
+
     const VALIDATOR_NAME_MATCH = {
       error: 'Invalid',
       validate: v => v === NAME_MATCH,
@@ -2351,82 +2362,60 @@ describe('FormService', () => {
   })
 
   describe('refresh()', () => {
-    const UPDATED_MODEL = {
-      name: 'Cecil',
-      job: 'dark_knight',
-      stats: {
-        attack: 7,
-        evasion: 3,
-        speed: 3,
-        attributes: {
-          level: 5,
-          experience: 0,
+    test('when invoked', () => {
+      const MODEL_INITIAL = {
+        name: '',
+      }
+
+      const MODEL_UPDATED = {
+        name: 'asdf',
+      }
+
+      const SELECTORS = {
+        children: {
+          name: [failValidator],
         },
-      },
-      ailments: [],
-      items: [
-        { id: 1, rate: 0.1 },
-      ],
-      triangles: [],
-    }
+      }
 
-    const UPDATED_ERRORS = {
-      name: '',
-      job: '',
-      stats: {
-        attack: '',
-        evasion: '',
-        speed: '',
-        attributes: {
-          level: '',
-          experience: '',
-        },
-      },
-      ailments: [],
-      items: [
-        { id: '', rate: '' },
-      ],
-      triangles: [],
-    }
+      const service = new FormService(MODEL_INITIAL, SELECTORS, onChangeMock)
 
-    const UPDATED_PRISTINE = map(UPDATED_ERRORS, () => true)
-
-    const SELECTORS = {
-      children: {
-        name: [failValidator],
-      },
-    }
-
-    beforeEach(() => {
-      service = new FormService(ENEMY_MODEL, SELECTORS, onChangeMock)
       service.apply('name', 'asdf')
       service.validate()
-      service.refresh(UPDATED_MODEL)
-    })
+      service.refresh(MODEL_UPDATED)
 
-    it('reverts state, errors, pristine, and dirtiness back', () =>
       expect(getLastChange()).toEqual([
-        false, UPDATED_MODEL, UPDATED_ERRORS, UPDATED_PRISTINE,
-      ]))
+        false,
+        MODEL_UPDATED,
+        { name: '' },
+        { name: true },
+      ])
+    })
   })
 
   describe('reset()', () => {
-    const SELECTORS = {
-      children: {
-        name: [failValidator],
-      },
-    }
+    test('when invoked', () => {
+      const MODEL = {
+        name: '',
+      }
 
-    beforeEach(() => {
-      service = new FormService(ENEMY_MODEL, SELECTORS, onChangeMock)
+      const SELECTORS = {
+        children: {
+          name: [failValidator],
+        },
+      }
+
+      const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
       service.apply('name', 'asdf')
       service.validate()
       service.reset()
-    })
 
-    it('reverts state, errors, pristine and dirtiness back', () =>
       expect(getLastChange()).toEqual([
-        false, ENEMY_MODEL, ENEMY_ERRORS, ENEMY_PRISTINE,
-      ]))
+        false,
+        MODEL,
+        { name: '' },
+        { name: true },
+      ])
+    })
   })
 })
