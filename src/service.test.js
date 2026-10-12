@@ -587,9 +587,8 @@ describe('FormService', () => {
     })
   })
 
-  // TODO: add formatters, and verify pristine
   describe('clipPristine', () => {
-    describe('when clipping an object', () => {
+    test('when clipping an object', () => {
       const MODEL = {
         id: '123',
         name: 'Test',
@@ -601,68 +600,65 @@ describe('FormService', () => {
 
       const SELECTORS = {
         children: {
-          type: { clipPristine: true },
+          type: {
+            clipPristine: true,
+          },
         },
       }
 
-      const EXPECTED_RESULT = {
+      const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
+      expect(service.pristine).toStrictEqual({
         id: true,
         name: true,
         type: true,
-      }
-
-      beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeMock)
       })
-
-      it('returns the proper schema', () =>
-        expect(service.__pristine).toEqual(EXPECTED_RESULT))
     })
 
-    describe('when clipping an array', () => {
+    test('when clipping an array', () => {
       const MODEL = {
         id: '123',
         name: 'Test',
-        types: [{
-          label: 'Default',
-          value: null,
-        }],
-      }
-
-      const SELECTORS = {
-        children: {
-          types: { clipPristine: true },
-        },
-      }
-
-      const EXPECTED_RESULT = {
-        id: true,
-        name: true,
-        types: true,
-      }
-
-      beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeMock)
-      })
-
-      it('returns the proper schema', () =>
-        expect(service.__pristine).toEqual(EXPECTED_RESULT))
-    })
-
-    describe('when clipping an array\'s object-elements', () => {
-      const MODEL = {
-        id: '123',
-        name: 'Test',
-        types: [{
-          label: 'Default',
-          value: null,
-        }],
+        types: [
+          {
+            label: 'Default',
+            value: null,
+          },
+        ],
       }
 
       const SELECTORS = {
         children: {
           types: {
-            createItem: () => ({ label: '', value: null }),
+            clipPristine: true,
+          },
+        },
+      }
+
+      const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
+      expect(service.pristine).toEqual({
+        id: true,
+        name: true,
+        types: true,
+      })
+    })
+
+    test('when clipping the object-elements in an array', () => {
+      const MODEL = {
+        id: '123',
+        name: 'Test',
+        types: [
+          {
+            label: 'Default',
+            value: null,
+          },
+        ],
+      }
+
+      const SELECTORS = {
+        children: {
+          types: {
             children: {
               $: {
                 clipPristine: true,
@@ -672,31 +668,81 @@ describe('FormService', () => {
         },
       }
 
-      const EXPECTED_RESULT = {
+      const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
+      expect(service.pristine).toStrictEqual({
         id: true,
         name: true,
         types: [true],
+      })
+    })
+
+    test('when clipping the object-elements in an array (add item)', () => {
+      const MODEL = {
+        id: '123',
+        name: 'Test',
+        types: [],
       }
 
-      beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeMock)
+      const SELECTORS = {
+        children: {
+          types: {
+            createItem: () => ({
+              label: '',
+              value: null,
+            }),
+            children: {
+              $: {
+                clipPristine: true,
+              },
+            },
+          },
+        },
+      }
+
+      const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
+      service.addItem('types')
+
+      expect(service.pristine).toStrictEqual({
+        id: true,
+        name: true,
+        types: [true],
       })
+    })
 
-      it('returns the proper schema', () =>
-        expect(service.__pristine).toEqual(EXPECTED_RESULT))
+    test('when clipping the object-elements in an array (remove item)', () => {
+      const MODEL = {
+        id: '123',
+        name: 'Test',
+        types: [
+          {
+            label: 'Default',
+            value: null,
+          },
+        ],
+      }
 
-      describe('when adding an item', () => {
-        const RESULT_ADDED = {
-          ...EXPECTED_RESULT,
-          types: [true, true],
-        }
+      const SELECTORS = {
+        children: {
+          types: {
+            children: {
+              $: {
+                clipPristine: true,
+              },
+            },
+          },
+        },
+      }
 
-        beforeEach(() => {
-          service.addItem('types')
-        })
+      const service = new FormService(MODEL, SELECTORS, onChangeMock)
 
-        it('clips the schema on the new item', () =>
-          expect(service.__pristine).toEqual(RESULT_ADDED))
+      service.removeItem('types')
+
+      expect(service.pristine).toStrictEqual({
+        id: true,
+        name: true,
+        types: [],
       })
     })
   })

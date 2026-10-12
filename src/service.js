@@ -60,6 +60,10 @@ export default class Service {
     return this.__errors
   }
 
+  get pristine () {
+    return this.__pristine
+  }
+
   constructor (model, selectors, onChange) {
     this.__state = {}
     this.__errors = {}
