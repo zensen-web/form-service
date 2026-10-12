@@ -337,7 +337,6 @@ const intervalValidator = {
 
 describe('FormService', () => {
   let service
-  let model
   let onChangeMock
 
   const getLastChange = () => onChangeMock.mock.calls.at(-1)
@@ -406,46 +405,52 @@ describe('FormService', () => {
       period: PERIOD.AM,
     }
 
-    describe('when format() is provided on selector', () => {
-      const MODEL = { amount: 42 }
+    test('when format() is provided on a selector', () => {
+      const formatMock = mock(v => toCurrency(v / 100))
+
+      const MODEL = {
+        amount: 42,
+      }
+
       const SELECTORS = {
         children: {
           amount: {
-            format: v => toCurrency(v / 100),
-            unformat: v => Number(toNumeric(v, true)) * 100,
+            format: formatMock,
           },
         },
       }
 
-      let formatSpy
-      let unformatSpy
+      const service = new FormService(MODEL, SELECTORS, onChangeMock)
 
-      beforeEach(() => {
-        formatSpy = spyOn(SELECTORS.children.amount, 'format')
-        unformatSpy = spyOn(SELECTORS.children.amount, 'unformat')
-
-        service = new FormService(MODEL, SELECTORS, onChangeMock)
-      })
-
-      it('invokes the format() modifier', () =>
-        expect(formatSpy.mock.calls).toEqual([[42, ['amount'], MODEL]]))
-
-      describe('when unformat() is provided on a selector', () => {
-        const STATE = {
-          amount: '$0.42',
-        }
-
-        beforeEach(() => {
-          model = service.build()
-        })
-
-        it('invokes the unformat() modifier', () =>
-          expect(unformatSpy.mock.calls).toEqual([['$0.42', ['amount'], STATE]]))
-      })
+      expect(service.state).toStrictEqual({ amount: '$0.42' })
     })
 
-    describe('when formatting from primitive to object', () => {
-      const MODEL = { time: TIME_NUM }
+    test('when unformat() is provided on a selector', () => {
+      const unformatMock = mock(v => Number(toNumeric(v, true)) * 100)
+
+      const MODEL = {
+        amount: '$0.42',
+      }
+
+      const SELECTORS = {
+        children: {
+          amount: {
+            unformat: unformatMock,
+          },
+        },
+      }
+
+      const service = new FormService(MODEL, SELECTORS, onChangeMock)
+      const model = service.build()
+
+      expect(model).toStrictEqual({ amount: 42 })
+    })
+
+    test('when formatting from primitive to object', () => {
+      const MODEL = {
+        time: TIME_NUM,
+      }
+
       const SELECTORS = {
         children: {
           time: {
@@ -455,20 +460,18 @@ describe('FormService', () => {
         },
       }
 
-      beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeMock)
-        model = service.build()
-      })
+      const service = new FormService(MODEL, SELECTORS, onChangeMock)
+      const model = service.build()
 
-      it('formats the field', () =>
-        expect(service.__state.time).toEqual(TIME_OBJ))
-
-      it('unformats the field', () =>
-        expect(model.time).toBe(TIME_NUM))
+      expect(service.state).toStrictEqual({ time: TIME_OBJ })
+      expect(model).toStrictEqual({ time: TIME_NUM })
     })
 
-    describe('when formatting from object to primitive', () => {
-      const MODEL = { time: TIME_OBJ }
+    test('when formatting from object to primitive', () => {
+      const MODEL = {
+        time: TIME_OBJ,
+      }
+
       const SELECTORS = {
         children: {
           time: {
@@ -478,20 +481,16 @@ describe('FormService', () => {
         },
       }
 
-      beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeMock)
-        model = service.build()
-      })
+      const service = new FormService(MODEL, SELECTORS, onChangeMock)
+      const model = service.build()
 
-      it('formats the field', () =>
-        expect(service.__state.time).toBe(TIME_NUM))
-
-      it('unformats the field', () =>
-        expect(model.time).toEqual(TIME_OBJ))
+      expect(service.state).toStrictEqual({ time: TIME_NUM })
+      expect(model).toStrictEqual({ time: TIME_OBJ })
     })
 
-    describe('when converters are provided to array items', () => {
+    test('when converters are provided to array items', () => {
       const ITEM_ADDED_HOURS = 8
+
       const MODEL = {
         items: [1, 4.25, 14.75],
       }
@@ -510,7 +509,6 @@ describe('FormService', () => {
             createItem: () => ITEM_ADDED_HOURS,
             children: {
               $: {
-                // validators: [],
                 format: v => hoursToObj(v),
                 unformat: v => objToHours(v),
               },
@@ -519,19 +517,14 @@ describe('FormService', () => {
         },
       }
 
-      beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeMock)
-        model = service.build()
-      })
+      const service = new FormService(MODEL, SELECTORS, onChangeMock)
+      const model = service.build()
 
-      it('formats the state', () =>
-        expect(service.__state).toEqual(STATE))
-
-      it('unformats the state', () =>
-        expect(model).toEqual(MODEL))
+      expect(service.state).toStrictEqual(STATE)
+      expect(model).toStrictEqual(MODEL)
     })
 
-    describe('when providing nested formatters', () => {
+    test('when providing nested formatters', () => {
       const MODEL = {
         phones: [{
           number: '7025551234',
@@ -565,35 +558,32 @@ describe('FormService', () => {
         },
       }
 
-      beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeMock)
-        model = service.build()
-      })
+      const service = new FormService(MODEL, SELECTORS, onChangeMock)
+      const model = service.build()
 
-      it('formats the state', () =>
-        expect(service.__state).toEqual(STATE))
-
-      it('unformats the state', () =>
-        expect(model).toEqual(MODEL))
+      expect(service.state).toStrictEqual(STATE)
+      expect(model).toStrictEqual(MODEL)
     })
 
-    describe('when formatting the root (object)', () => {
-      const MODEL = { amount: 42 }
-      const SELECTORS = {
-        format: v => ({ amount: toCurrency(v.amount / 100) }),
-        unformat: v => ({ amount: Number(toNumeric(v.amount, true)) * 100 }),
+    test('when formatting the root (object)', () => {
+      const MODEL = {
+        amount: 42,
       }
 
-      beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeMock)
-        model = service.build()
-      })
+      const SELECTORS = {
+        format: v => ({
+          amount: toCurrency(v.amount / 100),
+        }),
+        unformat: v => ({
+          amount: Number(toNumeric(v.amount, true)) * 100,
+        }),
+      }
 
-      it('formats the field', () =>
-        expect(service.__state).toEqual({ amount: '$0.42' }))
+      const service = new FormService(MODEL, SELECTORS, onChangeMock)
+      const model = service.build()
 
-      it('unformats the field', () =>
-        expect(model).toEqual({ amount: 42 }))
+      expect(service.state).toEqual({ amount: '$0.42' })
+      expect(model).toEqual({ amount: 42 })
     })
   })
 
