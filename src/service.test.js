@@ -582,8 +582,8 @@ describe('FormService', () => {
       const service = new FormService(MODEL, SELECTORS, onChangeMock)
       const model = service.build()
 
-      expect(service.state).toEqual({ amount: '$0.42' })
-      expect(model).toEqual({ amount: 42 })
+      expect(service.state).toStrictEqual({ amount: '$0.42' })
+      expect(model).toStrictEqual({ amount: 42 })
     })
   })
 
@@ -637,7 +637,7 @@ describe('FormService', () => {
 
       const service = new FormService(MODEL, SELECTORS, onChangeMock)
 
-      expect(service.pristine).toEqual({
+      expect(service.pristine).toStrictEqual({
         id: true,
         name: true,
         types: true,
@@ -747,343 +747,61 @@ describe('FormService', () => {
     })
   })
 
-  describe('getSelectorPath()', () => {
-    beforeEach(() => {
-      service = new FormService(ENEMY_MODEL, ENEMY_SELECTORS, onChangeMock)
-    })
+  describe('refresh()', () => {
+    test('when invoked', () => {
+      const MODEL_INITIAL = {
+        name: '',
+      }
 
-    it('throws an error when an invalid path is provided: "asdf"', () =>
-      expect(() => service.getSelectorPath(['asdf'])).toThrow(PathError))
+      const MODEL_UPDATED = {
+        name: 'asdf',
+      }
 
-    it('resovle the path for root', () =>
-      expect(service.getSelectorPath([])).toEqual([]))
+      const SELECTORS = {
+        children: {
+          name: [failValidator],
+        },
+      }
 
-    it('resolve the path for "name"', () =>
-      expect(service.getSelectorPath(['name'])).toEqual(['children', 'name']))
+      const service = new FormService(MODEL_INITIAL, SELECTORS, onChangeMock)
 
-    it('resolve the path for "job"', () =>
-      expect(service.getSelectorPath(['job'])).toEqual(['children', 'job']))
+      service.apply('name', 'asdf')
+      service.validate()
+      service.refresh(MODEL_UPDATED)
 
-    it('resolve the path for "stats"', () =>
-      expect(service.getSelectorPath(['stats'])).toEqual(['children', 'stats']))
-
-    it('resolve the path for "stats.attack"', () =>
-      expect(service.getSelectorPath(['stats', 'attack'])).toEqual([
-        'children', 'stats', 'children', 'attack',
-      ]))
-
-    it('resolve the path for "stats.evasion"', () =>
-      expect(service.getSelectorPath(['stats', 'evasion'])).toEqual([
-        'children', 'stats', 'children', 'evasion',
-      ]))
-
-    it('resolve the path for "stats.speed"', () =>
-      expect(service.getSelectorPath(['stats', 'speed'])).toEqual([
-        'children', 'stats', 'children', 'speed',
-      ]))
-
-    it('resolve the path for "stats.attributes"', () =>
-      expect(service.getSelectorPath(['stats', 'attributes'])).toEqual([
-        'children', 'stats', 'children', 'attributes',
-      ]))
-
-    it('resolve the path for "stats.attributes.level"', () =>
-      expect(service.getSelectorPath(['stats', 'attributes', 'level'])).toEqual([
-        'children', 'stats', 'children', 'attributes', 'children', 'level',
-      ]))
-
-    it('resolve the path for "stats.attributes.experience"', () =>
-      expect(service.getSelectorPath(['stats', 'attributes', 'experience'])).toEqual([
-        'children', 'stats', 'children', 'attributes', 'children', 'experience',
-      ]))
-
-    it('resolve the path for "stats.ailments"', () =>
-      expect(service.getSelectorPath(['ailments'])).toEqual(['children', 'ailments']))
-
-    it('resolve the path for "ailments.0"', () =>
-      expect(service.getSelectorPath(['ailments', '0'])).toEqual([
-        'children', 'ailments', 'children', '$',
-      ]))
-
-    it('resolve the path for "items"', () =>
-      expect(service.getSelectorPath(['items'])).toEqual(['children', 'items']))
-
-    it('resolve the path for "items.0"', () =>
-      expect(service.getSelectorPath(['items', '0'])).toEqual([
-        'children', 'items', 'children', '$',
-      ]))
-
-    it('resolve the path for "items.0.id"', () =>
-      expect(service.getSelectorPath(['items', '0', 'id'])).toEqual([
-        'children', 'items', 'children', '$', 'children', 'id',
-      ]))
-
-    it('resolve the path for "items.0.rate"', () =>
-      expect(service.getSelectorPath(['items', '0', 'rate'])).toEqual([
-        'children', 'items', 'children', '$', 'children', 'rate',
-      ]))
-
-    it('resolve the path for "triangles"', () =>
-      expect(service.getSelectorPath(['triangles'])).toEqual(['children', 'triangles']))
-
-    it('resolve the path for "triangles.0"', () =>
-      expect(service.getSelectorPath(['triangles', '0'])).toEqual([
-        'children', 'triangles', 'children', '$',
-      ]))
-
-    it('resolve the path for "triangles.0.0"', () =>
-      expect(service.getSelectorPath(['triangles', '0', '0'])).toEqual([
-        'children', 'triangles', 'children', '$', 'children', '$',
-      ]))
-
-    it('resolve the path for "triangles.0.1"', () =>
-      expect(service.getSelectorPath(['triangles', '0', '1'])).toEqual([
-        'children', 'triangles', 'children', '$', 'children', '$',
-      ]))
-
-    it('resolve the path for "triangles.0.2"', () =>
-      expect(service.getSelectorPath(['triangles', '0', '2'])).toEqual([
-        'children', 'triangles', 'children', '$', 'children', '$',
-      ]))
-
-    it('throws an error when an invalid path is provided: "triangles.0.3"', () =>
-      expect(() => service.getSelectorPath(['triangles.0.3'])).toThrow(PathError))
-
-    describe('array model', () => {
-      beforeEach(() => {
-        service = new FormService(ITEMS_MODEL, ITEMS_SELECTORS, onChangeMock)
-      })
-
-      it('resolve the path for root', () =>
-        expect(service.getSelectorPath([])).toEqual([]))
-
-      it('resolve the path for "0"', () =>
-        expect(service.getSelectorPath(['0'])).toEqual(['children', '$']))
-
-      it('resolve the path for "0.id"', () =>
-        expect(service.getSelectorPath(['0', 'id'])).toEqual([
-          'children', '$', 'children', 'id',
-        ]))
-
-      it('resolve the path for "0.name"', () =>
-        expect(service.getSelectorPath(['0', 'name'])).toEqual([
-          'children', '$', 'children', 'name',
-        ]))
+      expect(getLastChange()).toEqual([
+        false,
+        MODEL_UPDATED,
+        { name: '' },
+        { name: true },
+      ])
     })
   })
 
-  describe('getSelector()', () => {
-    beforeEach(() => {
-      service = new FormService(ENEMY_MODEL, ENEMY_SELECTORS, onChangeMock)
-    })
+  describe('reset()', () => {
+    test('when invoked', () => {
+      const MODEL = {
+        name: '',
+      }
 
-    it('throws an error when an invalid path is provided: "asdf"', () =>
-      expect(() => service.getSelector(['asdf'])).toThrow(PathError))
-
-    it('finds the selector for root', () =>
-      expect(service.getSelector([])).toBe(ENEMY_SELECTORS))
-
-    it('finds the selector for "name"', () =>
-      expect(service.getSelector(['name'])).toBe(
-        ENEMY_SELECTORS.children.name,
-      ))
-
-    it('does not find a selector for "job"', () =>
-      expect(service.getSelector(['job'])).toBe(undefined))
-
-    it('finds a selector for "stats"', () =>
-      expect(service.getSelector(['stats'])).toBe(
-        ENEMY_SELECTORS.children.stats,
-      ))
-
-    it('finds a selector for "stats.attack"', () =>
-      expect(service.getSelector(['stats', 'attack'])).toBe(
-        ENEMY_SELECTORS.children.stats.children.attack,
-      ))
-
-    it('finds a selector for "stats.evasion"', () =>
-      expect(service.getSelector(['stats', 'evasion'])).toBe(
-        ENEMY_SELECTORS.children.stats.children.evasion,
-      ))
-
-    it('finds a selector for "stats.speed"', () =>
-      expect(service.getSelector(['stats', 'speed'])).toBe(
-        ENEMY_SELECTORS.children.stats.children.speed,
-      ))
-
-    it('finds a selector for "stats.attributes"', () =>
-      expect(service.getSelector(['stats', 'attributes'])).toBe(
-        ENEMY_SELECTORS.children.stats.children.attributes,
-      ))
-
-    it('finds a selector for "stats.attributes.level"', () =>
-      expect(service.getSelector(['stats', 'attributes', 'level'])).toBe(
-        ENEMY_SELECTORS.children.stats.children.attributes.children.level,
-      ))
-
-    it('finds a selector for "stats.attributes.experience"', () =>
-      expect(service.getSelector(['stats', 'attributes', 'experience'])).toBe(
-        ENEMY_SELECTORS.children.stats.children.attributes.children.experience,
-      ))
-
-    it('finds a selector for "stats.ailments"', () =>
-      expect(service.getSelector(['ailments'])).toBe(
-        ENEMY_SELECTORS.children.ailments,
-      ))
-
-    it('finds a selector for "ailments.0"', () =>
-      expect(service.getSelector(['ailments', '0'])).toBe(
-        ENEMY_SELECTORS.children.ailments.children.$,
-      ))
-
-    it('finds a selector for "items"', () =>
-      expect(service.getSelector(['items'])).toBe(
-        ENEMY_SELECTORS.children.items,
-      ))
-
-    it('finds a selector for "items.0"', () =>
-      expect(service.getSelector(['items', '0'])).toBe(
-        ENEMY_SELECTORS.children.items.children.$,
-      ))
-
-    it('finds a selector for "items.0.id"', () =>
-      expect(service.getSelector(['items', '0', 'id'])).toBe(
-        ENEMY_SELECTORS.children.items.children.$.children.id,
-      ))
-
-    it('finds a selector for "items.0.rate"', () =>
-      expect(service.getSelector(['items', '0', 'rate'])).toBe(
-        ENEMY_SELECTORS.children.items.children.$.children.rate,
-      ))
-
-    it('finds a selector for "triangles"', () =>
-      expect(service.getSelector(['triangles'])).toBe(
-        ENEMY_SELECTORS.children.triangles,
-      ))
-
-    it('finds a selector for "triangles.0"', () =>
-      expect(service.getSelector(['triangles', '0'])).toBe(
-        ENEMY_SELECTORS.children.triangles.children.$,
-      ))
-
-    it('finds a selector for "triangles.0.0"', () =>
-      expect(service.getSelector(['triangles', '0', '0'])).toBe(
-        ENEMY_SELECTORS.children.triangles.children.$.children.$,
-      ))
-
-    it('finds a selector for "triangles.0.1"', () =>
-      expect(service.getSelector(['triangles', '0', '1'])).toBe(
-        ENEMY_SELECTORS.children.triangles.children.$.children.$,
-      ))
-
-    it('finds a selector for "triangles.0.2"', () =>
-      expect(service.getSelector(['triangles', '0', '2'])).toBe(
-        ENEMY_SELECTORS.children.triangles.children.$.children.$,
-      ))
-
-    it('throws an error when an invalid path is provided: "triangles.0.3"', () =>
-      expect(() => service.getSelector(['triangles', '0', '3'])).toThrow(PathError))
-
-    describe('array model', () => {
-      beforeEach(() => {
-        service = new FormService(ITEMS_MODEL, ITEMS_SELECTORS, onChangeMock)
-      })
-
-      it('finds a selector for root', () =>
-        expect(service.getSelector([])).toEqual(ITEMS_SELECTORS))
-
-      it('finds a selector for "0"', () =>
-        expect(service.getSelector(['0'])).toEqual(ITEMS_SELECTORS.children.$))
-
-      it('finds a selector for "0.id"', () =>
-        expect(service.getSelector(['0', 'id'])).toEqual(
-          ITEMS_SELECTORS.children.$.children.id,
-        ))
-
-      it('finds a selector for "0.name"', () =>
-        expect(service.getSelector(['0', 'name'])).toEqual(
-          ITEMS_SELECTORS.children.$.children.name,
-        ))
-    })
-  })
-
-  describe('unsetPristine()', () => {
-    beforeEach(() => {
-      service = new FormService(ENEMY_MODEL, {}, onChangeMock)
-    })
-
-    describe('when unsetting a top-level key', () => {
-      beforeEach(() => {
-        service.unsetPristine(['name'])
-      })
-
-      it('unsets the flag', () => expect(getLastChange()[3]).toEqual({
-        name: false,
-        job: true,
-        stats: {
-          attack: true,
-          evasion: true,
-          speed: true,
-          attributes: {
-            level: true,
-            experience: true,
-          },
+      const SELECTORS = {
+        children: {
+          name: [failValidator],
         },
-        ailments: [true, true, true],
-        items: [
-          { id: true, rate: true },
-          { id: true, rate: true },
-        ],
-        triangles: [
-          [true, true, true],
-          [true, true, true],
-        ],
-      }))
-    })
+      }
 
-    describe('when unsetting a nested key', () => {
-      beforeEach(() => {
-        service.unsetPristine(['stats', 'attack'])
-      })
+      const service = new FormService(MODEL, SELECTORS, onChangeMock)
 
-      it('unsets the flag', () => expect(getLastChange()[3]).toEqual({
-        name: true,
-        job: true,
-        stats: {
-          attack: false,
-          evasion: true,
-          speed: true,
-          attributes: {
-            level: true,
-            experience: true,
-          },
-        },
-        ailments: [true, true, true],
-        items: [
-          { id: true, rate: true },
-          { id: true, rate: true },
-        ],
-        triangles: [
-          [true, true, true],
-          [true, true, true],
-        ],
-      }))
-    })
+      service.apply('name', 'asdf')
+      service.validate()
+      service.reset()
 
-    describe('when unsetting on an invalid path', () => {
-      const INVALID_PATH = ['stats', 'attack', '0']
-      const fn = () => service.unsetPristine(INVALID_PATH)
-
-      it('throws an error', () =>
-        expect(fn).toThrow(`Invalid path: ${INVALID_PATH.join('.')}`))
-    })
-
-    describe('when setting on a branch instead of a leaf', () => {
-      const INVALID_PATH = ['stats']
-      const fn = () => service.unsetPristine(INVALID_PATH)
-
-      it('throws an error', () =>
-        expect(fn).toThrow(`Invalid path: ${INVALID_PATH.join('.')}`))
+      expect(getLastChange()).toEqual([
+        false,
+        MODEL,
+        { name: '' },
+        { name: true },
+      ])
     })
   })
 
@@ -1093,8 +811,11 @@ describe('FormService', () => {
     })
 
     it('invokes onChange', () =>
-      expect(getLastChange()).toEqual([
-        false, ENEMY_MODEL, ENEMY_ERRORS, ENEMY_PRISTINE,
+      expect(getLastChange()).toStrictEqual([
+        false,
+        ENEMY_MODEL,
+        ENEMY_ERRORS,
+        ENEMY_PRISTINE,
       ]))
 
     describe('when modifying a top-level property', () => {
@@ -1282,10 +1003,10 @@ describe('FormService', () => {
       it('throws an error', () => expect(fn).not.toThrow())
     })
 
-    describe.skip('when adding a rogue property to sub-object', () => {
+    test('when adding a rogue property to sub-object', () => {
       const fn = () => service.apply('stats.asdf', 42)
 
-      it('throws an error', () => expect(fn).toThrow(MutationError))
+      expect(fn).toThrow(new TypeError('Invalid path: stats.asdf'))
     })
 
     describe('when mutating an array', () => {
@@ -1379,7 +1100,7 @@ describe('FormService', () => {
         })
 
         it('invokes the callback', () =>
-          expect(getLastChange()).toEqual([
+          expect(getLastChange()).toStrictEqual([
             true,
             [{ id: '', name: 'asdf' }],
             [{ id: '', name: '' }],
@@ -1390,439 +1111,1273 @@ describe('FormService', () => {
   })
 
   describe('addItem()', () => {
-    const MODEL = { items: [] }
+    describe('object model', () => {
+      test('when a primitive item is added', () => {
+        const createItemMock = mock((keyPath, index, model) => {
+          const items = getValueByPath(model, keyPath)
+          const prevTwo = items.slice(index - 2, items.length)
+          const result = (prevTwo[0] || 0) + (prevTwo[1] || 0)
 
-    describe('when an object is added', () => {
-      const MODEL = {
-        items: [1, 2, 3, 5, 8],
-      }
-
-      const SELECTORS = {
-        children: {
-          items: {
-            createItem: (keyPath, _index, model) => {
-              const items = getValueByPath(model, keyPath)
-              const prevTwo = items.slice(items.length - 2, items.length)
-
-              return (prevTwo[0] || 0) + (prevTwo[1] || 0)
-            },
-            children: {
-              $: {
-                format: v => toCurrency(v / 100),
-                unformat: v => Number(toNumeric(v)),
-              },
-            },
-          },
-        },
-      }
-
-      let spy
-      let result
-
-      beforeEach(() => {
-        spy = spyOn(SELECTORS.children.items, 'createItem')
-
-        service = new FormService(MODEL, SELECTORS, onChangeMock)
-        service.addItem('items')
-        result = service.build().items
-      })
-
-      it('invokes createItem() with the correct arguments', () =>
-        expect(spy).toHaveBeenCalledWith(['items'], 5, MODEL, service))
-
-      it('adds the next Fibonacci number in the sequence', () =>
-        expect(result).toEqual([1, 2, 3, 5, 8, 13]))
-    })
-
-    describe('when adding a primitive item', () => {
-      const SELECTORS = {
-        children: {
-          items: {
-            createItem: () => '',
-          },
-        },
-      }
-
-      beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeMock)
-        service.addItem('items')
-      })
-
-      it('provides the correct errors', () =>
-        expect(service.__errors).toEqual({ items: [''] }))
-
-      describe('when adding an item to end of an array', () => {
-        const EXPECTED = ['', '']
-
-        beforeEach(() => {
-          service.addItem('items')
+          return result
         })
 
-        it('adds it', () => expect(service.__state.items).toEqual(EXPECTED))
+        const MODEL = {
+          items: [1, 2, 3],
+        }
 
-        describe('when adding an item in the middle of an array', () => {
-          const EXPECTED = ['1', '', '2']
+        const SELECTORS = {
+          children: {
+            items: {
+              createItem: createItemMock,
+            },
+          },
+        }
 
-          beforeEach(() => {
-            service.apply('items.0', '1')
-            service.apply('items.1', '2')
-            service.addItem('items', 1)
-          })
+        const service = new FormService(MODEL, SELECTORS, onChangeMock)
 
-          it('adds it', () => expect(service.__state.items).toEqual(EXPECTED))
+        service.addItem('items')
+
+        const model = service.build()
+
+        expect(model).toStrictEqual({
+          items: [1, 2, 3, 5],
         })
-      })
-    })
 
-    describe('when adding an object', () => {
-      const SELECTORS = {
-        children: {
-          items: {
-            createItem: () => ({ id: '' }),
-          },
-        },
-      }
+        expect(createItemMock).toHaveBeenCalledOnce()
 
-      beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeMock)
-        service.addItem('items')
-      })
+        expect(createItemMock).toHaveBeenCalledWith(
+          ['items'],
+          3,
+          MODEL,
+          service,
+        )
 
-      it('adds the item', () =>
-        expect(getLastChange()).toEqual([
+        expect(getLastChange()).toStrictEqual([
           true,
-          { items: [{ id: '' }] },
-          { items: [{ id: '' }] },
-          { items: [{ id: true }] },
-        ]))
-    })
-
-    describe('when adding an object with validators on the array selector', () => {
-      const SELECTORS = {
-        children: {
-          items: {
-            createItem: () => ({ id: '' }),
-            validators: [],
-          },
-        },
-      }
-
-      beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeMock)
-        service.addItem('items')
+          { items: [1, 2, 3, 5] },
+          { items: ['', '', '', ''] },
+          { items: [true, true, true, true] },
+        ])
       })
 
-      it('adds the item', () =>
-        expect(getLastChange()).toEqual([
-          true,
-          { items: [{ id: '' }] },
-          { items: '' },
-          { items: [{ id: true }] },
-        ]))
-    })
+      test('when a primitive item is inserted', () => {
+        const createItemMock = mock(() => 999)
 
-    describe('when adding an object with validators on the array element selector', () => {
-      const SELECTORS = {
-        children: {
-          items: {
-            createItem: () => ({ id: '' }),
-            children: {
-              $: {
-                validators: [],
-              },
+        const MODEL = {
+          items: [1, 2],
+        }
+
+        const SELECTORS = {
+          children: {
+            items: {
+              createItem: createItemMock,
             },
           },
-        },
-      }
+        }
 
-      beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeMock)
-        service.addItem('items')
+        const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
+        service.addItem('items', 1)
+
+        const model = service.build()
+
+        expect(model).toStrictEqual({
+          items: [1, 999, 2],
+        })
+
+        expect(createItemMock).toHaveBeenCalledOnce()
+
+        expect(createItemMock).toHaveBeenCalledWith(
+          ['items'],
+          1,
+          MODEL,
+          service,
+        )
+
+        expect(getLastChange()).toStrictEqual([
+          true,
+          { items: [1, 999, 2] },
+          { items: ['', '', ''] },
+          { items: [true, true, true] },
+        ])
       })
 
-      it('adds the item', () =>
-        expect(getLastChange()).toEqual([
-          true,
-          { items: [{ id: '' }] },
-          { items: [''] },
-          { items: [{ id: true }] },
-        ]))
-    })
+      test('when a complex item is added', () => {
+        const createItemMock = mock((keyPath, index, model) => {
+          const items = getValueByPath(model, keyPath)
 
-    describe('when adding an object with formatter on element', () => {
-      const SELECTORS = {
-        children: {
-          items: {
-            createItem: () => ({
-              id: '',
-              name: '',
-              amount: 0,
-            }),
-            children: {
-              $: {
-                format: v => ({ ...v, amount: toCurrency(v.amount) }),
-              },
+          const prevTwo = items
+            .slice(index - 2, items.length)
+            .map(item => item.val)
+
+          const val = (prevTwo[0] || 0) + (prevTwo[1] || 0)
+          const char = String.fromCharCode('a'.charCodeAt(0) + val)
+
+          return { val, char }
+        })
+
+        const MODEL = {
+          items: [
+            { val: 1, char: 'a' },
+            { val: 2, char: 'b' },
+            { val: 3, char: 'c' },
+          ],
+        }
+
+        const SELECTORS = {
+          children: {
+            items: {
+              createItem: createItemMock,
             },
           },
-        },
-      }
+        }
 
-      beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeMock)
+        const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
         service.addItem('items')
+
+        const model = service.build()
+
+        expect(model).toStrictEqual({
+          items: [
+            { val: 1, char: 'a' },
+            { val: 2, char: 'b' },
+            { val: 3, char: 'c' },
+            { val: 5, char: 'f' },
+          ],
+        })
+
+        expect(createItemMock).toHaveBeenCalledOnce()
+
+        expect(createItemMock).toHaveBeenCalledWith(
+          ['items'],
+          3,
+          MODEL,
+          service,
+        )
+
+        expect(getLastChange()).toStrictEqual([
+          true,
+          {
+            items: [
+              { val: 1, char: 'a' },
+              { val: 2, char: 'b' },
+              { val: 3, char: 'c' },
+              { val: 5, char: 'f' },
+            ],
+          },
+          {
+            items: [
+              { val: '', char: '' },
+              { val: '', char: '' },
+              { val: '', char: '' },
+              { val: '', char: '' },
+            ],
+          },
+          {
+            items: [
+              { val: true, char: true },
+              { val: true, char: true },
+              { val: true, char: true },
+              { val: true, char: true },
+            ],
+          },
+        ])
       })
 
-      it('adds the item', () =>
-        expect(service.__state).toEqual({
-          items: [{
-            id: '',
-            name: '',
-            amount: '$0.00',
-          }],
+      test('when a complex item is added (with validator selector on root)', () => {
+        const createItemMock = mock(() => ({
+          val: 999,
+          char: 'zzz',
         }))
-    })
 
-    describe('when adding an object with formatter on property of element', () => {
-      const SELECTORS = {
-        children: {
-          items: {
-            createItem: () => ({
-              id: '',
-              name: '',
-              amount: 0,
-            }),
-            children: {
-              $: {
-                children: {
-                  amount: {
-                    format: v => toCurrency(v),
+        const MODEL = {
+          items: [],
+        }
+
+        const SELECTORS = {
+          children: {
+            items: {
+              createItem: createItemMock,
+              validators: [],
+            },
+          },
+        }
+
+        const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
+        service.addItem('items')
+
+        const model = service.build()
+
+        expect(model).toStrictEqual({
+          items: [
+            {
+              val: 999,
+              char: 'zzz',
+            },
+          ],
+        })
+
+        expect(createItemMock).toHaveBeenCalledOnce()
+
+        expect(createItemMock).toHaveBeenCalledWith(
+          ['items'],
+          0,
+          MODEL,
+          service,
+        )
+
+        expect(getLastChange()).toStrictEqual([
+          true,
+          {
+            items: [
+              {
+                val: 999,
+                char: 'zzz',
+              },
+            ],
+          },
+          {
+            items: '',
+          },
+          {
+            items: [
+              {
+                val: true,
+                char: true,
+              },
+            ],
+          },
+        ])
+      })
+
+      test('when a complex item is added (with validator selector on item)', () => {
+        const createItemMock = mock(() => ({
+          val: 999,
+          char: 'zzz',
+        }))
+
+        const MODEL = {
+          items: [],
+        }
+
+        const SELECTORS = {
+          children: {
+            items: {
+              createItem: createItemMock,
+              children: {
+                $: {
+                  validators: [],
+                },
+              },
+            },
+          },
+        }
+
+        const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
+        service.addItem('items')
+
+        const model = service.build()
+
+        expect(model).toStrictEqual({
+          items: [
+            {
+              val: 999,
+              char: 'zzz',
+            },
+          ],
+        })
+
+        expect(createItemMock).toHaveBeenCalledOnce()
+
+        expect(createItemMock).toHaveBeenCalledWith(
+          ['items'],
+          0,
+          MODEL,
+          service,
+        )
+
+        expect(getLastChange()).toStrictEqual([
+          true,
+          {
+            items: [
+              {
+                val: 999,
+                char: 'zzz',
+              },
+            ],
+          },
+          {
+            items: [''],
+          },
+          {
+            items: [
+              {
+                val: true,
+                char: true,
+              },
+            ],
+          },
+        ])
+      })
+
+      test('when a complex item is added (with format selector on item)', () => {
+        const createItemMock = mock(() => ({
+          val: 999,
+          char: 'zzz',
+        }))
+
+        const MODEL = {
+          items: [],
+        }
+
+        const SELECTORS = {
+          children: {
+            items: {
+              createItem: createItemMock,
+              children: {
+                $: {
+                  format: v => ({ ...v, char: v.char.toUpperCase() }),
+                },
+              },
+            },
+          },
+        }
+
+        const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
+        service.addItem('items')
+
+        const model = service.build()
+
+        expect(model).toStrictEqual({
+          items: [
+            {
+              val: 999,
+              char: 'ZZZ',
+            },
+          ],
+        })
+
+        expect(createItemMock).toHaveBeenCalledOnce()
+
+        expect(createItemMock).toHaveBeenCalledWith(
+          ['items'],
+          0,
+          MODEL,
+          service,
+        )
+
+        expect(getLastChange()).toStrictEqual([
+          true,
+          {
+            items: [
+              {
+                val: 999,
+                char: 'ZZZ',
+              },
+            ],
+          },
+          {
+            items: [
+              {
+                val: '',
+                char: '',
+              },
+            ],
+          },
+          {
+            items: [
+              {
+                val: true,
+                char: true,
+              },
+            ],
+          },
+        ])
+      })
+
+      test('when a complex item is added (with format selector on item property)', () => {
+        const createItemMock = mock(() => ({
+          val: 999,
+          char: 'zzz',
+        }))
+
+        const MODEL = {
+          items: [],
+        }
+
+        const SELECTORS = {
+          children: {
+            items: {
+              createItem: createItemMock,
+              children: {
+                $: {
+                  children: {
+                    char: {
+                      format: v => v.toUpperCase(),
+                    },
                   },
                 },
               },
             },
           },
-        },
-      }
+        }
 
-      beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeMock)
+        const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
         service.addItem('items')
+
+        const model = service.build()
+
+        expect(model).toStrictEqual({
+          items: [
+            {
+              val: 999,
+              char: 'ZZZ',
+            },
+          ],
+        })
+
+        expect(createItemMock).toHaveBeenCalledOnce()
+
+        expect(createItemMock).toHaveBeenCalledWith(
+          ['items'],
+          0,
+          MODEL,
+          service,
+        )
+
+        expect(getLastChange()).toStrictEqual([
+          true,
+          {
+            items: [
+              {
+                val: 999,
+                char: 'ZZZ',
+              },
+            ],
+          },
+          {
+            items: [
+              {
+                val: '',
+                char: '',
+              },
+            ],
+          },
+          {
+            items: [
+              {
+                val: true,
+                char: true,
+              },
+            ],
+          },
+        ])
       })
 
-      it('adds the item', () =>
-        expect(service.__state).toEqual({
-          items: [{
-            id: '',
-            name: '',
-            amount: '$0.00',
-          }],
+      test('when a complex item is inserted', () => {
+        const createItemMock = mock(() => ({
+          val: 999,
+          char: 'zzz',
         }))
+
+        const MODEL = {
+          items: [
+            { val: 1, char: 'a' },
+            { val: 2, char: 'b' },
+          ],
+        }
+
+        const SELECTORS = {
+          children: {
+            items: {
+              createItem: createItemMock,
+            },
+          },
+        }
+
+        const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
+        service.addItem('items', 1)
+
+        const model = service.build()
+
+        expect(model).toStrictEqual({
+          items: [
+            { val: 1, char: 'a' },
+            { val: 999, char: 'zzz' },
+            { val: 2, char: 'b' },
+          ],
+        })
+
+        expect(createItemMock).toHaveBeenCalledOnce()
+
+        expect(createItemMock).toHaveBeenCalledWith(
+          ['items'],
+          1,
+          MODEL,
+          service,
+        )
+
+        expect(getLastChange()).toStrictEqual([
+          true,
+          {
+            items: [
+              { val: 1, char: 'a' },
+              { val: 999, char: 'zzz' },
+              { val: 2, char: 'b' },
+            ],
+          },
+          {
+            items: [
+              { val: '', char: '' },
+              { val: '', char: '' },
+              { val: '', char: '' },
+            ],
+          },
+          {
+            items: [
+              { val: true, char: true },
+              { val: true, char: true },
+              { val: true, char: true },
+            ],
+          },
+        ])
+      })
     })
 
-    describe('when adding an object item', () => {
-      const MODEL = {
-        items: [
-          {
-            start: { hours: 8, minutes: 0, period: PERIOD.AM },
-            end: { hours: 12, minutes: 0, period: PERIOD.PM },
-          },
-        ],
-      }
+    describe('array model', () => {
+      test('when a primitive item is added', () => {
+        const createItemMock = mock((keyPath, index, model) => {
+          const items = getValueByPath(model, keyPath)
+          const prevTwo = items.slice(index - 2, items.length)
+          const result = (prevTwo[0] || 0) + (prevTwo[1] || 0)
 
-      const SELECTORS = {
-        children: {
-          items: {
-            createItem: () => ({
-              start: { hours: 7, minutes: 0, period: PERIOD.AM },
-              end: { hours: 17, minutes: 0, period: PERIOD.PM },
-            }),
-            children: {
-              $: {
-                children: {
-                  start: [segmentValidator, intervalValidator],
-                  end: [segmentValidator, intervalValidator],
+          return result
+        })
+
+        const MODEL = [1, 2, 3]
+
+        const SELECTORS = {
+          createItem: createItemMock,
+        }
+
+        const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
+        service.addItem('')
+
+        const model = service.build()
+
+        expect(model).toStrictEqual([1, 2, 3, 5])
+        expect(createItemMock).toHaveBeenCalledOnce()
+        expect(createItemMock).toHaveBeenCalledWith([], 3, MODEL, service)
+
+        expect(getLastChange()).toStrictEqual([
+          true,
+          [1, 2, 3, 5],
+          ['', '', '', ''],
+          [true, true, true, true],
+        ])
+      })
+
+      test('when a primitive item is inserted', () => {
+        const createItemMock = mock(() => 999)
+
+        const MODEL = [1, 2]
+
+        const SELECTORS = {
+          createItem: createItemMock,
+        }
+
+        const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
+        service.addItem('', 1)
+
+        const model = service.build()
+
+        expect(model).toStrictEqual([1, 999, 2])
+        expect(createItemMock).toHaveBeenCalledOnce()
+        expect(createItemMock).toHaveBeenCalledWith([], 1, MODEL, service)
+
+        expect(getLastChange()).toStrictEqual([
+          true,
+          [1, 999, 2],
+          ['', '', ''],
+          [true, true, true],
+        ])
+      })
+
+      test('when a complex item is added', () => {
+        const createItemMock = mock((keyPath, index, model) => {
+          const items = getValueByPath(model, keyPath)
+
+          const prevTwo = items
+            .slice(index - 2, items.length)
+            .map(item => item.val)
+
+          const val = (prevTwo[0] || 0) + (prevTwo[1] || 0)
+          const char = String.fromCharCode('a'.charCodeAt(0) + val)
+
+          return { val, char }
+        })
+
+        const MODEL = [
+          { val: 1, char: 'a' },
+          { val: 2, char: 'b' },
+          { val: 3, char: 'c' },
+        ]
+
+        const SELECTORS = {
+          createItem: createItemMock,
+        }
+
+        const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
+        service.addItem('')
+
+        const model = service.build()
+
+        expect(model).toStrictEqual([
+          { val: 1, char: 'a' },
+          { val: 2, char: 'b' },
+          { val: 3, char: 'c' },
+          { val: 5, char: 'f' },
+        ])
+
+        expect(createItemMock).toHaveBeenCalledOnce()
+        expect(createItemMock).toHaveBeenCalledWith([], 3, MODEL, service)
+
+        expect(getLastChange()).toStrictEqual([
+          true,
+          [
+            { val: 1, char: 'a' },
+            { val: 2, char: 'b' },
+            { val: 3, char: 'c' },
+            { val: 5, char: 'f' },
+          ],
+          [
+            { val: '', char: '' },
+            { val: '', char: '' },
+            { val: '', char: '' },
+            { val: '', char: '' },
+          ],
+          [
+            { val: true, char: true },
+            { val: true, char: true },
+            { val: true, char: true },
+            { val: true, char: true },
+          ],
+        ])
+      })
+
+      test('when a complex item is added (with validator selector on root)', () => {
+        const createItemMock = mock(() => ({
+          val: 999,
+          char: 'zzz',
+        }))
+
+        const MODEL = []
+
+        const SELECTORS = {
+          createItem: createItemMock,
+          validators: [],
+        }
+
+        const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
+        service.addItem('')
+
+        const model = service.build()
+
+        expect(model).toStrictEqual([
+          {
+            val: 999,
+            char: 'zzz',
+          },
+        ])
+
+        expect(createItemMock).toHaveBeenCalledOnce()
+        expect(createItemMock).toHaveBeenCalledWith([], 0, MODEL, service)
+
+        expect(getLastChange()).toStrictEqual([
+          true,
+          [
+            {
+              val: 999,
+              char: 'zzz',
+            },
+          ],
+          '',
+          [
+            {
+              val: true,
+              char: true,
+            },
+          ],
+        ])
+      })
+
+      test('when a complex item is added (with validator selector on item)', () => {
+        const createItemMock = mock(() => ({
+          val: 999,
+          char: 'zzz',
+        }))
+
+        const MODEL = []
+
+        const SELECTORS = {
+          createItem: createItemMock,
+          children: {
+            $: {
+              validators: [],
+            },
+          },
+        }
+
+        const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
+        service.addItem('')
+
+        const model = service.build()
+
+        expect(model).toStrictEqual([
+          {
+            val: 999,
+            char: 'zzz',
+          },
+        ])
+
+        expect(createItemMock).toHaveBeenCalledOnce()
+        expect(createItemMock).toHaveBeenCalledWith([], 0, MODEL, service)
+
+        expect(getLastChange()).toStrictEqual([
+          true,
+          [
+            {
+              val: 999,
+              char: 'zzz',
+            },
+          ],
+          [''],
+          [
+            {
+              val: true,
+              char: true,
+            },
+          ],
+        ])
+      })
+
+      test('when a complex item is added (with format selector on item)', () => {
+        const createItemMock = mock(() => ({
+          val: 999,
+          char: 'zzz',
+        }))
+
+        const MODEL = []
+
+        const SELECTORS = {
+          createItem: createItemMock,
+          children: {
+            $: {
+              format: v => ({ ...v, char: v.char.toUpperCase() }),
+            },
+          },
+        }
+
+        const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
+        service.addItem('')
+
+        const model = service.build()
+
+        expect(model).toStrictEqual([
+          {
+            val: 999,
+            char: 'ZZZ',
+          },
+        ])
+
+        expect(createItemMock).toHaveBeenCalledOnce()
+        expect(createItemMock).toHaveBeenCalledWith([], 0, MODEL, service)
+
+        expect(getLastChange()).toStrictEqual([
+          true,
+          [
+            {
+              val: 999,
+              char: 'ZZZ',
+            },
+          ],
+          [
+            {
+              val: '',
+              char: '',
+            },
+          ],
+          [
+            {
+              val: true,
+              char: true,
+            },
+          ],
+        ])
+      })
+
+      test('when a complex item is added (with format selector on item property)', () => {
+        const createItemMock = mock(() => ({
+          val: 999,
+          char: 'zzz',
+        }))
+
+        const MODEL = []
+
+        const SELECTORS = {
+          createItem: createItemMock,
+          children: {
+            $: {
+              children: {
+                char: {
+                  format: v => v.toUpperCase(),
                 },
               },
             },
           },
-        },
-      }
+        }
 
-      beforeEach(() => {
-        service = new FormService(MODEL, SELECTORS, onChangeMock)
-        service.addItem('items')
-      })
+        const service = new FormService(MODEL, SELECTORS, onChangeMock)
 
-      it('provides the correct errors', () =>
-        expect(service.__errors).toEqual({
-          items: [
-            { start: '', end: '' },
-            { start: '', end: '' },
+        service.addItem('')
+
+        const model = service.build()
+
+        expect(model).toStrictEqual([
+          {
+            val: 999,
+            char: 'ZZZ',
+          },
+        ])
+
+        expect(createItemMock).toHaveBeenCalledOnce()
+        expect(createItemMock).toHaveBeenCalledWith([], 0, MODEL, service)
+
+        expect(getLastChange()).toStrictEqual([
+          true,
+          [
+            {
+              val: 999,
+              char: 'ZZZ',
+            },
           ],
-        }))
-    })
-
-    describe('array model', () => {
-      describe('when path is empty', () => {
-        const MODEL = ['']
-        const SELECTORS = {
-          createItem: () => '',
-        }
-
-        beforeEach(() => {
-          service = new FormService(MODEL, SELECTORS, onChangeMock)
-          service.addItem('')
-        })
-
-        it('adds the item', () =>
-          expect(service.__state).toEqual(['', '']))
+          [
+            {
+              val: '',
+              char: '',
+            },
+          ],
+          [
+            {
+              val: true,
+              char: true,
+            },
+          ],
+        ])
       })
 
-      describe('when adding an item with validators', () => {
+      test('when a complex item is inserted', () => {
+        const createItemMock = mock(() => ({
+          val: 999,
+          char: 'zzz',
+        }))
+
+        const MODEL = [
+          { val: 1, char: 'a' },
+          { val: 2, char: 'b' },
+        ]
+
         const SELECTORS = {
-          createItem: () => ({ id: '', name: '' }),
-          validators: [],
+          createItem: createItemMock,
         }
 
-        beforeEach(() => {
-          service = new FormService(ITEMS_MODEL, SELECTORS, onChangeMock)
-          service.addItem('')
-        })
+        const service = new FormService(MODEL, SELECTORS, onChangeMock)
 
-        it('invokes the callback', () =>
-          expect(getLastChange()).toEqual([
-            true,
-            [
-              { id: '', name: '' },
-              { id: '', name: '' },
-            ],
-            '',
-            [
-              { id: true, name: true },
-              { id: true, name: true },
-            ],
-          ]))
+        service.addItem('', 1)
+
+        const model = service.build()
+
+        expect(model).toStrictEqual([
+          { val: 1, char: 'a' },
+          { val: 999, char: 'zzz' },
+          { val: 2, char: 'b' },
+        ])
+
+        expect(createItemMock).toHaveBeenCalledOnce()
+        expect(createItemMock).toHaveBeenCalledWith([], 1, MODEL, service)
+
+        expect(getLastChange()).toStrictEqual([
+          true,
+          [
+            { val: 1, char: 'a' },
+            { val: 999, char: 'zzz' },
+            { val: 2, char: 'b' },
+          ],
+          [
+            { val: '', char: '' },
+            { val: '', char: '' },
+            { val: '', char: '' },
+          ],
+          [
+            { val: true, char: true },
+            { val: true, char: true },
+            { val: true, char: true },
+          ],
+        ])
       })
     })
   })
 
   describe('removeItem()', () => {
-    beforeEach(() => {
-      service = new FormService(ENEMY_MODEL, {}, onChangeMock)
-    })
+    describe('object model', () => {
+      const MODEL = {
+        items: [1, 2, 3],
+      }
 
-    describe('when removing an item from the end of an array', () => {
-      beforeEach(() => {
-        service.removeItem('ailments')
+      test('when removing an item from the end of an array', () => {
+        const service = new FormService(MODEL, {}, onChangeMock)
+
+        service.removeItem('items')
+
+        expect(service.state).toStrictEqual({
+          items: [1, 2],
+        })
       })
 
-      it('removes it', () =>
-        expect(service.__state.ailments).toEqual([3, 4]))
-    })
+      test('when removing an item from the middle of an array', () => {
+        const service = new FormService(MODEL, {}, onChangeMock)
 
-    describe('when removing an item from the front of an array', () => {
-      beforeEach(() => {
-        service.removeItem('ailments', 0)
+        service.removeItem('items', 1)
+
+        expect(service.state).toStrictEqual({
+          items: [1, 3],
+        })
       })
 
-      it('removes it', () =>
-        expect(service.__state.ailments).toEqual([4, 7]))
+      test('when removing an item from the front of an array', () => {
+        const service = new FormService(MODEL, {}, onChangeMock)
+
+        service.removeItem('items', 0)
+
+        expect(service.state).toStrictEqual({
+          items: [2, 3],
+        })
+      })
     })
 
     describe('array model', () => {
-      describe('when path is empty', () => {
-        const MODEL = ['']
+      const MODEL = [1, 2, 3]
 
-        beforeEach(() => {
-          service = new FormService(MODEL, {}, onChangeMock)
-          service.removeItem('')
-        })
+      test('when removing an item from the end of an array', () => {
+        const service = new FormService(MODEL, {}, onChangeMock)
 
-        it('removes the item', () =>
-          expect(service.__state).toEqual([]))
+        service.removeItem('')
+
+        expect(service.state).toStrictEqual([1, 2])
+      })
+
+      test('when removing an item from the middle of an array', () => {
+        const service = new FormService(MODEL, {}, onChangeMock)
+
+        service.removeItem('', 1)
+
+        expect(service.state).toStrictEqual([1, 3])
+      })
+
+      test('when removing an item from the front of an array', () => {
+        const service = new FormService(MODEL, {}, onChangeMock)
+
+        service.removeItem('', 0)
+
+        expect(service.state).toStrictEqual([2, 3])
       })
     })
   })
 
   describe('moveItem()', () => {
-    const EXPECTED_STATE = [7, 3, 4]
-    const EXPECTED_PRISTINE = [false, true, true]
-    const EXPECTED_ERRORS = 'asdf'
-    const SELECTORS = {
-      children: {
-        ailments: [failValidator],
-      },
-    }
+    describe('object model', () => {
+      test('when invoked (simple)', () => {
+        const MODEL = {
+          items: [1, 2, 3],
+        }
 
-    beforeEach(() => {
-      service = new FormService(ENEMY_MODEL, SELECTORS, onChangeMock)
+        const SELECTORS = {
+          children: {
+            items: {
+              children: {
+                $: [failValidator],
+              },
+            },
+          },
+        }
 
-      service.apply('ailments.2', 7)
-      service.apply('ailments.2', 7)
-      service.moveItem('ailments', 2, 0)
+        const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
+        service.apply('items.2', 999)
+        service.apply('items.2', 999)
+        service.moveItem('items', 2, 0)
+
+        expect(getLastChange()).toStrictEqual([
+          true,
+          { items: [999, 1, 2] },
+          { items: ['asdf', '', ''] },
+          { items: [false, true, true] },
+        ])
+      })
+
+      test('when invoked (complex)', () => {
+        const MODEL = {
+          items: [
+            { id: 1 },
+            { id: 2 },
+            { id: 3 },
+          ],
+        }
+
+        const SELECTORS = {
+          children: {
+            items: {
+              children: {
+                $: [failValidator],
+              },
+            },
+          },
+        }
+
+        const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
+        service.apply('items.2.id', 999)
+        service.apply('items.2.id', 999)
+        service.moveItem('items', 2, 0)
+
+        expect(getLastChange()).toStrictEqual([
+          true,
+          {
+            items: [
+              { id: 999 },
+              { id: 1 },
+              { id: 2 },
+            ],
+          },
+          { items: ['asdf', '', ''] },
+          {
+            items: [
+              { id: false },
+              { id: true },
+              { id: true },
+            ],
+          },
+        ])
+      })
     })
 
-    it('reorders the item in the state', () =>
-      expect(service.__state.ailments).toEqual(EXPECTED_STATE))
-
-    it('reorders the item in the error schema', () =>
-      expect(service.__errors.ailments).toEqual(EXPECTED_ERRORS))
-
-    it('reorders the item in the pristine schema', () =>
-      expect(service.__pristine.ailments).toEqual(EXPECTED_PRISTINE))
-
     describe('array model', () => {
-      describe('when path is empty', () => {
-        const MODEL = ['a', 'b', 'c']
+      test('when invoked (simple)', () => {
+        const MODEL = [1, 2, 3]
 
-        beforeEach(() => {
-          service = new FormService(MODEL, {}, onChangeMock)
-          service.moveItem('', 2, 1)
-        })
+        const SELECTORS = {
+          children: {
+            $: [failValidator],
+          },
+        }
 
-        it('moves the item', () =>
-          expect(service.__state).toEqual(['a', 'c', 'b']))
+        const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
+        service.apply('2', 999)
+        service.apply('2', 999)
+        service.moveItem('', 2, 0)
+
+        expect(getLastChange()).toStrictEqual([
+          true,
+          [999, 1, 2],
+          ['asdf', '', ''],
+          [false, true, true],
+        ])
+      })
+
+      test('when invoked (complex)', () => {
+        const MODEL = [
+          { id: 1 },
+          { id: 2 },
+          { id: 3 },
+        ]
+
+        const SELECTORS = {
+          children: {
+            $: [failValidator],
+          },
+        }
+
+        const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
+        service.apply('2.id', 999)
+        service.apply('2.id', 999)
+        service.moveItem('', 2, 0)
+
+        expect(getLastChange()).toStrictEqual([
+          true,
+          [
+            { id: 999 },
+            { id: 1 },
+            { id: 2 },
+          ],
+          ['asdf', '', ''],
+          [
+            { id: false },
+            { id: true },
+            { id: true },
+          ],
+        ])
       })
     })
   })
 
-  describe('swapItems()', () => {
-    const EXPECTED_STATE = [7, 4, 3]
-    const EXPECTED_PRISTINE = [false, true, false]
-    const EXPECTED_ERRORS = 'asdf'
-    const SELECTORS = {
-      children: {
-        ailments: [failValidator],
-      },
-    }
+  describe('swapItem()', () => {
+    describe('object model', () => {
+      test('when invoked (simple)', () => {
+        const MODEL = {
+          items: [1, 2, 3],
+        }
 
-    beforeEach(() => {
-      service = new FormService(ENEMY_MODEL, SELECTORS, onChangeMock)
-      service.apply('ailments.2', 7)
-      service.apply('ailments.2', 7)
-      service.swapItems('ailments', 2, 0)
+        const SELECTORS = {
+          children: {
+            items: {
+              children: {
+                $: [failValidator],
+              },
+            },
+          },
+        }
+
+        const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
+        service.apply('items.2', 999)
+        service.apply('items.2', 999)
+        service.swapItems('items', 2, 0)
+
+        expect(getLastChange()).toStrictEqual([
+          true,
+          { items: [999, 2, 1] },
+          { items: ['asdf', '', ''] },
+          { items: [false, true, false] },
+        ])
+      })
+
+      test('when invoked (complex)', () => {
+        const MODEL = {
+          items: [
+            { id: 1 },
+            { id: 2 },
+            { id: 3 },
+          ],
+        }
+
+        const SELECTORS = {
+          children: {
+            items: {
+              children: {
+                $: [failValidator],
+              },
+            },
+          },
+        }
+
+        const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
+        service.apply('items.2.id', 999)
+        service.apply('items.2.id', 999)
+        service.swapItems('items', 2, 0)
+
+        expect(getLastChange()).toStrictEqual([
+          true,
+          {
+            items: [
+              { id: 999 },
+              { id: 2 },
+              { id: 1 },
+            ],
+          },
+          { items: ['asdf', '', ''] },
+          {
+            items: [
+              false, // BUG: FIX THIS!
+              { id: true },
+              false, // BUG: FIX THIS!
+            ],
+          },
+        ])
+      })
     })
 
-    it('swaps the selected items in the state', () =>
-      expect(service.__state.ailments).toEqual(EXPECTED_STATE))
-
-    it('swaps the selected items in the error schema', () =>
-      expect(service.__errors.ailments).toEqual(EXPECTED_ERRORS))
-
-    it('swaps the selected items in the pristine schema', () =>
-      expect(service.__pristine.ailments).toEqual(EXPECTED_PRISTINE))
-
     describe('array model', () => {
-      describe('when path is empty', () => {
-        const MODEL = ['a', 'b', 'c']
+      test('when invoked (simple)', () => {
+        const MODEL = [1, 2, 3]
 
-        beforeEach(() => {
-          service = new FormService(MODEL, {}, onChangeMock)
-          service.swapItems('', 2, 0)
-        })
+        const SELECTORS = {
+          children: {
+            $: [failValidator],
+          },
+        }
 
-        it('swaps the items', () =>
-          expect(service.__state).toEqual(['c', 'b', 'a']))
+        const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
+        service.apply('2', 999)
+        service.apply('2', 999)
+        service.swapItems('', 2, 0)
+
+        expect(getLastChange()).toStrictEqual([
+          true,
+          [999, 2, 1],
+          ['asdf', '', ''],
+          [false, true, false],
+        ])
+      })
+
+      test('when invoked (complex)', () => {
+        const MODEL = [
+          { id: 1 },
+          { id: 2 },
+          { id: 3 },
+        ]
+
+        const SELECTORS = {
+          children: {
+            $: [failValidator],
+          },
+        }
+
+        const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
+        service.apply('2.id', 999)
+        service.apply('2.id', 999)
+        service.swapItems('', 2, 0)
+
+        expect(getLastChange()).toStrictEqual([
+          true,
+          [
+            { id: 999 },
+            { id: 2 },
+            { id: 1 },
+          ],
+          ['asdf', '', ''],
+          [
+            false, // BUG: FIX THIS!
+            { id: true },
+            false, // BUG: FIX THIS!
+          ],
+        ])
       })
     })
   })
@@ -2397,61 +2952,745 @@ describe('FormService', () => {
     })
   })
 
-  describe('refresh()', () => {
-    test('when invoked', () => {
-      const MODEL_INITIAL = {
-        name: '',
+  describe('unsetPristine()', () => {
+    describe('primitive model', () => {
+      const MODEL = ''
+      const SELECTORS = { children: {} }
+
+      function createService () {
+        return new FormService(MODEL, SELECTORS, onChangeMock)
       }
 
-      const MODEL_UPDATED = {
-        name: 'asdf',
+      test('when unsetting the root selector', () => {
+        const service = createService()
+        const fn = () => service.unsetPristine([''])
+
+        expect(fn).toThrow(new TypeError('Invalid path: \'\''))
+      })
+    })
+
+    describe('object model', () => {
+      const MODEL = {
+        name: '',
+        stats: {
+          hp: 8,
+        },
+        items: [
+          {
+            id: 1,
+            amount: 2,
+          },
+        ],
+        refs: [
+          [1, 2, 3],
+          [4, 5, 6],
+          [7, 8, 9],
+        ],
       }
 
       const SELECTORS = {
         children: {
-          name: [failValidator],
+          name: { format: v => v },
+          stats: {
+            children: {
+              hp: { format: v => v },
+            },
+          },
+          items: {
+            children: {
+              $: {
+                children: {
+                  id: { format: v => v },
+                  amount: { format: v => v },
+                },
+              },
+            },
+          },
+          refs: {
+            children: {
+              $: {
+                children: {
+                  $: { format: v => v },
+                },
+              },
+            },
+          },
         },
       }
 
-      const service = new FormService(MODEL_INITIAL, SELECTORS, onChangeMock)
+      function createService () {
+        return new FormService(MODEL, SELECTORS, onChangeMock)
+      }
 
-      service.apply('name', 'asdf')
-      service.validate()
-      service.refresh(MODEL_UPDATED)
+      test('when root-level property selector DOES NOT exist', () => {
+        const service = createService()
+        const fn = () => service.unsetPristine(['asdf'])
 
-      expect(getLastChange()).toEqual([
-        false,
-        MODEL_UPDATED,
-        { name: '' },
-        { name: true },
-      ])
+        expect(fn).toThrow(new TypeError('Invalid path: \'asdf\''))
+      })
+
+      test('when root-level property selector EXISTS', () => {
+        const service = createService()
+
+        service.unsetPristine(['name'])
+
+        expect(service.pristine.name).toBe(false)
+      })
+
+      test('when sub-object property selector DOES NOT exist', () => {
+        const service = createService()
+        const fn = () => service.unsetPristine(['stats', 'asdf'])
+
+        expect(fn).toThrow(new TypeError('Invalid path: \'stats.asdf\''))
+      })
+
+      test('when sub-object property selector EXISTS', () => {
+        const service = createService()
+
+        service.unsetPristine(['stats', 'hp'])
+
+        expect(service.pristine.stats.hp).toBe(false)
+      })
+
+      test('when array-object index selector DOES NOT exist', () => {
+        const service = createService()
+        const fn = () => service.unsetPristine(['items', '999', 'amount'])
+
+        expect(fn).toThrow(new TypeError('Invalid path: \'items.999.amount\''))
+      })
+
+      test('when array-object property selector DOES NOT exist', () => {
+        const service = createService()
+        const fn = () => service.unsetPristine(['items', '0', 'asdf'])
+
+        expect(fn).toThrow(new TypeError('Invalid path: \'items.0.asdf\''))
+      })
+
+      test('when array-object property selector EXISTS', () => {
+        const service = createService()
+
+        service.unsetPristine(['items', '0', 'amount'])
+
+        expect(service.pristine.items[0].amount).toBe(false)
+      })
+
+      test('when 1st nested-array index selector DOES NOT exist', () => {
+        const service = createService()
+        const fn = () => service.unsetPristine(['refs', '999', '0'])
+
+        expect(fn).toThrow(new TypeError('Invalid path: \'refs.999.0\''))
+      })
+
+      test('when 2nd nested-array index selector DOES NOT exist', () => {
+        const service = createService()
+        const fn = () => service.unsetPristine(['refs', '0', '999'])
+
+        expect(fn).toThrow(new TypeError('Invalid path: \'refs.0.999\''))
+      })
+
+      test('when nested-array property selector EXISTS', () => {
+        const service = createService()
+
+        service.unsetPristine(['refs', '0', '0'])
+
+        expect(service.pristine.refs[0][0]).toBe(false)
+      })
+
+      test('when selecting an object property', () => {
+        const service = createService()
+        const fn = () => service.unsetPristine(['stats'])
+
+        expect(fn).toThrow(new TypeError('Invalid path: \'stats\''))
+      })
+
+      test('when selecting an array property', () => {
+        const service = createService()
+        const fn = () => service.unsetPristine(['items'])
+
+        expect(fn).toThrow(new TypeError('Invalid path: \'items\''))
+      })
+
+      test('when selecting a nested-array property', () => {
+        const service = createService()
+        const fn = () => service.unsetPristine(['refs', '0'])
+
+        expect(fn).toThrow(new TypeError('Invalid path: \'refs.0\''))
+      })
+    })
+
+    describe('array model', () => {
+      const MODEL = [
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9],
+      ]
+
+      const SELECTORS = {
+        children: {
+          $: {
+            children: {
+              $: { format: v => v },
+            },
+          },
+        },
+      }
+
+      function createService () {
+        return new FormService(MODEL, SELECTORS, onChangeMock)
+      }
+
+      test('when 1st nested-array index selector DOES NOT exist', () => {
+        const service = createService()
+        const fn = () => service.unsetPristine(['999', '0'])
+
+        expect(fn).toThrow(new TypeError('Invalid path: \'999.0\''))
+      })
+
+      test('when 2nd nested-array index selector DOES NOT exist', () => {
+        const service = createService()
+        const fn = () => service.unsetPristine(['0', '999'])
+
+        expect(fn).toThrow(new TypeError('Invalid path: \'0.999\''))
+      })
+
+      test('when nested-array property selector EXISTS', () => {
+        const service = createService()
+
+        service.unsetPristine(['0', '0'])
+
+        expect(service.pristine[0][0]).toBe(false)
+      })
+
+      test('when selecting an array property', () => {
+        const service = createService()
+        const fn = () => service.unsetPristine(['0'])
+
+        expect(fn).toThrow(new TypeError('Invalid path: \'0\''))
+      })
+
+      test('when selecting a nested-array property', () => {
+        const service = createService()
+
+        service.unsetPristine(['0', '0'])
+
+        expect(service.pristine[0][0]).toBe(false)
+      })
     })
   })
 
-  describe('reset()', () => {
-    test('when invoked', () => {
+  describe('getSelectorPath()', () => {
+    test('when resolving the path for root', () => {
       const MODEL = {
         name: '',
       }
 
       const SELECTORS = {
         children: {
-          name: [failValidator],
+          name: { format: v => v },
         },
       }
 
       const service = new FormService(MODEL, SELECTORS, onChangeMock)
 
-      service.apply('name', 'asdf')
-      service.validate()
-      service.reset()
+      const result = service.getSelectorPath([])
 
-      expect(getLastChange()).toEqual([
-        false,
-        MODEL,
-        { name: '' },
-        { name: true },
-      ])
+      expect(result).toStrictEqual([])
+    })
+
+    describe('primitive model', () => {
+      const MODEL = ''
+      const SELECTORS = { children: {} }
+
+      function createService () {
+        return new FormService(MODEL, SELECTORS, onChangeMock)
+      }
+
+      test('when selecting the root selector', () => {
+        const service = createService()
+        const fn = () => service.getSelectorPath([''])
+
+        expect(fn).toThrow(new PathError(['']))
+      })
+    })
+
+    describe('object model', () => {
+      const MODEL = {
+        name: '',
+        stats: {
+          hp: 8,
+        },
+        items: [
+          {
+            id: 1,
+            amount: 2,
+          },
+        ],
+        refs: [
+          [1, 2, 3],
+          [4, 5, 6],
+          [7, 8, 9],
+        ],
+      }
+
+      const SELECTORS = {
+        children: {
+          name: { format: v => v },
+          stats: {
+            children: {
+              hp: { format: v => v },
+            },
+          },
+          items: {
+            children: {
+              $: {
+                children: {
+                  id: { format: v => v },
+                  amount: { format: v => v },
+                },
+              },
+            },
+          },
+          refs: {
+            children: {
+              $: {
+                children: {
+                  $: { format: v => v },
+                },
+              },
+            },
+          },
+        },
+      }
+
+      function createService () {
+        return new FormService(MODEL, SELECTORS, onChangeMock)
+      }
+
+      test('when root-level property selector DOES NOT exist', () => {
+        const service = createService()
+        const fn = () => service.getSelectorPath(['asdf'])
+
+        expect(fn).toThrow(new PathError(['asdf']))
+      })
+
+      test('when root-level property selector EXISTS', () => {
+        const service = createService()
+        const result = service.getSelectorPath(['name'])
+
+        expect(result).toStrictEqual(['children', 'name'])
+      })
+
+      test('when sub-object property selector DOES NOT exist', () => {
+        const service = createService()
+        const fn = () => service.getSelectorPath(['stats', 'asdf'])
+
+        expect(fn).toThrow(new PathError(['stats', 'asdf']))
+      })
+
+      test('when sub-object property selector EXISTS', () => {
+        const service = createService()
+        const result = service.getSelectorPath(['stats', 'hp'])
+
+        expect(result).toStrictEqual([
+          'children',
+          'stats',
+          'children',
+          'hp',
+        ])
+      })
+
+      test('when array-object index selector DOES NOT exist', () => {
+        const service = createService()
+        const fn = () => service.getSelectorPath(['items', '999', 'amount'])
+
+        expect(fn).toThrow(new PathError(['items', '999', 'amount']))
+      })
+
+      test('when array-object property selector DOES NOT exist', () => {
+        const service = createService()
+        const fn = () => service.getSelectorPath(['items', '0', 'asdf'])
+
+        expect(fn).toThrow(new PathError(['items', '0', 'asdf']))
+      })
+
+      test('when array-object property selector EXISTS', () => {
+        const service = createService()
+        const result = service.getSelectorPath(['items', '0', 'amount'])
+
+        expect(result).toStrictEqual([
+          'children',
+          'items',
+          'children',
+          '$',
+          'children',
+          'amount',
+        ])
+      })
+
+      test('when 1st nested-array index selector DOES NOT exist', () => {
+        const service = createService()
+        const fn = () => service.getSelectorPath(['refs', '999', '0'])
+
+        expect(fn).toThrow(new PathError(['refs', '999', '0']))
+      })
+
+      test('when 2nd nested-array index selector DOES NOT exist', () => {
+        const service = createService()
+        const fn = () => service.getSelectorPath(['refs', '0', '999'])
+
+        expect(fn).toThrow(new PathError(['refs', '0', '999']))
+      })
+
+      test('when nested-array property selector EXISTS', () => {
+        const service = createService()
+        const result = service.getSelectorPath(['refs', '0', '0'])
+
+        expect(result).toStrictEqual([
+          'children',
+          'refs',
+          'children',
+          '$',
+          'children',
+          '$',
+        ])
+      })
+
+      test('when selecting an object property', () => {
+        const service = createService()
+        const result = service.getSelectorPath(['stats'])
+
+        expect(result).toStrictEqual(['children', 'stats'])
+      })
+
+      test('when selecting an array property', () => {
+        const service = createService()
+        const result = service.getSelectorPath(['items'])
+
+        expect(result).toStrictEqual(['children', 'items'])
+      })
+
+      test('when selecting a nested-array property', () => {
+        const service = createService()
+        const result = service.getSelectorPath(['refs', '0'])
+
+        expect(result).toStrictEqual(['children', 'refs', 'children', '$'])
+      })
+    })
+
+    describe('array model', () => {
+      const MODEL = [
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9],
+      ]
+
+      const SELECTORS = {
+        children: {
+          $: {
+            children: {
+              $: { format: v => v },
+            },
+          },
+        },
+      }
+
+      function createService () {
+        return new FormService(MODEL, SELECTORS, onChangeMock)
+      }
+
+      test('when 1st nested-array index selector DOES NOT exist', () => {
+        const service = createService()
+        const fn = () => service.getSelectorPath(['999', '0'])
+
+        expect(fn).toThrow(new PathError(['999', '0']))
+      })
+
+      test('when 2nd nested-array index selector DOES NOT exist', () => {
+        const service = createService()
+        const fn = () => service.getSelectorPath(['0', '999'])
+
+        expect(fn).toThrow(new PathError(['0', '999']))
+      })
+
+      test('when nested-array property selector EXISTS', () => {
+        const service = createService()
+        const result = service.getSelectorPath(['0', '0'])
+
+        expect(result).toStrictEqual([
+          'children',
+          '$',
+          'children',
+          '$',
+        ])
+      })
+
+      test('when selecting an array property', () => {
+        const service = createService()
+        const result = service.getSelectorPath(['0'])
+
+        expect(result).toStrictEqual(['children', '$'])
+      })
+
+      test('when selecting a nested-array property', () => {
+        const service = createService()
+        const result = service.getSelectorPath(['0', '0'])
+
+        expect(result).toStrictEqual(['children', '$', 'children', '$'])
+      })
+    })
+  })
+
+  describe('getSelector()', () => {
+    test('when getting the root selector', () => {
+      const MODEL = {
+        name: '',
+      }
+
+      const SELECTORS = {
+        children: {
+          name: { format: v => v },
+        },
+      }
+
+      const service = new FormService(MODEL, SELECTORS, onChangeMock)
+
+      const result = service.getSelector([])
+
+      expect(result).toStrictEqual(SELECTORS)
+    })
+
+    describe('primitive model', () => {
+      const MODEL = ''
+      const SELECTORS = { children: {} }
+
+      function createService () {
+        return new FormService(MODEL, SELECTORS, onChangeMock)
+      }
+
+      test('when selecting the root selector', () => {
+        const service = createService()
+        const fn = () => service.getSelector([''])
+
+        expect(fn).toThrow(new PathError(['']))
+      })
+    })
+
+    describe('object model', () => {
+      const MODEL = {
+        name: '',
+        stats: {
+          hp: 8,
+        },
+        items: [
+          {
+            id: 1,
+            amount: 2,
+          },
+        ],
+        refs: [
+          [1, 2, 3],
+          [4, 5, 6],
+          [7, 8, 9],
+        ],
+      }
+
+      const SELECTORS = {
+        children: {
+          name: { format: v => v },
+          stats: {
+            children: {
+              hp: { format: v => v },
+            },
+          },
+          items: {
+            children: {
+              $: {
+                children: {
+                  id: { format: v => v },
+                  amount: { format: v => v },
+                },
+              },
+            },
+          },
+          refs: {
+            children: {
+              $: {
+                children: {
+                  $: { format: v => v },
+                },
+              },
+            },
+          },
+        },
+      }
+
+      function createService () {
+        return new FormService(MODEL, SELECTORS, onChangeMock)
+      }
+
+      test('when root-level property selector DOES NOT exist', () => {
+        const service = createService()
+        const fn = () => service.getSelector(['asdf'])
+
+        expect(fn).toThrow(new PathError(['asdf']))
+      })
+
+      test('when root-level property selector EXISTS', () => {
+        const service = createService()
+        const result = service.getSelector(['name'])
+
+        expect(result).toStrictEqual(SELECTORS.children.name)
+      })
+
+      test('when sub-object property selector DOES NOT exist', () => {
+        const service = createService()
+        const fn = () => service.getSelector(['stats', 'asdf'])
+
+        expect(fn).toThrow(new PathError(['stats', 'asdf']))
+      })
+
+      test('when sub-object property selector EXISTS', () => {
+        const service = createService()
+        const result = service.getSelector(['stats', 'hp'])
+
+        expect(result).toStrictEqual(SELECTORS.children.stats.children.hp)
+      })
+
+      test('when array-object index selector DOES NOT exist', () => {
+        const service = createService()
+        const fn = () => service.getSelector(['items', '999', 'amount'])
+
+        expect(fn).toThrow(new PathError(['items', '999', 'amount']))
+      })
+
+      test('when array-object property selector DOES NOT exist', () => {
+        const service = createService()
+        const fn = () => service.getSelector(['items', '0', 'asdf'])
+
+        expect(fn).toThrow(new PathError(['items', '0', 'asdf']))
+      })
+
+      test('when array-object property selector EXISTS', () => {
+        const service = createService()
+        const result = service.getSelector(['items', '0', 'amount'])
+
+        expect(result).toStrictEqual(
+          SELECTORS
+            .children
+            .items
+            .children
+            .$
+            .children
+            .amount
+        )
+      })
+
+      test('when 1st nested-array index selector DOES NOT exist', () => {
+        const service = createService()
+        const fn = () => service.getSelector(['refs', '999', '0'])
+
+        expect(fn).toThrow(new PathError(['refs', '999', '0']))
+      })
+
+      test('when 2nd nested-array index selector DOES NOT exist', () => {
+        const service = createService()
+        const fn = () => service.getSelector(['refs', '0', '999'])
+
+        expect(fn).toThrow(new PathError(['refs', '0', '999']))
+      })
+
+      test('when nested-array property selector EXISTS', () => {
+        const service = createService()
+        const result = service.getSelector(['refs', '0', '0'])
+
+        expect(result).toStrictEqual(
+          SELECTORS
+            .children
+            .refs
+            .children
+            .$
+            .children
+            .$,
+        )
+      })
+
+      test('when selecting an object property', () => {
+        const service = createService()
+        const result = service.getSelector(['stats'])
+
+        expect(result).toStrictEqual(SELECTORS.children.stats)
+      })
+
+      test('when selecting an array property', () => {
+        const service = createService()
+        const result = service.getSelector(['items'])
+
+        expect(result).toStrictEqual(SELECTORS.children.items)
+      })
+
+      test('when selecting a nested-array property', () => {
+        const service = createService()
+        const result = service.getSelector(['refs', '0'])
+
+        expect(result).toStrictEqual(SELECTORS.children.refs.children.$)
+      })
+    })
+
+    describe('array model', () => {
+      const MODEL = [
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9],
+      ]
+
+      const SELECTORS = {
+        children: {
+          $: {
+            children: {
+              $: { format: v => v },
+            },
+          },
+        },
+      }
+
+      function createService () {
+        return new FormService(MODEL, SELECTORS, onChangeMock)
+      }
+
+      test('when 1st nested-array index selector DOES NOT exist', () => {
+        const service = createService()
+        const fn = () => service.getSelector(['999', '0'])
+
+        expect(fn).toThrow(new PathError(['999', '0']))
+      })
+
+      test('when 2nd nested-array index selector DOES NOT exist', () => {
+        const service = createService()
+        const fn = () => service.getSelector(['0', '999'])
+
+        expect(fn).toThrow(new PathError(['0', '999']))
+      })
+
+      test('when nested-array property selector EXISTS', () => {
+        const service = createService()
+        const result = service.getSelector(['0', '0'])
+
+        expect(result).toStrictEqual(SELECTORS.children.$.children.$)
+      })
+
+      test('when selecting an array property', () => {
+        const service = createService()
+        const result = service.getSelector(['0'])
+
+        expect(result).toStrictEqual(SELECTORS.children.$)
+      })
+
+      test('when selecting a nested-array property', () => {
+        const service = createService()
+        const result = service.getSelector(['0', '0'])
+
+        expect(result).toStrictEqual(SELECTORS.children.$.children.$)
+      })
     })
   })
 })

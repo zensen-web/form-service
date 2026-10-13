@@ -8,6 +8,7 @@ import {
   swap,
   traverse,
   map,
+  deepEqual,
   deepCopy,
   setValueByPath,
   getValueByPath,
@@ -318,6 +319,250 @@ describe('map()', () => {
     const result = map(OBJ_STRING, (_, v) => Number(v))
 
     expect(result).toStrictEqual(OBJ_NUMERIC)
+  })
+})
+
+describe('deepEqual()', () => {
+  describe('primitives', () => {
+    test('when comparing two different primitive types', () => {
+      const result = deepEqual(1, '1')
+
+      expect(result).toBe(false)
+    })
+
+    test('when comparing NaN to a number', () => {
+      const result = deepEqual(NaN, 1)
+
+      expect(result).toBe(false)
+    })
+
+    test('when comparing two identical primitives', () => {
+      const result = deepEqual(42, 42)
+
+      expect(result).toBe(true)
+    })
+
+    test('when comparing NaN to NaN', () => {
+      const result = deepEqual(NaN, NaN)
+
+      expect(result).toBe(true)
+    })
+  })
+
+  describe('null and undefined', () => {
+    test('when comparing null to an object', () => {
+      const result = deepEqual(null, {})
+
+      expect(result).toBe(false)
+    })
+
+    test('when comparing null to undefined', () => {
+      const result = deepEqual(null, undefined)
+
+      expect(result).toBe(false)
+    })
+
+    test('when comparing null to null', () => {
+      const result = deepEqual(null, null)
+
+      expect(result).toBe(true)
+    })
+
+    test('when comparing undefined to undefined', () => {
+      const result = deepEqual(undefined, undefined)
+
+      expect(result).toBe(true)
+    })
+  })
+
+  describe('arrays', () => {
+    test('when comparing arrays with different lengths', () => {
+      const result = deepEqual([1, 2], [1, 2, 3])
+
+      expect(result).toBe(false)
+    })
+
+    test('when comparing arrays with different elements', () => {
+      const result = deepEqual([1, 2, 3], [1, 4, 3])
+
+      expect(result).toBe(false)
+    })
+
+    test('when comparing identical arrays', () => {
+      const result = deepEqual([1, 2, 3], [1, 2, 3])
+
+      expect(result).toBe(true)
+    })
+
+    test('when comparing nested arrays', () => {
+      const result = deepEqual([[1, 2], [3, 4]], [[1, 2], [3, 4]])
+
+      expect(result).toBe(true)
+    })
+  })
+
+  describe('plain objects', () => {
+    test('when comparing objects with different key counts', () => {
+      const result = deepEqual({ a: 1 }, { a: 1, b: 2 })
+
+      expect(result).toBe(false)
+    })
+
+    test('when comparing objects with different keys', () => {
+      const result = deepEqual({ a: 1 }, { b: 1 })
+
+      expect(result).toBe(false)
+    })
+
+    test('when comparing objects with different values', () => {
+      const result = deepEqual({ a: 1 }, { a: 2 })
+
+      expect(result).toBe(false)
+    })
+
+    test('when comparing objects with different constructors', () => {
+      const result = deepEqual([], {})
+
+      expect(result).toBe(false)
+    })
+
+    test('when comparing identical objects', () => {
+      const result = deepEqual({ a: 1, b: 2 }, { a: 1, b: 2 })
+
+      expect(result).toBe(true)
+    })
+
+    test('when comparing nested objects', () => {
+      const a = { x: { y: { z: 1 } } }
+      const b = { x: { y: { z: 1 } } }
+      const result = deepEqual(a, b)
+
+      expect(result).toBe(true)
+    })
+  })
+
+  describe('maps', () => {
+    test('when comparing maps with different sizes', () => {
+      const a = new Map([['a', 1]])
+      const b = new Map([['a', 1], ['b', 2]])
+      const result = deepEqual(a, b)
+
+      expect(result).toBe(false)
+    })
+
+    test('when comparing maps with different keys', () => {
+      const a = new Map([['a', 1]])
+      const b = new Map([['b', 1]])
+      const result = deepEqual(a, b)
+
+      expect(result).toBe(false)
+    })
+
+    test('when comparing maps with different values', () => {
+      const a = new Map([['a', 1]])
+      const b = new Map([['a', 2]])
+      const result = deepEqual(a, b)
+
+      expect(result).toBe(false)
+    })
+
+    test('when comparing identical maps', () => {
+      const a = new Map([['a', 1], ['b', 2]])
+      const b = new Map([['a', 1], ['b', 2]])
+      const result = deepEqual(a, b)
+
+      expect(result).toBe(true)
+    })
+  })
+
+  describe('sets', () => {
+    test('when comparing sets with different sizes', () => {
+      const a = new Set([1, 2])
+      const b = new Set([1, 2, 3])
+      const result = deepEqual(a, b)
+
+      expect(result).toBe(false)
+    })
+
+    test('when comparing sets with different elements', () => {
+      const a = new Set([1, 2])
+      const b = new Set([1, 3])
+      const result = deepEqual(a, b)
+
+      expect(result).toBe(false)
+    })
+
+    test('when comparing identical sets', () => {
+      const a = new Set([1, 2, 3])
+      const b = new Set([1, 2, 3])
+      const result = deepEqual(a, b)
+
+      expect(result).toBe(true)
+    })
+  })
+
+  describe('typed arrays', () => {
+    test('when comparing typed arrays with different lengths', () => {
+      const a = new Uint8Array([1, 2])
+      const b = new Uint8Array([1, 2, 3])
+      const result = deepEqual(a, b)
+
+      expect(result).toBe(false)
+    })
+
+    test('when comparing typed arrays with different elements', () => {
+      const a = new Uint8Array([1, 2, 3])
+      const b = new Uint8Array([1, 4, 3])
+      const result = deepEqual(a, b)
+
+      expect(result).toBe(false)
+    })
+
+    test('when comparing identical typed arrays', () => {
+      const a = new Uint8Array([1, 2, 3])
+      const b = new Uint8Array([1, 2, 3])
+      const result = deepEqual(a, b)
+
+      expect(result).toBe(true)
+    })
+  })
+
+  describe('regexps', () => {
+    test('when comparing regexps with different sources', () => {
+      const result = deepEqual(/abc/, /def/)
+
+      expect(result).toBe(false)
+    })
+
+    test('when comparing regexps with different flags', () => {
+      const result = deepEqual(/abc/i, /abc/g)
+
+      expect(result).toBe(false)
+    })
+
+    test('when comparing identical regexps', () => {
+      const result = deepEqual(/abc/gi, /abc/gi)
+
+      expect(result).toBe(true)
+    })
+  })
+
+  describe('dates', () => {
+    test('when comparing dates with different timestamps', () => {
+      const a = new Date(1000)
+      const b = new Date(2000)
+      const result = deepEqual(a, b)
+
+      expect(result).toBe(false)
+    })
+
+    test('when comparing identical dates', () => {
+      const a = new Date(1000)
+      const b = new Date(1000)
+      const result = deepEqual(a, b)
+
+      expect(result).toBe(true)
+    })
   })
 })
 
